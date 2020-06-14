@@ -28,24 +28,24 @@ type Command interface {
 	Validate() error
 
 	// Return the name of this command
-	Name()	string
+	Name() string
 
 	// Return the arguments, including flags for this command
-	Arguments() 	[]string
+	Arguments() []string
 
 	// Return the flags for this command
-	Flags()				Flags
+	Flags() Flags
 }
 
 type command struct {
 	// the actual command name
-	name			string
+	name string
 
 	// the arguments to the command
 	arguments []string
 
 	// the flags
-	flags		Flags
+	flags Flags
 }
 
 func (c command) Name() string {
@@ -70,9 +70,9 @@ func GetCommand(cmd string, arguments []string) (Command, error) {
 			actualArgs = append(actualArgs, arg)
 		}
 	}
-	baseCommand := command {
+	baseCommand := command{
 		arguments: actualArgs,
-		flags:		 flags,
+		flags:     flags,
 	}
 	switch cmd {
 	case "ls":
@@ -159,7 +159,7 @@ func (s show) Execute(sh *ShellContext) (stdout string, stderr error) {
 	}
 
 	entries := sh.CurrentLocation.Entries()
-	if len(entries) - 1 < entryIndex {
+	if len(entries)-1 < entryIndex {
 		return "", fmt.Errorf("invalid entry index %d", entryIndex)
 	}
 

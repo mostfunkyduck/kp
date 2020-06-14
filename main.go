@@ -1,11 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
-	"bufio"
 	"log"
 	"os"
 	"strings"
@@ -15,7 +15,7 @@ import (
 
 var (
 	keyFile = flag.String("key", "", "a key file to use to unlock the db")
-	dbFile	= flag.String("db", "", "the db to open")
+	dbFile  = flag.String("db", "", "the db to open")
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 
 	opts := &keepass.Options{
 		Password: password,
-		KeyFile: keyReader,
+		KeyFile:  keyReader,
 	}
 
 	db, err := keepass.Open(dbReader, opts)
