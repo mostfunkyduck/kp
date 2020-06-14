@@ -93,14 +93,14 @@ type ls struct {
 func (l ls) Execute(s *ShellContext) (stdout string, stderr error) {
 	// it appears that keepass uses null terminators at the end of its group and entries
 	// lists, so i'm explicitly leaving those out of the output
-	stdout = "groups:\n"
+	stdout = "*Groups*:\n\n"
 	for _, group := range s.CurrentLocation.Groups() {
 		if group.Name != "" {
 			stdout += fmt.Sprintf("%s/\n", group.Name)
 		}
 	}
 
-	stdout += "entries:\n"
+	stdout += "\n*Entries*:\n\n"
 	for i, entry := range s.CurrentLocation.Entries() {
 		if entry.Title != "" {
 			stdout += fmt.Sprintf("%d: %s\n", i, entry.Title)
@@ -126,6 +126,13 @@ type cd struct {
 
 func (c cd) Execute(s *ShellContext) (stdout string, stderr error) {
 	args := c.Arguments()
+	if args[0] == ".." {
+		if s.CurrentLocation.Parent() != nil {
+			s.CurrentLocation = s.CurrentLocation.Parent()
+			return "", nil
+		}
+		return "", fmt.Errorf("couldn't find a parent for the current group!")
+	}
 	for _, group := range s.CurrentLocation.Groups() {
 		if group.Name == args[0] {
 			s.CurrentLocation = group
