@@ -1,4 +1,5 @@
 package main
+
 // Tests the shell commands
 // This will test shell output because there's not really any other way to do it.
 
@@ -27,15 +28,14 @@ func (f FakeWriter) Write(p []byte) (n int, err error) {
 }
 
 type testResources struct {
-	Shell *ishell.Shell
+	Shell   *ishell.Shell
 	Context *ishell.Context
-	Group *keepass.Group
-	Path string
-	Db	*keepass.Database
-	Entry *keepass.Entry
-	F	FakeWriter
+	Group   *keepass.Group
+	Path    string
+	Db      *keepass.Database
+	Entry   *keepass.Entry
+	F       FakeWriter
 }
-
 
 func createTestResources(t *testing.T) (r testResources) {
 	r.Shell = ishell.New()
@@ -94,7 +94,7 @@ func testShowOutput(output string, substr string, t *testing.T) {
 }
 
 func TestShowNoArgs(t *testing.T) {
-	r  := createTestResources(t)
+	r := createTestResources(t)
 	r.Context.Args = []string{}
 	Show(r.Shell)(r.Context)
 	expected := ERROR_MESSAGE[INCORRECT_NUMBER_OF_ARGUMENTS]
@@ -130,7 +130,7 @@ func TestShowFullMode(t *testing.T) {
 
 func TestCdToGroup(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string {
+	r.Context.Args = []string{
 		r.Group.Name,
 	}
 
@@ -146,7 +146,7 @@ func TestCdToGroup(t *testing.T) {
 
 func TestCdToRoot(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string {}
+	r.Context.Args = []string{}
 
 	r.Shell.Set("currentLocation", r.Group)
 
@@ -160,7 +160,7 @@ func TestCdToRoot(t *testing.T) {
 
 func TestCdToSubgroup(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string {
+	r.Context.Args = []string{
 		r.Group.Name,
 	}
 

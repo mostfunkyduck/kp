@@ -1,4 +1,5 @@
 package main
+
 // All the commands that the shell will run
 // Note: do NOT use context.Err() here, it will impede testing.
 
@@ -214,11 +215,15 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 			}
 		}
 
-		shell.Print("enter database password: ")
-		password, err := shell.ReadPasswordErr()
-		if err != nil {
-			shell.Printf("could not obtain password: %s\n", err)
-			return nil, false
+		password := os.Getenv("KP_PASSWORD")
+		if password == "" {
+			shell.Print("enter database password: ")
+			var err error
+			password, err = shell.ReadPasswordErr()
+			if err != nil {
+				shell.Printf("could not obtain password: %s\n", err)
+				return nil, false
+			}
 		}
 
 		if *debugMode {
