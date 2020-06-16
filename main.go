@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/abiosoft/ishell"
 	"log"
+	"strings"
+	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 var (
@@ -12,6 +14,37 @@ var (
 	dbFile    = flag.String("db", "", "the db to open")
 	debugMode = flag.Bool("debug", false, "verbose logging")
 )
+
+func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
+	return func(prefix string, args []string) (ret []string) {
+		var rawPath string
+		baseGroup := strings.Split(prefix, "/")
+		baseGroup = baseGroup[0 : len(baseGroup)-1]
+		rawPath = strings.Join(baseGroup, "/")
+
+		location := shell.Get("currentLocation").(*keepass.Group)
+		location, err := traversePath(location, rawPath)
+		if err != nil {
+			return []string{}
+		}
+
+		if location != nil {
+			if rawPath != "" {
+				rawPath = rawPath + "/"
+			}
+			for _, g := range location.Groups() {
+				ret = append(ret, rawPath+g.Name+"/")
+			}
+
+			if printEntries {
+				for _, e := range location.Entries() {
+					ret = append(ret, rawPath+strings.ReplaceAll(e.Title, " ", "\\ "))
+				}
+			}
+		}
+		return ret
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -30,19 +63,22 @@ func main() {
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
 
 	shell.AddCmd(&ishell.Cmd{
-		Name: "ls",
-		Help: "ls [path]",
-		Func: Ls(shell),
+		Name:                "ls",
+		Help:                "ls [path]",
+		Func:                Ls(shell),
+		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "show",
-		Help: "show [-f] <entry>",
-		Func: Show(shell),
+		Name:                "show",
+		Help:                "show [-f] <entry>",
+		Func:                Show(shell),
+		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "cd",
-		Help: "cd <path>",
-		Func: Cd(shell),
+		Name:                "cd",
+		Help:                "cd <path>",
+		Func:                Cd(shell),
+		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "attach",
