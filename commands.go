@@ -1,4 +1,6 @@
 package main
+// All the commands that the shell will run
+// Note: do NOT use context.Err() here, it will impede testing.
 
 import (
 	"fmt"
@@ -10,22 +12,33 @@ import (
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
+const (
+	INCORRECT_NUMBER_OF_ARGUMENTS int = iota
+)
+
+// these will be base error messages, they can be spruced up with fmt.Sprintf()
+var ERROR_MESSAGE = map[int]string{
+	INCORRECT_NUMBER_OF_ARGUMENTS: "incorrect number of arguments",
+	//INVALID_ARGUMENTS: "invalid arguments",
+	//INVALID_PATH:	"invalid path",
+}
+
 func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		args := c.Args
-		currentLocation := c.Get("currentLocation").(*keepass.Group)
+		currentLocation := shell.Get("currentLocation").(*keepass.Group)
 		if len(args) == 0 {
 			currentLocation = getRoot(currentLocation)
 		} else {
 			newLocation, err := traversePath(currentLocation, args[0])
 			if err != nil {
-				c.Err(fmt.Errorf("invalid path: %s", err))
+				shell.Println(fmt.Sprintf("invalid path: %s", err))
 				return
 			}
 			currentLocation = newLocation
 		}
 		shell.Set("currentLocation", currentLocation)
-		c.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
+		shell.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
 	}
 }
 
@@ -49,19 +62,19 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		for i, entry := range location.Entries() {
 			lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Title))
 		}
-		c.Println(strings.Join(lines, "\n"))
+		shell.Println(strings.Join(lines, "\n"))
 	}
 }
 
 func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		if len(c.Args) < 1 {
-			c.Err(fmt.Errorf("incorrect number of arguments to show"))
+			shell.Println(ERROR_MESSAGE[INCORRECT_NUMBER_OF_ARGUMENTS])
 			return
 		}
 
 		fullMode := false
-		entryName := c.Args[0]
+		path := c.Args[0]
 		for _, arg := range c.Args {
 			if strings.HasPrefix(arg, "-") {
 				if arg == "-f" {
@@ -69,20 +82,20 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				}
 				continue
 			}
-			entryName = arg
+			path = arg
 		}
 
 		currentLocation := c.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(currentLocation, entryName)
+		location, err := traversePath(currentLocation, path)
 		if err != nil {
-			c.Err(fmt.Errorf("could not find entry named [%s]", entryName))
+			shell.Println(fmt.Sprintf("could not find entry named [%s]", path))
 			return
 		}
 
 		// get the base name of the entry so that we can compare it to the actual
 		// entries in this group
-		entryNameBits := strings.Split(entryName, "/")
-		entryName = entryNameBits[len(entryNameBits)-1]
+		entryNameBits := strings.Split(path, "/")
+		entryName := entryNameBits[len(entryNameBits)-1]
 		if *debugMode {
 			shell.Printf("looking for entry [%s]", entryName)
 		}
@@ -91,36 +104,38 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				shell.Printf("looking at entry/idx for entry %s/%d\n", entry.Title, i, entryName)
 			}
 			if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i {
-				outputEntry(*entry, c, fullMode)
+				outputEntry(*entry, shell, path, fullMode)
 				break
 			}
 
 			if entryName == entry.Title {
-				outputEntry(*entry, c, fullMode)
+				outputEntry(*entry, shell, path, fullMode)
 				break
 			}
 		}
 	}
 }
 
-func outputEntry(e keepass.Entry, c *ishell.Context, full bool) {
-	c.Println(fmt.Sprintf("Title: %s", e.Title))
-	c.Println(fmt.Sprintf("URL: %s", e.URL))
-	c.Println(fmt.Sprintf("Username: %s", e.URL))
+func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
+	s.Println(fmt.Sprintf("Location: %s", path))
+	s.Println(fmt.Sprintf("Title: %s", e.Title))
+	s.Println(fmt.Sprintf("URL: %s", e.URL))
+	s.Println(fmt.Sprintf("Username: %s", e.Username))
 	password := "[redacted]"
 	if full {
 		password = e.Password
 	}
-	c.Println(fmt.Sprintf("Password: %s", password))
-	c.Println(fmt.Sprintf("Notes : %s", e.Notes))
+	s.Println(fmt.Sprintf("Password: %s", password))
+	s.Println(fmt.Sprintf("Notes: %s", e.Notes))
 	if e.HasAttachment() {
-		c.Println(fmt.Sprintf("Attachment: %s", e.Attachment.Name))
+		s.Println(fmt.Sprintf("Attachment: %s", e.Attachment.Name))
 	}
 
 }
 
 func getRoot(location *keepass.Group) (root *keepass.Group) {
 	for c := location; c.Parent() != nil; c = c.Parent() {
+		root = c.Parent()
 	}
 	return root
 }
