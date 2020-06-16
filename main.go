@@ -29,8 +29,10 @@ func main() {
 	}
 
 	shell.Println("opened database")
+
 	shell.Set("currentLocation", db.Root())
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
+
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ls",
 		Help: "ls [path]",
@@ -84,9 +86,16 @@ func main() {
 				return
 			}
 
+			// get the base name of the entry so that we can compare it to the actual 
+			// entries in this group
+			entryNameBits := strings.Split(entryName, "/")
+			entryName = entryNameBits[len(entryNameBits)-1]
+			if *debugMode {
+				shell.Printf("looking for entry [%s]", entryName)
+			}
 			for i, entry := range location.Entries() {
 				if *debugMode {
-					shell.Printf("looking at entry/idx for entry %s: %s/%d\n", entry.Title, i, entryName)
+					shell.Printf("looking at entry/idx for entry %s/%d\n", entry.Title, i, entryName)
 				}
 				if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i {
 					outputEntry(*entry, c, fullMode)
@@ -159,15 +168,18 @@ func traversePath(startingLocation *keepass.Group, root *keepass.Group, fullPath
 		}
 
 		if part == ".." {
+			// if we're not at the root, go up a level
 			if currentLocation.Parent() != nil {
 				currentLocation = currentLocation.Parent()
 				continue
 			}
+			// we're at the root, the user wanted to go higher, that's no bueno
 			return nil, fmt.Errorf("root group has no parent")
 		}
 		// regular traversal
 		found := false
 		for _, group := range currentLocation.Groups() {
+			// was the entity being searched for this group?
 			if group.Name == part {
 				currentLocation = group
 				found = true
@@ -175,6 +187,7 @@ func traversePath(startingLocation *keepass.Group, root *keepass.Group, fullPath
 			}
 		}
 		for i, entry := range currentLocation.Entries() {
+			// is the entity we're looking for this index or this entry?
 			if entry.Title == part || strconv.Itoa(i) == part {
 				found = true
 				break
