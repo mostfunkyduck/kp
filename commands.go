@@ -134,8 +134,7 @@ func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
 }
 
 func getRoot(location *keepass.Group) (root *keepass.Group) {
-	for c := location; c.Parent() != nil; c = c.Parent() {
-		root = c.Parent()
+	for root = location; root.Parent() != nil; root = root.Parent() {
 	}
 	return root
 }
