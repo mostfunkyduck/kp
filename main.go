@@ -15,43 +15,17 @@ import (
 var (
 	keyFile = flag.String("key", "", "a key file to use to unlock the db")
 	dbFile  = flag.String("db", "", "the db to open")
+	debugMode = flag.Bool("debug", false, "verbose logging")
 )
 
 func main() {
 	flag.Parse()
 
-	if *dbFile == "" {
-		log.Fatalf("no db file provided!")
-	}
-
-	dbReader, err := os.Open(*dbFile)
-	if err != nil {
-		log.Fatalf("could not open db file [%s]: %s", *dbFile, err)
-	}
-
-	var keyReader io.Reader
-	if *keyFile != "" {
-		keyReader, err = os.Open(*keyFile)
-		if err != nil {
-			log.Fatalf("could not open key file %s", *keyFile)
-		}
-	}
 	shell := ishell.New()
 
-	shell.Println("enter database password")
-	password, err := shell.ReadPasswordErr()
-	if err != nil {
-		log.Fatalf("could not obtain password: %s", password)
-	}
-
-	opts := &keepass.Options{
-		Password: password,
-		KeyFile:  keyReader,
-	}
-
-	db, err := keepass.Open(dbReader, opts)
-	if err != nil {
-		log.Fatalf("could not open database [%s]: %s", *dbFile, err)
+	db, ok := openDB(shell)
+	if !ok {
+		log.Fatalf("could not open database")
 	}
 
 	shell.Println("opened database")
@@ -111,6 +85,9 @@ func main() {
 			}
 
 			for i, entry := range location.Entries() {
+				if *debugMode {
+					shell.Printf("looking at entry/idx for entry %s: %s/%d\n", entry.Title, i, entryName)
+				}
 				if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i {
 					outputEntry(*entry, c, fullMode)
 					break
@@ -208,4 +185,52 @@ func traversePath(startingLocation *keepass.Group, root *keepass.Group, fullPath
 		}
 	}
 	return currentLocation, nil
+}
+
+func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
+	if *dbFile == "" {
+		shell.Println("no db file provided!")
+		return nil, false
+	}
+
+	for {
+		dbReader, err := os.Open(*dbFile)
+		if err != nil {
+			shell.Print("could not open db file [%s]: %s\n", *dbFile, err)
+			return nil, false
+		}
+
+		var keyReader io.Reader
+		if *keyFile != "" {
+			keyReader, err = os.Open(*keyFile)
+			if err != nil {
+				shell.Print("could not open key file %s: %s\n", *keyFile, err)
+			}
+		}
+
+		shell.Print("enter database password: ")
+		password, err := shell.ReadPasswordErr()
+		if err != nil {
+			shell.Printf("could not obtain password: %s\n", err)
+			return nil, false
+		}
+
+		if *debugMode {
+			shell.Printf("got password: %s\n", password)
+		}
+
+		opts := &keepass.Options{
+			Password: password,
+			KeyFile:  keyReader,
+		}
+
+		db, err := keepass.Open(dbReader, opts)
+		if err != nil {
+			shell.Printf("could not open database: %s\n", err)
+			// in case this is a bad password, try again
+			continue
+		}
+		return db, true
+	}
+
 }
