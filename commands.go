@@ -122,7 +122,7 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	}
 }
 
-func listAttachment(entry *keepass.Entry) (s string, err error){
+func listAttachment(entry *keepass.Entry) (s string, err error) {
 	s = fmt.Sprintf("Name: %s, Size: %d bytes", entry.Attachment.Name, len(entry.Attachment.Data))
 	return
 }
@@ -144,7 +144,7 @@ func getAttachment(entry *keepass.Entry, outputLocation string) (s string, err e
 func Attach(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	attachCommands := map[string]bool{
 		"get":    true,
-		"list": true,
+		"list":   true,
 		"cancel": true,
 	}
 	return func(c *ishell.Context) {
