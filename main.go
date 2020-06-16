@@ -59,14 +59,24 @@ func main() {
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
 	shell.AddCmd(&ishell.Cmd{
 		Name: "ls",
-		Help: "show entries in group",
+		Help: "ls [path]",
 		Func: func(c *ishell.Context) {
 			currentLocation := c.Get("currentLocation").(*keepass.Group)
+			location := currentLocation
+			if len(c.Args) > 0 {
+				newLocation, err := traversePath(currentLocation, db.Root(), c.Args[0])
+				if err != nil {
+					c.Err(fmt.Errorf("Invalid path: %s", err))
+					return
+				}
+				location = newLocation
+			}
+
 			lines := []string{}
-			for _, group := range currentLocation.Groups() {
+			for _, group := range location.Groups() {
 				lines = append(lines, fmt.Sprintf("%s/", group.Name))
 			}
-			for i, entry := range currentLocation.Entries() {
+			for i, entry := range location.Entries() {
 				lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Title))
 			}
 			c.Println(strings.Join(lines, "\n"))
@@ -83,15 +93,24 @@ func main() {
 
 			fullMode := false
 			entryName := c.Args[0]
-			if c.Args[0] == "-f" {
-				fullMode = true
-				if len(c.Args) != 2 {
-					c.Err(fmt.Errorf("no second argument to show"))
+			for _, arg := range c.Args {
+				if strings.HasPrefix(arg, "-") {
+					if arg == "-f" {
+						fullMode = true
+					}
+					continue
 				}
-				entryName = c.Args[1]
+				entryName = arg
 			}
+
 			currentLocation := c.Get("currentLocation").(*keepass.Group)
-			for i, entry := range currentLocation.Entries() {
+			location, err := traversePath(currentLocation, db.Root(), entryName)
+			if err != nil {
+				c.Err(fmt.Errorf("could not find entry named [%s]", entryName))
+				return
+			}
+
+			for i, entry := range location.Entries() {
 				if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i {
 					outputEntry(*entry, c, fullMode)
 					break
@@ -106,47 +125,22 @@ func main() {
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name: "cd",
-		Help: "change current group",
+		Help: "cd <path>",
 		Func: func(c *ishell.Context) {
 			args := c.Args
 			currentLocation := c.Get("currentLocation").(*keepass.Group)
-			update := false
-			defer func() {
-				if update {
-					shell.Set("currentLocation", currentLocation)
-					c.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
-				} else {
-					c.Err(fmt.Errorf("invalid group"))
-				}
-			}()
 			if len(args) == 0 {
 				currentLocation = db.Root()
-				update = true
-				return
-			}
-			path := strings.Split(args[0], "/")
-
-			for _, part := range path {
-				if part == "." {
-					continue
+			} else {
+				newLocation, err := traversePath(currentLocation, db.Root(), args[0])
+				if err != nil {
+					c.Err(fmt.Errorf("invalid path: %s", err))
+					return
 				}
-
-				if part == ".." {
-					if currentLocation.Parent() != nil {
-						currentLocation = currentLocation.Parent()
-						update = true
-						continue
-					}
-				} else {
-					for _, group := range currentLocation.Groups() {
-						if group.Name == part {
-							currentLocation = group
-							update = true
-							break
-						}
-					}
-				}
+				currentLocation = newLocation
 			}
+			shell.Set("currentLocation", currentLocation)
+			c.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
 		}})
 	shell.Run()
 }
@@ -165,4 +159,53 @@ func outputEntry(e keepass.Entry, c *ishell.Context, full bool) {
 		c.Println(fmt.Sprintf("Attachment: %s", e.Attachment.Name))
 	}
 
+}
+
+// given a starting location and a UNIX-style path, will walk the path and return the final location or an error
+func traversePath(startingLocation *keepass.Group, root *keepass.Group, fullPath string) (finalLocation *keepass.Group, err error) {
+	currentLocation := startingLocation
+	if fullPath == "/" {
+		// short circuit now
+		return root, nil
+	}
+
+	if strings.HasPrefix(fullPath, "/") {
+		// the user entered a fully qualified path, so start at the top
+		currentLocation = root
+	}
+
+	// break the path up into components
+	path := strings.Split(fullPath, "/")
+	for _, part := range path {
+		if part == "." || part == "" {
+			continue
+		}
+
+		if part == ".." {
+			if currentLocation.Parent() != nil {
+				currentLocation = currentLocation.Parent()
+				continue
+			}
+			return nil, fmt.Errorf("root group has no parent")
+		}
+		// regular traversal
+		found := false
+		for _, group := range currentLocation.Groups() {
+			if group.Name == part {
+				currentLocation = group
+				found = true
+				break
+			}
+		}
+		for i, entry := range currentLocation.Entries() {
+			if entry.Title == part || strconv.Itoa(i) == part {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("could not find a group or entry named [%s]", part)
+		}
+	}
+	return currentLocation, nil
 }
