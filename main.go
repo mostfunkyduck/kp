@@ -44,5 +44,10 @@ func main() {
 		Help: "cd <path>",
 		Func: Cd(shell),
 	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "attach",
+		Help: "attach <get|show|delete> <entry> <filesystem location>",
+		Func: Attach(shell),
+	})
 	shell.Run()
 }
