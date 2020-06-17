@@ -50,10 +50,19 @@ func main() {
 	flag.Parse()
 
 	shell := ishell.New()
-
-	db, ok := openDB(shell)
-	if !ok {
-		log.Fatalf("could not open database")
+	var db *keepass.Database
+	if *dbFile == "" {
+		_db, err := keepass.New(&keepass.Options{})
+		if err != nil {
+			panic(err)
+		}
+		db = _db
+	} else {
+		_db, ok := openDB(shell)
+		if !ok {
+			log.Fatalf("could not open database")
+		}
+		db = _db
 	}
 
 	shell.Println("opened database")
@@ -69,6 +78,23 @@ func main() {
 		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
+		Name:                "new",
+		Help:                "new <path>",
+		Func:                NewEntry(shell),
+		CompleterWithPrefix: fileCompleter(shell, false),
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "mkdir",
+		Help:                "mkdir <group name> (only works within current group)",
+		Func:                NewGroup(shell),
+		CompleterWithPrefix: fileCompleter(shell, false),
+	})
+	shell.AddCmd(&ishell.Cmd{
+		Name: "saveas",
+		Help: "saveas <file.kdb> [file.key]",
+		Func: SaveAs(shell),
+	})
+	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
 		Help:                "show [-f] <entry>",
 		Func:                Show(shell),
@@ -80,10 +106,23 @@ func main() {
 		Func:                Cd(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
-	shell.AddCmd(&ishell.Cmd{
+	cmd := &ishell.Cmd{
 		Name: "attach",
 		Help: "attach <get|show|delete> <entry> <filesystem location>",
-		Func: Attach(shell),
+	}
+	cmd.AddCmd(&ishell.Cmd{
+		Name:                "get",
+		Help:                "attach get <entry> <filesystem location>",
+		LongHelp:            "retrieves an attachment and outputs it to a filesystem location",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Attach(shell, "get"),
 	})
+	cmd.AddCmd(&ishell.Cmd{
+		Name:                "details",
+		Help:                "attach details <entry>",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Attach(shell, "details"),
+	})
+	shell.AddCmd(cmd)
 	shell.Run()
 }

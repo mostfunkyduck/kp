@@ -15,3 +15,5 @@ require (
 	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1 // indirect
 	zombiezen.com/go/sandpass v1.1.0
 )
+
+replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911

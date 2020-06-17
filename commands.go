@@ -7,33 +7,71 @@ import (
 	"fmt"
 	"github.com/abiosoft/ishell"
 	"io"
+	"io/ioutil"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 const (
-	INCORRECT_NUMBER_OF_ARGUMENTS int = iota
-	INVALID_ATTACH_COMMAND
-	INVALID_ARGUMENTS
-	INVALID_ARGUMENTS_ATTACH_GET
+	INVALID_ATTACH_COMMAND int = iota
 )
 
 // these will be base error messages, they can be spruced up with fmt.Sprintf()
 var ERROR_MESSAGE = map[int]string{
-	INCORRECT_NUMBER_OF_ARGUMENTS: "incorrect number of arguments",
-	INVALID_ARGUMENTS:             "invalid arguments",
-	INVALID_ATTACH_COMMAND:        "invalid attach command",
-	INVALID_ARGUMENTS_ATTACH_GET:  "syntax: attach get <entry> <filesystem location>",
+	INVALID_ATTACH_COMMAND: "invalid attach command",
 	//INVALID_PATH:	"invalid path",
 }
 
+func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
+	return func(c *ishell.Context) {
+		errString, ok := syntaxCheck(c, 1)
+		if !ok {
+			shell.Println(errString)
+			return
+		}
+		path := strings.Split(c.Args[0], "/")
+		currentLocation := shell.Get("currentLocation").(*keepass.Group)
+		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
+		if err != nil {
+			shell.Printf("invalid path: " + err.Error())
+			return
+		}
+		location.NewSubgroup().Name = path[len(path)-1]
+	}
+}
+func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
+	return func(c *ishell.Context) {
+		args := c.Args
+		errString, ok := syntaxCheck(c, 1)
+		if !ok {
+			shell.Println(errString)
+			return
+		}
+		currentLocation := shell.Get("currentLocation").(*keepass.Group)
+		path := strings.Split(args[0], "/")
+		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
+		if err != nil {
+			shell.Println("invalid path: " + err.Error())
+			return
+		}
+		e, err := location.NewEntry()
+		if err != nil {
+			shell.Printf("could not create new entry: %s\n", err)
+			return
+		}
+		e.Title = path[len(path)-1]
+	}
+}
 func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		args := c.Args
 		currentLocation := shell.Get("currentLocation").(*keepass.Group)
 		if len(args) == 0 {
+			// FIXME db.Root() can come in from the context
 			currentLocation = getRoot(currentLocation)
 		} else {
 			newLocation, err := traversePath(currentLocation, args[0])
@@ -84,10 +122,94 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	}
 }
 
+func generateRandomString(length int) (str string) {
+	// based on a few things, mainly https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
+	rand.Seed(time.Now().UnixNano())
+	letters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()-_=+\\][{}|/.,?><'"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
+	if len(c.Args) < numArgs {
+		return "syntax: " + c.Cmd.Help, false
+	}
+	return "", true
+}
+
+// loadOrGenerateKey will return a file handle for the key, will prompt the user to generate a key if they so desire.
+// if the key doesn't exist and the user declines to generate it, will return a nil reader and a nil error
+func loadOrGenerateKey(shell *ishell.Shell, path string) (f io.Reader, err error) {
+	if _, err := os.Stat(path); err != nil {
+		shell.Printf("%s does not exist: generate a key at that location? [yes]\n", path)
+		shell.ShowPrompt(false)
+		choice := shell.ReadLine()
+		shell.ShowPrompt(true)
+		if choice != "yes" {
+			shell.Println("aborting operation")
+			return nil, nil
+		}
+		str := generateRandomString(2048)
+		if err := ioutil.WriteFile(path, []byte(str), 0644); err != nil {
+			return nil, err
+		}
+	}
+
+	f, err = os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
+func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
+	return func(c *ishell.Context) {
+		errString, ok := syntaxCheck(c, 1)
+		if !ok {
+			shell.Println(errString)
+			return
+		}
+		var file io.Reader
+		if len(c.Args) >= 2 {
+			_file, err := loadOrGenerateKey(shell, c.Args[1])
+			if err != nil {
+				shell.Printf("could not load or generate key: %s\n", err)
+				return
+			}
+			// this will either set the reader in the outer scope or set it to nil
+			// nil is fine, zero values won't hurt later
+			file = _file
+		}
+
+		db := shell.Get("db").(*keepass.Database)
+		opts := &keepass.Options{
+			Password: "yaakov is testing",
+			KeyFile:  file,
+		}
+		if err := db.SetOpts(opts); err != nil {
+			shell.Printf("could not set DB options: %s", err)
+			return
+		}
+
+		savePath := c.Args[0]
+		w, err := os.Create(savePath)
+		if err != nil {
+			shell.Printf("could not open/create db save location [%s]: %s", savePath, err)
+			return
+		}
+		if err = db.Write(w); err != nil {
+			shell.Printf("error writing database to [%s]: %s", savePath, err)
+			return
+		}
+	}
+}
 func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		if len(c.Args) < 1 {
-			shell.Println(ERROR_MESSAGE[INCORRECT_NUMBER_OF_ARGUMENTS])
+			shell.Println("syntax: " + c.Cmd.Help)
 			return
 		}
 
@@ -135,9 +257,10 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 }
 
 func listAttachment(entry *keepass.Entry) (s string, err error) {
-	s = fmt.Sprintf("Name: %s, Size: %d bytes", entry.Attachment.Name, len(entry.Attachment.Data))
+	s = fmt.Sprintf("Name: %s\nSize: %d bytes", entry.Attachment.Name, len(entry.Attachment.Data))
 	return
 }
+
 func getAttachment(entry *keepass.Entry, outputLocation string) (s string, err error) {
 	f, err := os.Create(outputLocation)
 	if err != nil {
@@ -153,25 +276,16 @@ func getAttachment(entry *keepass.Entry, outputLocation string) (s string, err e
 	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", entry.Attachment.Name, written, outputLocation)
 	return s, nil
 }
-func Attach(shell *ishell.Shell) (f func(c *ishell.Context)) {
-	attachCommands := map[string]bool{
-		"get":    true,
-		"list":   true,
-		"cancel": true,
-	}
+
+func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		if len(c.Args) < 2 {
-			shell.Println(ERROR_MESSAGE[INVALID_ARGUMENTS])
+		if len(c.Args) < 1 {
+			shell.Println("syntax: " + c.Cmd.Help)
 			return
 		}
 
 		args := c.Args
-		cmd := args[0]
-		path := args[1]
-		if _, ok := attachCommands[cmd]; !ok {
-			shell.Printf("%s: %s\n", INVALID_ATTACH_COMMAND, cmd)
-			return
-		}
+		path := args[0]
 		currentLocation := shell.Get("currentLocation").(*keepass.Group)
 		location, err := traversePath(currentLocation, path)
 		if err != nil {
@@ -201,6 +315,7 @@ func Attach(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		shell.Printf("could not find entry at path %s\n", path)
 	}
 }
+
 func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
 	s.Println(fmt.Sprintf("Location: %s", path))
 	s.Println(fmt.Sprintf("Title: %s", e.Title))
@@ -279,11 +394,6 @@ func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocati
 }
 
 func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
-	if *dbFile == "" {
-		shell.Println("no db file provided!")
-		return nil, false
-	}
-
 	for {
 		dbReader, err := os.Open(*dbFile)
 		if err != nil {
@@ -330,14 +440,17 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 
 }
 
+// helper function run running attach commands. 'args' are all arguments after the attach command
+// for instance, 'attach get foo bar' will result in args being '[foo, bar]'
 func runAttachCommands(args []string, cmd string, entry *keepass.Entry) (output string, err error) {
 	switch cmd {
 	case "get":
-		if len(args) < 3 {
-			return "", fmt.Errorf(ERROR_MESSAGE[INVALID_ARGUMENTS_ATTACH_GET])
+		if len(args) < 2 {
+			return "", fmt.Errorf("bad syntax")
 		}
-		return getAttachment(entry, args[2])
-	case "list":
+
+		return getAttachment(entry, args[1])
+	case "details":
 		return listAttachment(entry)
 	default:
 		return "", fmt.Errorf(ERROR_MESSAGE[INVALID_ATTACH_COMMAND])

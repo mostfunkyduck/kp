@@ -96,8 +96,12 @@ func testShowOutput(output string, substr string, t *testing.T) {
 func TestShowNoArgs(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{}
+	cmd := ishell.Cmd{
+		Help: "test string",
+	}
+	r.Context.Cmd = cmd
 	Show(r.Shell)(r.Context)
-	expected := ERROR_MESSAGE[INCORRECT_NUMBER_OF_ARGUMENTS]
+	expected := "syntax: " + r.Context.Cmd.Help
 	if r.F.outputHolder.output != expected {
 		t.Fatalf("output was incorrect: %s != %s", r.F.outputHolder.output, expected)
 	}
