@@ -16,16 +16,6 @@ import (
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
-const (
-	INVALID_ATTACH_COMMAND int = iota
-)
-
-// these will be base error messages, they can be spruced up with fmt.Sprintf()
-var ERROR_MESSAGE = map[int]string{
-	INVALID_ATTACH_COMMAND: "invalid attach command",
-	//INVALID_PATH:	"invalid path",
-}
-
 func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		errString, ok := syntaxCheck(c, 1)
@@ -453,6 +443,6 @@ func runAttachCommands(args []string, cmd string, entry *keepass.Entry) (output 
 	case "details":
 		return listAttachment(entry)
 	default:
-		return "", fmt.Errorf(ERROR_MESSAGE[INVALID_ATTACH_COMMAND])
+		return "", fmt.Errorf("invalid attach command")
 	}
 }
