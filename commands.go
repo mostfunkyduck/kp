@@ -55,6 +55,9 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 		e.Title = path[len(path)-1]
+		e.LastModificationTime = time.Now()
+		e.CreationTime = time.Now()
+		e.LastAccessTime = time.Now()
 	}
 }
 func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {

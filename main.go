@@ -85,14 +85,16 @@ func main() {
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "mkdir",
-		Help:                "mkdir <group name> (only works within current group)",
+		LongHelp:            "create a new group",
+		Help:                "mkdir <group name>",
 		Func:                NewGroup(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 	shell.AddCmd(&ishell.Cmd{
-		Name: "saveas",
-		Help: "saveas <file.kdb> [file.key]",
-		Func: SaveAs(shell),
+		Name:     "saveas",
+		LongHelp: "save this db to a new file with an optional key to be generated",
+		Help:     "saveas <file.kdb> [file.key]",
+		Func:     SaveAs(shell),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
