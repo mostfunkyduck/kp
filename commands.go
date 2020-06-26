@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -73,6 +74,70 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 		shell.Set("currentLocation", currentLocation)
 		shell.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
+	}
+}
+
+// FIXME the keepass library has a bug where you can't get the parent
+// unless the entry is a pointer to the one in the db (it's comparing pointer values)
+// this can/should/will be fixed in my fork
+func searchEntries(g keepass.Group, term *regexp.Regexp) (titles []string) {
+	for _, e := range g.Entries() {
+		if term.FindString(e.Title) != "" ||
+			term.FindString(e.Notes) != "" ||
+			term.FindString(e.Attachment.Name) != "" ||
+			term.FindString(e.Username) != "" {
+			titles = append(titles, e.Title)
+		}
+	}
+	return titles
+}
+
+// searchGroup returns a list of paths to entries or groups matching the search terms
+func searchGroup(g keepass.Group, term *regexp.Regexp, path string) (paths []string) {
+	// the initial group will send in "", meaning it should be skipped in the path output
+	if path != "" {
+		path = path + "/" + g.Name
+		if term.FindString(g.Name) != "" {
+			// adding a terminal / to indicate that this is a group (imitating how directories are output in ls by default
+			paths = append(paths, path+"/")
+		}
+	} else {
+		path = "."
+	}
+
+	for _, title := range searchEntries(g, term) {
+		paths = append(paths, path+"/"+title)
+	}
+	for _, g := range g.Groups() {
+		paths = append(paths, searchGroup(*g, term, path)...)
+	}
+	return paths
+}
+
+// This implements the equivalent of kpcli's "find" command, just with a name
+// that won't be confused for the shell command of the same name
+func Search(shell *ishell.Shell) (f func(c *ishell.Context)) {
+	return func(c *ishell.Context) {
+		currentLocation := getRoot(shell.Get("currentLocation").(*keepass.Group))
+		errString, ok := syntaxCheck(c, 1)
+		if !ok {
+			shell.Println(errString)
+			return
+		}
+
+		term, err := regexp.Compile(c.Args[0])
+		if err != nil {
+			shell.Printf("could not compile search term into a regular expression: %s", err)
+			return
+		}
+
+		// kpcli makes a fake group for search results, which gets into trouble when entries have the same name in different paths
+		// this takes a different approach of printing out full paths and letting the user type them in later
+		// a little more typing for the user, less oddness in the implementation though
+		for _, result := range searchGroup(*currentLocation, term, "") {
+			// the tab makes it a little more readable
+			shell.Printf("\t%s\n", result)
+		}
 	}
 }
 
@@ -176,8 +241,9 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		db := shell.Get("db").(*keepass.Database)
 		opts := &keepass.Options{
-			Password: "yaakov is testing",
-			KeyFile:  file,
+			// FIXME prompt for this
+			// Password: "yaakov is testing",
+			KeyFile: file,
 		}
 		if err := db.SetOpts(opts); err != nil {
 			shell.Printf("could not set DB options: %s", err)
@@ -233,14 +299,11 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			if *debugMode {
 				shell.Printf("looking at entry/idx for entry %s/%d\n", entry.Title, i, entryName)
 			}
-			if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i {
+			if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
+				entryName == entry.Title ||
+				entryName == entry.UUID.String() {
 				outputEntry(*entry, shell, path, fullMode)
-				break
-			}
-
-			if entryName == entry.Title {
-				outputEntry(*entry, shell, path, fullMode)
-				break
+				return
 			}
 		}
 	}
@@ -306,19 +369,61 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 	}
 }
 
+func formatTime(t time.Time) (formatted string) {
+	timeFormat := "Mon Jan 2 15:04:05 MST 2006"
+	if (t == time.Time{}) {
+		formatted = "unknown"
+	} else {
+		since := time.Since(t).Round(time.Duration(1) * time.Second)
+		sinceString := since.String()
+
+		// greater than or equal to 1 day
+		if since.Hours() >= 24 {
+			sinceString = fmt.Sprintf("%d days ago", int(since.Hours()/24))
+		}
+
+		// greater than or equal to ~1 month
+		if since.Hours() >= 720 {
+			// rough estimate, not accounting for non-30-day months
+			months := int(since.Hours() / 720)
+			sinceString = fmt.Sprintf("about %d months ago", months)
+		}
+
+		// greater or equal to 1 year
+		if since.Hours() >= 8760 {
+			// yes yes yes, leap years aren't 365 days long
+			years := int(since.Hours() / 8760)
+			sinceString = fmt.Sprintf("about %d years ago", years)
+		}
+
+		// less than a second
+		if since.Seconds() < 1.0 {
+			sinceString = "less than a second ago"
+		}
+
+		formatted = fmt.Sprintf("%s (%s)", t.Local().Format(timeFormat), sinceString)
+	}
+	return
+}
+
 func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
-	s.Println(fmt.Sprintf("Location: %s", path))
-	s.Println(fmt.Sprintf("Title: %s", e.Title))
-	s.Println(fmt.Sprintf("URL: %s", e.URL))
-	s.Println(fmt.Sprintf("Username: %s", e.Username))
+	s.Printf("UUID: %s\n", e.UUID)
+
+	s.Printf("Creation Time: %s\n", formatTime(e.CreationTime))
+	s.Printf("Last Modified: %s\n", formatTime(e.LastModificationTime))
+	s.Printf("Last Accessed: %s\n", formatTime(e.LastAccessTime))
+	s.Printf("Location: %s\n", path)
+	s.Printf("Title: %s\n", e.Title)
+	s.Printf("URL: %s\n", e.URL)
+	s.Printf("Username: %s\n", e.Username)
 	password := "[redacted]"
 	if full {
 		password = e.Password
 	}
-	s.Println(fmt.Sprintf("Password: %s", password))
-	s.Println(fmt.Sprintf("Notes: %s", e.Notes))
+	s.Printf("Password: %s\n", password)
+	s.Printf("Notes: %s\n", e.Notes)
 	if e.HasAttachment() {
-		s.Println(fmt.Sprintf("Attachment: %s", e.Attachment.Name))
+		s.Printf("Attachment: %s\n", e.Attachment.Name)
 	}
 
 }
@@ -387,7 +492,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 	for {
 		dbReader, err := os.Open(*dbFile)
 		if err != nil {
-			shell.Print("could not open db file [%s]: %s\n", *dbFile, err)
+			shell.Printf("could not open db file [%s]: %s\n", *dbFile, err)
 			return nil, false
 		}
 
@@ -395,7 +500,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 		if *keyFile != "" {
 			keyReader, err = os.Open(*keyFile)
 			if err != nil {
-				shell.Print("could not open key file %s: %s\n", *keyFile, err)
+				shell.Printf("could not open key file %s: %s\n", *keyFile, err)
 			}
 		}
 

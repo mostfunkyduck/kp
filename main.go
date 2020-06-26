@@ -106,23 +106,32 @@ func main() {
 		Func:                Cd(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
-	cmd := &ishell.Cmd{
+
+	attachCmd := &ishell.Cmd{
 		Name: "attach",
 		Help: "attach <get|show|delete> <entry> <filesystem location>",
 	}
-	cmd.AddCmd(&ishell.Cmd{
+	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "get",
 		Help:                "attach get <entry> <filesystem location>",
 		LongHelp:            "retrieves an attachment and outputs it to a filesystem location",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Attach(shell, "get"),
 	})
-	cmd.AddCmd(&ishell.Cmd{
+	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "details",
 		Help:                "attach details <entry>",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Attach(shell, "details"),
 	})
-	shell.AddCmd(cmd)
+	shell.AddCmd(attachCmd)
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "search",
+		Help:                "search <term>",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Search(shell),
+	})
+
 	shell.Run()
 }
