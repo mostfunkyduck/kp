@@ -5,9 +5,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/abiosoft/ishell"
 	"strings"
 	"testing"
+
+	"github.com/abiosoft/ishell"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 

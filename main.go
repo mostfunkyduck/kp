@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/abiosoft/ishell"
 	"log"
 	"strings"
+
+	"github.com/abiosoft/ishell"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
