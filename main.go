@@ -69,6 +69,7 @@ func main() {
 
 	shell.Set("currentLocation", db.Root())
 	shell.Set("db", db)
+	shell.Set("filePath", *dbFile)
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
 
 	shell.AddCmd(&ishell.Cmd{

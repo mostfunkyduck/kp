@@ -49,17 +49,101 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Println("invalid path: " + err.Error())
 			return
 		}
-		e, err := location.NewEntry()
+
+		shell.ShowPrompt(false)
+		entry, err := location.NewEntry()
 		if err != nil {
-			shell.Printf("could not create new entry: %s\n", err)
+			shell.Printf("error creating new entry: %s\n", err)
 			return
 		}
-		e.Title = path[len(path)-1]
-		e.LastModificationTime = time.Now()
-		e.CreationTime = time.Now()
-		e.LastAccessTime = time.Now()
+		err = promptForEntry(shell, entry)
+		shell.ShowPrompt(true)
+		if err != nil {
+			shell.Printf("could not collect user input: %s\n", err)
+			if err := location.RemoveEntry(entry); err != nil {
+				shell.Printf("could not remove malformed entry from group: %s\n", err)
+			}
+			return
+		}
+		entry.CreationTime = time.Now()
+		entry.LastModificationTime = time.Now()
+		entry.LastAccessTime = time.Now()
+
+		savePath := shell.Get("filePath").(string)
+		if savePath == "" {
+			shell.Println("Database has been updated")
+			return
+		}
+
+		shell.Printf("Database has been updated, save?: [Y/n] :  ")
+		line, err := shell.ReadLineErr()
+		if err != nil {
+			shell.Printf("could not read user input: %s\n", err)
+			return
+		}
+
+		if !strings.HasPrefix(line, "n") {
+			db := shell.Get("db").(*keepass.Database)
+			if err := saveDB(db, savePath); err != nil {
+				shell.Printf("could not save database: %s\n", err)
+				return
+			}
+		}
 	}
 }
+
+func promptForEntry(shell *ishell.Shell, e *keepass.Entry) error {
+	shell.Printf("Title: ")
+	title, err := shell.ReadLineErr()
+	if err != nil {
+		return fmt.Errorf("failed to read input: %s", err)
+	}
+	e.Title = title
+
+	shell.Printf("URL: ")
+	url, err := shell.ReadLineErr()
+	if err != nil {
+		return fmt.Errorf("failed to read input: %s", err)
+	}
+	e.URL = url
+
+	shell.Printf("username: ")
+	un, err := shell.ReadLineErr()
+	if err != nil {
+		return fmt.Errorf("failed to read input: %s", err)
+	}
+	e.Username = un
+
+
+	var pw, pwConfirm string
+	for {
+		var err error
+		shell.Printf("password: ")
+		pw, err = shell.ReadPasswordErr()
+		if err != nil {
+			return fmt.Errorf("failed to read input: %s", err)
+		}
+
+		shell.Printf("enter password again: ")
+		pwConfirm, err = shell.ReadPasswordErr()
+		if err != nil {
+			return fmt.Errorf("failed to read input: %s", err)
+		}
+
+		if pwConfirm != pw {
+			shell.Println("password mismatch!")
+			continue
+		}
+		break
+	}
+
+	e.Password = pw
+
+	shell.Printf("Enter notes ('...' to terminate)\n\n")
+	e.Notes = shell.ReadMultiLines("...")
+	return nil
+}
+
 func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		args := c.Args
@@ -243,9 +327,26 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		db := shell.Get("db").(*keepass.Database)
+		shell.Printf("enter password: ")
+		pw, err := shell.ReadPasswordErr()
+		if err != nil {
+			shell.Printf("could not read user input: %s\n", err)
+			return
+		}
+
+		shell.Printf("enter password again: ")
+		pwConfirm, err := shell.ReadPasswordErr()
+		if err != nil {
+			shell.Printf("could not read user input: %s\n", err)
+			return
+		}
+		if pw != pwConfirm {
+			shell.Println("password mismatch!")
+			return
+		}
+
 		opts := &keepass.Options{
-			// FIXME prompt for this
-			// Password: "yaakov is testing",
+			Password: pw,
 			KeyFile: file,
 		}
 		if err := db.SetOpts(opts); err != nil {
@@ -253,18 +354,25 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		savePath := c.Args[0]
-		w, err := os.Create(savePath)
-		if err != nil {
-			shell.Printf("could not open/create db save location [%s]: %s", savePath, err)
+		if err := saveDB(db, c.Args[0]); err != nil {
+			shell.Printf("could not save database: %s\n", err)
 			return
 		}
-		if err = db.Write(w); err != nil {
-			shell.Printf("error writing database to [%s]: %s", savePath, err)
-			return
-		}
+		shell.Set("filePath", c.Args[0])
 	}
 }
+
+func saveDB(db *keepass.Database, savePath string) error {
+	w, err := os.Create(savePath)
+	if err != nil {
+		return fmt.Errorf("could not open/create db save location [%s]: %s", savePath, err)
+	}
+	if err = db.Write(w); err != nil {
+		return fmt.Errorf("error writing database to [%s]: %s", savePath, err)
+	}
+	return nil
+}
+
 func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		if len(c.Args) < 1 {
