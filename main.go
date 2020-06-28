@@ -137,5 +137,11 @@ func main() {
 		Func:                Search(shell),
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "rm",
+		Help:                "rm <entry>",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Rm(shell),
+	})
 	shell.Run()
 }
