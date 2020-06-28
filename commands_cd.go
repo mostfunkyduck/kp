@@ -22,7 +22,11 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			}
 			currentLocation = newLocation
 		}
-		shell.Set("currentLocation", currentLocation)
-		shell.SetPrompt(fmt.Sprintf("%s > ", currentLocation.Name))
+		changeDirectory(currentLocation, shell)
 	}
+}
+
+func changeDirectory(newLocation *keepass.Group, shell *ishell.Shell) {
+	shell.Set("currentLocation", newLocation)
+	shell.SetPrompt(fmt.Sprintf("%s > ", newLocation.Name))
 }

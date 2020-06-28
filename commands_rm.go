@@ -78,6 +78,11 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				shell.Printf("could not fully remove group '%s': %s\n", newLocation.Name, err)
 				return
 			}
+
+			if currentLocation == newLocation {
+				changeDirectory(currentLocation.Parent(), shell)
+			}
+
 			if err := newLocation.Parent().RemoveSubgroup(newLocation); err != nil {
 				shell.Printf("could not fully remove group %s: %s\n", newLocation.Name, err)
 				return

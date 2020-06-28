@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
+	"github.com/sethvargo/go-password/password"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -25,13 +26,18 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
+		if location.IsRoot() {
+			shell.Println("cannot add entries to root node")
+			return
+		}
+
 		shell.ShowPrompt(false)
 		entry, err := location.NewEntry()
 		if err != nil {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
 		}
-		err = promptForEntry(shell, entry)
+		err = promptForEntry(shell, entry, path[len(path) - 1 ])
 		shell.ShowPrompt(true)
 		if err != nil {
 			shell.Printf("could not collect user input: %s\n", err)
@@ -46,11 +52,11 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		savePath := shell.Get("filePath").(string)
 		if savePath == "" {
-			shell.Println("Database has been updated")
+			shell.Println("Database has been updated in memory, but not saved")
 			return
 		}
 
-		shell.Printf("Database has been updated, save?: [Y/n] :  ")
+		shell.Printf("Database has been updated, save?: [Y/n]  ")
 		line, err := shell.ReadLineErr()
 		if err != nil {
 			shell.Printf("could not read user input: %s\n", err)
@@ -67,11 +73,16 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	}
 }
 
-func promptForEntry(shell *ishell.Shell, e *keepass.Entry) error {
+func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
 	shell.Printf("Title: ")
-	title, err := shell.ReadLineErr()
-	if err != nil {
-		return fmt.Errorf("failed to read input: %s", err)
+	if title == "" {
+		_title, err := shell.ReadLineErr()
+		if err != nil {
+			return fmt.Errorf("failed to read input: %s", err)
+		}
+		title = _title
+	} else {
+		shell.Printf("%s\n", title)
 	}
 	e.Title = title
 
@@ -92,10 +103,18 @@ func promptForEntry(shell *ishell.Shell, e *keepass.Entry) error {
 	var pw, pwConfirm string
 	for {
 		var err error
-		shell.Printf("password: ")
+		shell.Printf("password: ('g' for automatic generation)")
 		pw, err = shell.ReadPasswordErr()
 		if err != nil {
 			return fmt.Errorf("failed to read input: %s", err)
+		}
+
+		if pw == "g" {
+			pw, err = password.Generate(20, 10, 10, false, false)
+			if err != nil {
+				return fmt.Errorf("failed to generate password: %s\n", err)
+			}
+			break
 		}
 
 		shell.Printf("enter password again: ")
@@ -113,7 +132,9 @@ func promptForEntry(shell *ishell.Shell, e *keepass.Entry) error {
 
 	e.Password = pw
 
-	shell.Printf("Enter notes ('...' to terminate)\n\n")
-	e.Notes = shell.ReadMultiLines("...")
+	shell.Printf("Enter notes ('ctrl-c' to terminate)\n\n")
+	// this module seems to never actually detect the newline, which is why
+	// ctrl-c is what will abort the prompt
+	e.Notes = shell.ReadMultiLines("\n")
 	return nil
 }
