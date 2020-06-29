@@ -25,6 +25,7 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		lines := []string{}
+		lines = append(lines, "=== Groups ===")
 		for _, group := range location.Groups() {
 			if group.Name == entityName {
 				shell.Println(group.Name + "/")
@@ -32,14 +33,18 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			}
 			lines = append(lines, fmt.Sprintf("%s/", group.Name))
 		}
+
+		lines = append(lines, "\n=== Entries ===")
 		for i, entry := range location.Entries() {
-			entryLine := fmt.Sprintf("%d: %s", i, entry.Title)
-			lines = append(lines, entryLine)
+			// entryLine := fmt.Sprintf("%d: %s", i, entry.Title)
+			lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Title))
 			if entry.Title == entityName {
-				shell.Println(entryLine)
+				shell.Println(entry.Title)
 				return
 			}
 		}
-		shell.Println(strings.Join(lines, "\n"))
+		for _, line := range lines {
+			shell.Println(line)
+		}
 	}
 }
