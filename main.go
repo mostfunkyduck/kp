@@ -83,6 +83,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "new",
 		Help:                "new <path>",
+		LongHelp:            "creates a new entry at <path>",
 		Func:                NewEntry(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
@@ -102,19 +103,22 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
 		Help:                "show [-f] <entry>",
+		LongHelp:            "shows details on a given entry, passwords will be redacted unless '-f' is specified",
 		Func:                Show(shell),
 		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "cd",
 		Help:                "cd <path>",
+		LongHelp:            "changes the current group to a different path",
 		Func:                Cd(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 
 	attachCmd := &ishell.Cmd{
-		Name: "attach",
-		Help: "attach <get|show|delete> <entry> <filesystem location>",
+		Name:     "attach",
+		LongHelp: "manages the attachment for a given entry",
+		Help:     "attach <get|show|delete> <entry> <filesystem location>",
 	}
 	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "get",
@@ -126,12 +130,14 @@ func main() {
 	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "details",
 		Help:                "attach details <entry>",
+		LongHelp:            "shows the details of the attachment on an entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Attach(shell, "details"),
 	})
 	shell.AddCmd(attachCmd)
 
 	shell.AddCmd(&ishell.Cmd{
+		LongHelp:            "searches for any entries with the regular expression '<term>' in their titles or contents",
 		Name:                "search",
 		Help:                "search <term>",
 		CompleterWithPrefix: fileCompleter(shell, true),
@@ -141,6 +147,7 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "rm",
 		Help:                "rm <entry>",
+		LongHelp:            "removes an entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Rm(shell),
 	})
@@ -148,10 +155,20 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "xp",
 		Help:                "xp <entry>",
+		LongHelp:            "copies a password to the clipboard",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Xp(shell),
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "edit",
+		Help:                "edit <entry>",
+		LongHelp:            "edits an existing entry",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Edit(shell),
+	})
+
+	// trap ctrl-d and remove the lockfile
 	shell.EOF(func(c *ishell.Context) {
 		if err := removeLockfile(shell); err != nil {
 			shell.Printf("could not remove lock file: %s\n", err)

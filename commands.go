@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	"github.com/sethvargo/go-password/password"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -211,4 +212,95 @@ func isPresent(shell *ishell.Shell, path string) (ok bool) {
 	currentLocation := shell.Get("currentLocation").(*keepass.Group)
 	_, err := traversePath(currentLocation, path)
 	return err == nil
+}
+
+func doPrompt(shell *ishell.Shell, prompt string, deflt string) (string, error) {
+	shell.Printf("%s: [%s]  ", prompt, deflt)
+	input, err := shell.ReadLineErr()
+	if err != nil {
+		return "", fmt.Errorf("could not read user input: %s", err)
+	}
+
+	if input == "" {
+		return deflt, nil
+	}
+
+	return input, nil
+}
+
+func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
+	var err error
+	if e.Title, err = doPrompt(shell, "Title", title); err != nil {
+		return fmt.Errorf("could not set title: %s", err)
+	}
+
+	if e.URL, err = doPrompt(shell, "URL", e.URL); err != nil {
+		return fmt.Errorf("could not set URL: %s", err)
+	}
+
+	if e.Username, err = doPrompt(shell, "Username", e.Username); err != nil {
+		return fmt.Errorf("could not set username: %s", err)
+	}
+
+	if e.Password, err = getPassword(shell, e.Password); err != nil {
+		return fmt.Errorf("could not set password: %s", err)
+	}
+
+	shell.Printf("Enter notes ('ctrl-c' to terminate) ['%s']\n\n", e.Notes)
+	// TODO kind of a hack - it doesn't seem to be able to match newlines, at least not in the WSL
+	// TODO find a way to make this only use ctrl-c to terminate without funkiness
+	newNotes := shell.ReadMultiLines("\n")
+
+	if newNotes != e.Notes {
+		shell.Printf("Notes contents have changed, overwrite existing? [Y/n]  ")
+		input, err := shell.ReadLineErr()
+		if err != nil {
+			return fmt.Errorf("could not read input on notes changes: %s", err)
+		}
+
+		if input == "n" {
+			shell.Println("\ndiscarding notes changes, other edits will be saved")
+			return nil
+		}
+	}
+	e.Notes = newNotes
+	return nil
+}
+
+func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
+	for {
+		shell.Printf("password: ('g' for automatic generation)  ")
+		pw, err = shell.ReadPasswordErr()
+		if err != nil {
+			return "", fmt.Errorf("failed to read input: %s", err)
+		}
+
+		// default to whatever password was already set for the entry
+		if pw == "" {
+			return defaultPassword, nil
+		}
+
+		// otherwise, we're either generating a new password or reading one from user input
+		if pw == "g" {
+			pw, err = password.Generate(20, 5, 5, false, false)
+			if err != nil {
+				return "", fmt.Errorf("failed to generate password: %s\n", err)
+			}
+			break
+		}
+
+		// the user is passing us a password, confirm it before saving
+		shell.Printf("enter password again: ")
+		pwConfirm, err := shell.ReadPasswordErr()
+		if err != nil {
+			return "", fmt.Errorf("failed to read input: %s", err)
+		}
+
+		if pwConfirm != pw {
+			shell.Println("password mismatch!")
+			continue
+		}
+		break
+	}
+	return pw, nil
 }
