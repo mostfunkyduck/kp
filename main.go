@@ -188,6 +188,15 @@ func main() {
 		LongHelp: "clears the clipboard",
 		Func:     Xc(shell),
 	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "mv",
+		Help:                "mv <soruce> <destination>",
+		LongHelp:            "moves entries between groups",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Mv(shell),
+	})
+
 	// trap ctrl-d and remove the lockfile
 	shell.EOF(func(c *ishell.Context) {
 		if err := removeLockfile(shell); err != nil {

@@ -22,13 +22,44 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 	return "", true
 }
 
+var backupExtension = ".kpbackup"
+
+func backupDB(db *keepass.Database, savePath string) error {
+	backupPath := savePath + backupExtension
+	w, err := os.Create(backupPath)
+	if err != nil {
+		return fmt.Errorf("could not open file '%s': %s", backupPath, err)
+	}
+
+	if err := db.Write(w); err != nil {
+		return fmt.Errorf("could not write to file '%s': %s", backupPath, err)
+	}
+	return nil
+}
+
+func removeBackup(savePath string) error {
+	backupPath := savePath + backupExtension
+	if err := os.Remove(backupPath); err != nil {
+		return fmt.Errorf("could not remove backup file '%s': %s", backupPath, err)
+	}
+	return nil
+}
+
 func saveDB(db *keepass.Database, savePath string) error {
+	if err := backupDB(db, savePath); err != nil {
+		return fmt.Errorf("could not back up database: %s", err)
+	}
 	w, err := os.Create(savePath)
 	if err != nil {
 		return fmt.Errorf("could not open/create db save location [%s]: %s", savePath, err)
 	}
+
 	if err = db.Write(w); err != nil {
 		return fmt.Errorf("error writing database to [%s]: %s", savePath, err)
+	}
+
+	if err := removeBackup(savePath); err != nil {
+		return fmt.Errorf("could not remove backup after saving: %s", err)
 	}
 	return nil
 }
@@ -315,4 +346,31 @@ func getPwd(shell *ishell.Shell, group *keepass.Group) (fullPath string) {
 		fullPath = group.Name + "/" + fullPath
 	}
 	return fullPath
+}
+
+// promptAndSave prompts the user to save and returns whether or not they agreed to do so.
+// it also makes sure that there's actually a path to save to
+func promptAndSave(shell *ishell.Shell) error {
+	filePath := shell.Get("filePath").(string)
+	if filePath == "" {
+		return fmt.Errorf("no file path for database")
+	}
+
+	shell.Printf("database has been updated, save?: [Y/n]  ")
+	line, err := shell.ReadLineErr()
+	if err != nil {
+		return fmt.Errorf("could not read user input: %s", err)
+	}
+
+	if line == "n" {
+		shell.Println("continuing without saving")
+		return nil
+	}
+
+	db := shell.Get("db").(*keepass.Database)
+	if err := saveDB(db, filePath); err != nil {
+		return fmt.Errorf("could not save database: %s", err)
+	}
+	shell.Println("database saved!")
+	return nil
 }

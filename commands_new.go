@@ -54,25 +54,9 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		entry.LastModificationTime = time.Now()
 		entry.LastAccessTime = time.Now()
 
-		savePath := shell.Get("filePath").(string)
-		if savePath == "" {
-			shell.Println("Database has been updated in memory, but not saved")
+		if err := promptAndSave(shell); err != nil {
+			shell.Printf("failed to save database: %s\n", err)
 			return
-		}
-
-		shell.Printf("Database has been updated, save?: [Y/n]  ")
-		line, err := shell.ReadLineErr()
-		if err != nil {
-			shell.Printf("could not read user input: %s\n", err)
-			return
-		}
-
-		if !strings.HasPrefix(line, "n") {
-			db := shell.Get("db").(*keepass.Database)
-			if err := saveDB(db, savePath); err != nil {
-				shell.Printf("could not save database: %s\n", err)
-				return
-			}
 		}
 	}
 }
