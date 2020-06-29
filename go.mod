@@ -22,3 +22,5 @@ require (
 )
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911
+
+replace github.com/atotto/clipboard => github.com/mostfunkyduck/clipboard v0.1.3-0.20190428164314-bdea50a7aaf0
