@@ -169,6 +169,13 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
+		Name:     "pwd",
+		Help:     "pwd",
+		LongHelp: "shows path of current group",
+		Func:     Pwd(shell),
+	})
+
+	shell.AddCmd(&ishell.Cmd{
 		Name:     "save",
 		Help:     "save",
 		LongHelp: "saves the database to its most recently used path",

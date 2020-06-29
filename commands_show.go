@@ -98,15 +98,3 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		outputEntry(*entry, shell, fullPath, fullMode)
 	}
 }
-
-// getPwd will walk up the group hierarchy to determine the path to the current location
-func getPwd(shell *ishell.Shell, group *keepass.Group) (fullPath string) {
-	for ; group != nil; group = group.Parent() {
-		if group.IsRoot() {
-			fullPath = "/" + fullPath
-			break
-		}
-		fullPath = group.Name + "/" + fullPath
-	}
-	return fullPath
-}
