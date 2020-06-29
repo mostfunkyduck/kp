@@ -14,6 +14,11 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Println(errString)
 			return
 		}
+
+		if isPresent(shell, c.Args[0]) {
+			shell.Printf("cannot create duplicate entity '%s'\n", c.Args[0])
+			return
+		}
 		path := strings.Split(c.Args[0], "/")
 		currentLocation := shell.Get("currentLocation").(*keepass.Group)
 		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
@@ -21,6 +26,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("invalid path: " + err.Error())
 			return
 		}
+
 		location.NewSubgroup().Name = path[len(path)-1]
 	}
 }

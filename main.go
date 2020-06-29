@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"os"
 	"strings"
 
 	"github.com/abiosoft/ishell"
@@ -51,6 +51,7 @@ func main() {
 	flag.Parse()
 
 	shell := ishell.New()
+	shell.Set("filePath", *dbFile)
 	var db *keepass.Database
 	if *dbFile == "" {
 		_db, err := keepass.New(&keepass.Options{})
@@ -61,7 +62,8 @@ func main() {
 	} else {
 		_db, ok := openDB(shell)
 		if !ok {
-			log.Fatalf("could not open database")
+			shell.Println("could not open database")
+			os.Exit(1)
 		}
 		db = _db
 	}
@@ -70,7 +72,6 @@ func main() {
 
 	shell.Set("currentLocation", db.Root())
 	shell.Set("db", db)
-	shell.Set("filePath", *dbFile)
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
 
 	shell.AddCmd(&ishell.Cmd{
@@ -142,6 +143,20 @@ func main() {
 		Help:                "rm <entry>",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                Rm(shell),
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "xp",
+		Help:                "xp <entry>",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Xp(shell),
+	})
+
+	shell.EOF(func(c *ishell.Context) {
+		if err := removeLockfile(shell); err != nil {
+			shell.Printf("could not remove lock file: %s\n", err)
+		}
+		shell.Close()
 	})
 	shell.Run()
 }

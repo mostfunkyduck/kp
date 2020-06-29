@@ -99,5 +99,9 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 		shell.Set("filePath", c.Args[0])
+		if err := setLockfile(shell); err != nil {
+			shell.Printf("could not create lock file, data corruption may occur!: %s", err)
+			return
+		}
 	}
 }

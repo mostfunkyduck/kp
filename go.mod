@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/abiosoft/ishell v2.0.1-0.20190723053747-1b6ad7eb4d5e+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db // indirect
+	github.com/atotto/clipboard v0.1.2
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

@@ -38,7 +38,8 @@ func getRoot(location *keepass.Group) (root *keepass.Group) {
 	return root
 }
 
-// given a starting location and a UNIX-style path, will walk the path and return the final location or an error
+// traversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
+// if the path points to an entry, the parent group is returned, otherwise the target group is returned
 func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocation *keepass.Group, err error) {
 	currentLocation := startingLocation
 	root := getRoot(currentLocation)
@@ -68,6 +69,7 @@ func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocati
 			// we're at the root, the user wanted to go higher, that's no bueno
 			return nil, fmt.Errorf("root group has no parent")
 		}
+
 		// regular traversal
 		found := false
 		for _, group := range currentLocation.Groups() {
@@ -93,6 +95,22 @@ func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocati
 }
 
 func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
+	lockfilePath := fmt.Sprintf("%s.lock", *dbFile)
+	if _, err := os.Stat(lockfilePath); err == nil {
+		shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
+		shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
+		line, err := shell.ReadLineErr()
+		if err != nil {
+			shell.Printf("could not read user input: %s\n", line)
+			return nil, false
+		}
+
+		if line != "yes" {
+			shell.Println("aborting")
+			return nil, false
+		}
+	}
+
 	for {
 		dbReader, err := os.Open(*dbFile)
 		if err != nil {
@@ -107,8 +125,8 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 				shell.Printf("could not open key file %s: %s\n", *keyFile, err)
 			}
 		}
-
-		password := os.Getenv("KP_PASSWORD")
+		envPassword := os.Getenv("KP_PASSWORD")
+		password := envPassword
 		if password == "" {
 			shell.Print("enter database password: ")
 			var err error
@@ -131,9 +149,66 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 		db, err := keepass.Open(dbReader, opts)
 		if err != nil {
 			shell.Printf("could not open database: %s\n", err)
-			// in case this is a bad password, try again
-			continue
+			if envPassword == "" {
+				// we are prompting for the password
+				// in case this is a bad password, try again
+				continue
+			}
+			return nil, false
+		}
+
+		if err := setLockfile(shell); err != nil {
+			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
+			return nil, false
 		}
 		return db, true
 	}
+}
+
+func setLockfile(shell *ishell.Shell) error {
+	filePath := shell.Get("filePath").(string)
+	if filePath != "" {
+		if _, err := os.Create(filePath + ".lock"); err != nil {
+			return fmt.Errorf("could not create lock file at path '%s.lock': %s", filePath, err)
+		}
+	}
+	return nil
+}
+
+func removeLockfile(shell *ishell.Shell) error {
+	filePath := shell.Get("filePath").(string)
+	if filePath != "" {
+		if err := os.Remove(filePath + ".lock"); err != nil {
+			return fmt.Errorf("could not remove lockfile: %s", err)
+		}
+	}
+	return nil
+}
+
+// getEntryByPath returns the entry at path 'path' using context variables in shell 'shell'
+func getEntryByPath(shell *ishell.Shell, path string) (entry *keepass.Entry, ok bool) {
+	currentLocation := shell.Get("currentLocation").(*keepass.Group)
+	location, err := traversePath(currentLocation, path)
+	if err != nil {
+		return nil, false
+	}
+
+	// get the base name of the entry so that we can compare it to the actual
+	// entries in this group
+	entryNameBits := strings.Split(path, "/")
+	entryName := entryNameBits[len(entryNameBits)-1]
+	for i, entry := range location.Entries() {
+		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
+			entryName == entry.Title ||
+			entryName == entry.UUID.String() {
+			return entry, true
+		}
+	}
+	return nil, false
+}
+
+func isPresent(shell *ishell.Shell, path string) (ok bool) {
+	currentLocation := shell.Get("currentLocation").(*keepass.Group)
+	_, err := traversePath(currentLocation, path)
+	return err == nil
 }

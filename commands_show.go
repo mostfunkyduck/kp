@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -48,23 +47,24 @@ func formatTime(t time.Time) (formatted string) {
 }
 
 func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
-	s.Printf("UUID: %s\n", e.UUID)
+	s.Printf("\n")
+	s.Printf("UUID:\t%s\n", e.UUID)
 
-	s.Printf("Creation Time: %s\n", formatTime(e.CreationTime))
-	s.Printf("Last Modified: %s\n", formatTime(e.LastModificationTime))
-	s.Printf("Last Accessed: %s\n", formatTime(e.LastAccessTime))
-	s.Printf("Location: %s\n", path)
-	s.Printf("Title: %s\n", e.Title)
-	s.Printf("URL: %s\n", e.URL)
-	s.Printf("Username: %s\n", e.Username)
+	s.Printf("Creation Time:\t%s\n", formatTime(e.CreationTime))
+	s.Printf("Last Modified:\t%s\n", formatTime(e.LastModificationTime))
+	s.Printf("Last Accessed:\t%s\n", formatTime(e.LastAccessTime))
+	s.Printf("Location:\t%s\n", path)
+	s.Printf("Title:\t%s\n", e.Title)
+	s.Printf("URL:\t%s\n", e.URL)
+	s.Printf("Username:\t%s\n", e.Username)
 	password := "[redacted]"
 	if full {
 		password = e.Password
 	}
-	s.Printf("Password: %s\n", password)
-	s.Printf("Notes: %s\n", e.Notes)
+	s.Printf("Password:\t%s\n", password)
+	s.Printf("Notes:\t%s\n", e.Notes)
 	if e.HasAttachment() {
-		s.Printf("Attachment: %s\n", e.Attachment.Name)
+		s.Printf("Attachment:\t%s\n", e.Attachment.Name)
 	}
 
 }
@@ -88,30 +88,11 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			path = arg
 		}
 
-		currentLocation := c.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(currentLocation, path)
-		if err != nil {
-			shell.Println(fmt.Sprintf("could not find entry named [%s]", path))
+		entry, ok := getEntryByPath(shell, path)
+		if !ok {
+			shell.Printf("could not retrieve entry at path '%s'\n")
 			return
 		}
-
-		// get the base name of the entry so that we can compare it to the actual
-		// entries in this group
-		entryNameBits := strings.Split(path, "/")
-		entryName := entryNameBits[len(entryNameBits)-1]
-		if *debugMode {
-			shell.Printf("looking for entry [%s]", entryName)
-		}
-		for i, entry := range location.Entries() {
-			if *debugMode {
-				shell.Printf("looking at entry/idx for entry %s/%d\n", entry.Title, i, entryName)
-			}
-			if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-				entryName == entry.Title ||
-				entryName == entry.UUID.String() {
-				outputEntry(*entry, shell, path, fullMode)
-				return
-			}
-		}
+		outputEntry(*entry, shell, path, fullMode)
 	}
 }

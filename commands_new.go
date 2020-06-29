@@ -18,7 +18,13 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Println(errString)
 			return
 		}
+		if isPresent(shell, args[0]) {
+			shell.Printf("cannot create duplicate entity '%s'\n", args[0])
+			return
+		}
+
 		currentLocation := shell.Get("currentLocation").(*keepass.Group)
+
 		path := strings.Split(args[0], "/")
 		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
 		if err != nil {
@@ -37,7 +43,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
 		}
-		err = promptForEntry(shell, entry, path[len(path) - 1 ])
+		err = promptForEntry(shell, entry, path[len(path)-1])
 		shell.ShowPrompt(true)
 		if err != nil {
 			shell.Printf("could not collect user input: %s\n", err)
@@ -103,14 +109,14 @@ func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
 	var pw, pwConfirm string
 	for {
 		var err error
-		shell.Printf("password: ('g' for automatic generation)")
+		shell.Printf("password: ('g' for automatic generation)  ")
 		pw, err = shell.ReadPasswordErr()
 		if err != nil {
 			return fmt.Errorf("failed to read input: %s", err)
 		}
 
 		if pw == "g" {
-			pw, err = password.Generate(20, 10, 10, false, false)
+			pw, err = password.Generate(20, 5, 5, false, false)
 			if err != nil {
 				return fmt.Errorf("failed to generate password: %s\n", err)
 			}
