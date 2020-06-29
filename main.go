@@ -181,6 +181,13 @@ func main() {
 		LongHelp: "saves the database to its most recently used path",
 		Func:     Save(shell),
 	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "xc",
+		Help:     "xc",
+		LongHelp: "clears the clipboard",
+		Func:     Xc(shell),
+	})
 	// trap ctrl-d and remove the lockfile
 	shell.EOF(func(c *ishell.Context) {
 		if err := removeLockfile(shell); err != nil {
