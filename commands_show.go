@@ -62,7 +62,7 @@ func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
 		password = e.Password
 	}
 	s.Printf("Password:\t%s\n", password)
-	s.Printf("Notes:\t%s\n", e.Notes)
+	s.Printf("Notes:\n%s\n", e.Notes)
 	if e.HasAttachment() {
 		s.Printf("Attachment:\t%s\n", e.Attachment.Name)
 	}

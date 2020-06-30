@@ -183,10 +183,26 @@ func main() {
 	})
 
 	shell.AddCmd(&ishell.Cmd{
-		Name:     "xc",
-		Help:     "xc",
+		Name:     "xx",
+		Help:     "xx",
 		LongHelp: "clears the clipboard",
-		Func:     Xc(shell),
+		Func:     Xx(shell),
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "xu",
+		Help:                "xu",
+		LongHelp:            "copies username to the clipboard",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Xu(shell),
+	})
+
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "xw",
+		Help:                "xw",
+		LongHelp:            "copies url to clipboard",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Xw(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{

@@ -9,8 +9,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/abiosoft/ishell"
+	"github.com/atotto/clipboard"
 	"github.com/sethvargo/go-password/password"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -245,6 +247,8 @@ func isPresent(shell *ishell.Shell, path string) (ok bool) {
 	return err == nil
 }
 
+// doPrompt is a convenience function that takes a prompt and a default and
+// then sets that up as an actual prompt for the user.
 func doPrompt(shell *ishell.Shell, prompt string, deflt string) (string, error) {
 	shell.Printf("%s: [%s]  ", prompt, deflt)
 	input, err := shell.ReadLineErr()
@@ -261,41 +265,75 @@ func doPrompt(shell *ishell.Shell, prompt string, deflt string) (string, error) 
 
 func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
 	var err error
-	if e.Title, err = doPrompt(shell, "Title", title); err != nil {
+	// store all the changes in a temporary entry
+	tempEntry := keepass.Entry{}
+	if tempEntry.Title, err = doPrompt(shell, "Title", title); err != nil {
 		return fmt.Errorf("could not set title: %s", err)
 	}
 
-	if e.URL, err = doPrompt(shell, "URL", e.URL); err != nil {
+	if tempEntry.URL, err = doPrompt(shell, "URL", e.URL); err != nil {
 		return fmt.Errorf("could not set URL: %s", err)
 	}
 
-	if e.Username, err = doPrompt(shell, "Username", e.Username); err != nil {
+	if tempEntry.Username, err = doPrompt(shell, "Username", e.Username); err != nil {
 		return fmt.Errorf("could not set username: %s", err)
 	}
 
-	if e.Password, err = getPassword(shell, e.Password); err != nil {
+	if tempEntry.Password, err = getPassword(shell, e.Password); err != nil {
 		return fmt.Errorf("could not set password: %s", err)
 	}
 
-	shell.Printf("Enter notes ('ctrl-c' to terminate) ['%s']\n\n", e.Notes)
-	// TODO kind of a hack - it doesn't seem to be able to match newlines, at least not in the WSL
-	// TODO find a way to make this only use ctrl-c to terminate without funkiness
-	newNotes := shell.ReadMultiLines("\n")
+	if tempEntry.Notes, err = getNotes(shell, e.Notes); err != nil {
+		return fmt.Errorf("could not get notes: %s", err)
+	}
 
-	if newNotes != e.Notes {
-		shell.Printf("Notes contents have changed, overwrite existing? [Y/n]  ")
-		input, err := shell.ReadLineErr()
-		if err != nil {
-			return fmt.Errorf("could not read input on notes changes: %s", err)
-		}
-
-		if input == "n" {
-			shell.Println("\ndiscarding notes changes, other edits will be saved")
-			return nil
+	if changed := copyEntry(tempEntry, e); changed {
+		shell.Println("edit successful, database has changed!")
+		if err := promptAndSave(shell); err != nil {
+			return fmt.Errorf("could not save database: %s", err)
 		}
 	}
-	e.Notes = newNotes
+
 	return nil
+}
+
+func getNotes(shell *ishell.Shell, existingNotes string) (string, error) {
+	shell.Printf("Enter notes ('ctrl-c' to terminate)\nExisting notes:\n---\n%s\n---\n", existingNotes)
+	// allow a single newline at the beginning to short circuit editing
+	firstLine, err := shell.ReadLineErr()
+	if err != nil {
+		return existingNotes, fmt.Errorf("error reading user input: %s\n", err)
+	}
+
+	if firstLine == "" {
+		return existingNotes, nil
+	}
+
+	// TODO kind of a hack - it doesn't seem to be able to match newlines, at least not in the WSL
+	// TODO find a way to make this only use ctrl-c to terminate without funkiness
+	newNotes := firstLine + "\n" + shell.ReadMultiLines("\n")
+
+	if newNotes != existingNotes {
+		shell.Println("Notes contents have changed, (o)verwrite, (A)ppend, or (d)iscard?\nOther edits will still be saved.")
+		input, err := shell.ReadLineErr()
+		if err != nil {
+			return "", fmt.Errorf("could not read input on notes changes: %s", err)
+		}
+
+		input = strings.ToLower(input)
+		switch input {
+		case "d":
+			shell.Println("discarding notes changes, other edits will be saved")
+			return existingNotes, nil
+		case "o":
+			shell.Println("oerwriting existing notes")
+			return newNotes, nil
+		default:
+			shell.Println("appending to existing notes")
+			return existingNotes + "\n" + newNotes, nil
+		}
+	}
+	return newNotes, nil
 }
 
 func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
@@ -373,4 +411,50 @@ func promptAndSave(shell *ishell.Shell) error {
 	}
 	shell.Println("database saved!")
 	return nil
+}
+
+// copyFromEntry will find an entry and copy a given field in the entry
+// to the clipboard
+func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) error {
+	entry, ok := getEntryByPath(shell, targetPath)
+	if !ok {
+		return fmt.Errorf("could not retrieve entry at path '%s'", targetPath)
+	}
+
+	var data string
+	switch entryData {
+	case "username":
+		data = entry.Username
+	case "password":
+		data = entry.Password
+	case "url":
+		data = entry.URL
+	default:
+		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
+	}
+	if err := clipboard.WriteAll(data); err != nil {
+		return fmt.Errorf("could not write %s to clipboard: %s\n", entryData, err)
+	}
+	entry.LastAccessTime = time.Now()
+	shell.Printf("%s copied!\n", entryData)
+	shell.Println("(access time has been updated, will be persisted on next save)")
+	return nil
+}
+
+// copyEntry puts all the data in 'src' into 'dest' (timestamps are not affected)
+func copyEntry(src keepass.Entry, dest *keepass.Entry) (changed bool) {
+	changed = false
+	if dest.Title != src.Title ||
+		dest.Username != src.Username ||
+		dest.Password != src.Password ||
+		dest.Notes != src.Notes ||
+		dest.URL != src.URL {
+		changed = true
+	}
+	dest.Title = src.Title
+	dest.Username = src.Username
+	dest.Password = src.Password
+	dest.Notes = src.Notes
+	dest.URL = src.URL
+	return changed
 }

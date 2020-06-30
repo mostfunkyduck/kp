@@ -41,6 +41,10 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
 		}
+		entry.CreationTime = time.Now()
+		entry.LastModificationTime = time.Now()
+		entry.LastAccessTime = time.Now()
+
 		err = promptForEntry(shell, entry, path[len(path)-1])
 		shell.ShowPrompt(true)
 		if err != nil {
@@ -50,9 +54,6 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			}
 			return
 		}
-		entry.CreationTime = time.Now()
-		entry.LastModificationTime = time.Now()
-		entry.LastAccessTime = time.Now()
 
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("failed to save database: %s\n", err)

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/abiosoft/ishell"
 )
 
@@ -20,6 +22,8 @@ func Edit(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		if err := promptForEntry(shell, entry, entry.Title); err != nil {
 			shell.Printf("couldn't edit entry: %s\n", err)
 		}
+		entry.LastModificationTime = time.Now()
+
 		shell.ShowPrompt(true)
 	}
 }
