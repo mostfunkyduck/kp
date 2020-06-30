@@ -14,6 +14,7 @@ var (
 	keyFile   = flag.String("key", "", "a key file to use to unlock the db")
 	dbFile    = flag.String("db", "", "the db to open")
 	debugMode = flag.Bool("debug", false, "verbose logging")
+	version   = flag.Bool("version", false, "print version and exit")
 )
 
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
@@ -47,10 +48,18 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 	}
 }
 
+func buildVersionString() string {
+	return fmt.Sprintf("%s.%s-%s.%s (built on %s from %s)", VersionRelease, VersionBuildDate, VersionBuildTZ, VersionBranch, VersionHostname, VersionRevision)
+}
 func main() {
 	flag.Parse()
 
 	shell := ishell.New()
+	if *version {
+		shell.Printf("version: %s\n", buildVersionString())
+		os.Exit(1)
+	}
+
 	shell.Set("filePath", *dbFile)
 	var db *keepass.Database
 	if *dbFile == "" {
@@ -213,6 +222,14 @@ func main() {
 		Func:                Mv(shell),
 	})
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:     "version",
+		Help:     "version",
+		LongHelp: "prints version",
+		Func: func(c *ishell.Context) {
+			shell.Printf("version: %s\n", buildVersionString())
+		},
+	})
 	// trap ctrl-d and remove the lockfile
 	shell.EOF(func(c *ishell.Context) {
 		if err := promptAndSave(shell); err != nil {
