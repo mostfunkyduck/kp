@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/abiosoft/ishell"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -40,16 +42,28 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
+		title := ""
 		currentLocation := shell.Get("currentLocation").(*keepass.Group)
 		location, err := traversePath(currentLocation, dstPath)
 		if err != nil {
-			shell.Printf("error finding path '%s': %s\n", dstPath, err)
-			return
+			// there's no group or entry at this location, attempt to process this as a rename
+			// and set the location to be the group
+			pathBits := strings.Split(dstPath, "/")
+			path := strings.Join(pathBits[0:len(pathBits)-1], "/")
+			location, err = traversePath(currentLocation, path)
+			if err != nil {
+				shell.Printf("error finding path '%s': %s\n", dstPath, err)
+				return
+			}
+			title = pathBits[len(pathBits)-1]
 		}
 
 		if err := srcEntry.SetParent(location); err != nil {
 			shell.Printf("error moving entry '%s' to new location '%s': %s\n", srcEntry.Title, location.Name, err)
 			return
+		}
+		if title != "" {
+			srcEntry.Title = title
 		}
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("error saving database: %s\n", err)

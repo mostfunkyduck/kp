@@ -356,7 +356,7 @@ func promptAndSave(shell *ishell.Shell) error {
 		return fmt.Errorf("no file path for database")
 	}
 
-	shell.Printf("database has been updated, save?: [Y/n]  ")
+	shell.Printf("save database?: [Y/n]  ")
 	line, err := shell.ReadLineErr()
 	if err != nil {
 		return fmt.Errorf("could not read user input: %s", err)

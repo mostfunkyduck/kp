@@ -199,6 +199,9 @@ func main() {
 
 	// trap ctrl-d and remove the lockfile
 	shell.EOF(func(c *ishell.Context) {
+		if err := promptAndSave(shell); err != nil {
+			shell.Printf("error attempting to save database: %s\n", err)
+		}
 		if err := removeLockfile(shell); err != nil {
 			shell.Printf("could not remove lock file: %s\n", err)
 		}

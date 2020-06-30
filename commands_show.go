@@ -90,7 +90,7 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		entry, ok := getEntryByPath(shell, path)
 		if !ok {
-			shell.Printf("could not retrieve entry at path '%s'\n")
+			shell.Printf("could not retrieve entry at path '%s'\n", path)
 			return
 		}
 
