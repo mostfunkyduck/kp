@@ -34,7 +34,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 				rawPath = rawPath + "/"
 			}
 			for _, g := range location.Groups() {
-				ret = append(ret, rawPath+g.Name+"/")
+				ret = append(ret, rawPath+strings.ReplaceAll(g.Name, " ", "\\ ")+"/")
 			}
 
 			if printEntries {
