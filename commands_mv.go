@@ -65,6 +65,8 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		if title != "" {
 			srcEntry.Title = title
 		}
+
+		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("error saving database: %s\n", err)
 			return

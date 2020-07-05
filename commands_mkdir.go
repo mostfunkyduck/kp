@@ -28,5 +28,9 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		location.NewSubgroup().Name = path[len(path)-1]
+		DBChanged = true
+		if err := promptAndSave(shell); err != nil {
+			shell.Printf("could not save database: %s\n", err)
+		}
 	}
 }

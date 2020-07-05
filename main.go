@@ -15,6 +15,7 @@ var (
 	dbFile    = flag.String("db", "", "the db to open")
 	debugMode = flag.Bool("debug", false, "verbose logging")
 	version   = flag.Bool("version", false, "print version and exit")
+	DBChanged = false
 )
 
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
@@ -230,15 +231,19 @@ func main() {
 			shell.Printf("version: %s\n", buildVersionString())
 		},
 	})
-	// trap ctrl-d and remove the lockfile
-	shell.EOF(func(c *ishell.Context) {
+
+	shell.Run()
+
+	// This will run after the shell exits
+	if DBChanged {
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("error attempting to save database: %s\n", err)
 		}
-		if err := removeLockfile(shell); err != nil {
-			shell.Printf("could not remove lock file: %s\n", err)
-		}
-		shell.Close()
-	})
-	shell.Run()
+	}
+
+	if err := removeLockfile(shell); err != nil {
+		shell.Printf("could not remove lock file: %s\n", err)
+	} else {
+		shell.Println("no changes detected since last save.")
+	}
 }

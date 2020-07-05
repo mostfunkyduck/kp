@@ -289,6 +289,7 @@ func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
 
 	if changed := copyEntry(tempEntry, e); changed {
 		shell.Println("edit successful, database has changed!")
+		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			return fmt.Errorf("could not save database: %s", err)
 		}
@@ -409,6 +410,7 @@ func promptAndSave(shell *ishell.Shell) error {
 	if err := saveDB(db, filePath); err != nil {
 		return fmt.Errorf("could not save database: %s", err)
 	}
+	DBChanged = false
 	shell.Println("database saved!")
 	return nil
 }
