@@ -128,40 +128,52 @@ func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocati
 	return currentLocation, nil
 }
 
+// TODO break this function down, it's too long and mildly complicated
 func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
-	lockfilePath := fmt.Sprintf("%s.lock", *dbFile)
-	if _, err := os.Stat(lockfilePath); err == nil {
-		shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
-		shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
-		line, err := shell.ReadLineErr()
-		if err != nil {
-			shell.Printf("could not read user input: %s\n", line)
-			return nil, false
-		}
-
-		if line != "yes" {
-			shell.Println("aborting")
-			return nil, false
-		}
-	}
-
 	for {
-		dbReader, err := os.Open(*dbFile)
+		dbPath := *dbFile
+		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && *dbFile == "" {
+			dbPath = envDbfile
+		}
+
+		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
+		if _, err := os.Stat(lockfilePath); err == nil {
+			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
+			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
+			line, err := shell.ReadLineErr()
+			if err != nil {
+				shell.Printf("could not read user input: %s\n", line)
+				return nil, false
+			}
+
+			if line != "yes" {
+				shell.Println("aborting")
+				return nil, false
+			}
+		}
+
+		dbReader, err := os.Open(dbPath)
 		if err != nil {
-			shell.Printf("could not open db file [%s]: %s\n", *dbFile, err)
+			shell.Printf("could not open db file [%s]: %s\n", dbPath, err)
 			return nil, false
+		}
+
+		keyPath := *keyFile
+		if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && *keyFile == "" {
+			keyPath = envKeyfile
 		}
 
 		var keyReader io.Reader
-		if *keyFile != "" {
-			keyReader, err = os.Open(*keyFile)
+		if keyPath != "" {
+			var err error
+			keyReader, err = os.Open(keyPath)
 			if err != nil {
-				shell.Printf("could not open key file %s: %s\n", *keyFile, err)
+				shell.Printf("could not open key file [%s]: %s\n", keyPath, err)
 			}
 		}
-		envPassword := os.Getenv("KP_PASSWORD")
-		password := envPassword
-		if password == "" {
+
+		password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
+		if !passwordInEnv {
 			shell.Print("enter database password: ")
 			var err error
 			password, err = shell.ReadPasswordErr()
@@ -183,7 +195,9 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 		db, err := keepass.Open(dbReader, opts)
 		if err != nil {
 			shell.Printf("could not open database: %s\n", err)
-			if envPassword == "" {
+			// if the password is coming from an environment variable, we need to terminate
+			// after the first attempt or it will fall into an infinite loop
+			if !passwordInEnv {
 				// we are prompting for the password
 				// in case this is a bad password, try again
 				continue
@@ -191,6 +205,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 			return nil, false
 		}
 
+		shell.Set("filePath", dbPath)
 		if err := setLockfile(shell); err != nil {
 			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
 			return nil, false
@@ -420,7 +435,7 @@ func promptAndSave(shell *ishell.Shell) error {
 func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) error {
 	entry, ok := getEntryByPath(shell, targetPath)
 	if !ok {
-		return fmt.Errorf("could not retrieve entry at path '%s'", targetPath)
+		return fmt.Errorf("could not retrieve entry at path '%s'\n", targetPath)
 	}
 
 	var data string

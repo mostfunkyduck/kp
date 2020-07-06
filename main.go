@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -11,11 +12,12 @@ import (
 )
 
 var (
-	keyFile   = flag.String("key", "", "a key file to use to unlock the db")
-	dbFile    = flag.String("db", "", "the db to open")
-	debugMode = flag.Bool("debug", false, "verbose logging")
-	version   = flag.Bool("version", false, "print version and exit")
-	DBChanged = false
+	keyFile        = flag.String("key", "", "a key file to use to unlock the db")
+	dbFile         = flag.String("db", "", "the db to open")
+	debugMode      = flag.Bool("debug", false, "verbose logging")
+	version        = flag.Bool("version", false, "print version and exit")
+	noninteractive = flag.String("n", "", "execute a given command and exit")
+	DBChanged      = false
 )
 
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
@@ -63,7 +65,8 @@ func main() {
 
 	shell.Set("filePath", *dbFile)
 	var db *keepass.Database
-	if *dbFile == "" {
+	_, exists := os.LookupEnv("KP_DATABASE")
+	if *dbFile == "" && !exists {
 		_db, err := keepass.New(&keepass.Options{})
 		if err != nil {
 			panic(err)
@@ -78,7 +81,7 @@ func main() {
 		db = _db
 	}
 
-	shell.Println("opened database")
+	shell.Printf("opened database at %s\n", shell.Get("filePath").(string))
 
 	shell.Set("currentLocation", db.Root())
 	shell.Set("db", db)
@@ -232,18 +235,26 @@ func main() {
 		},
 	})
 
-	shell.Run()
+	if *noninteractive != "" {
+		bits := strings.Split(*noninteractive, " ")
+		if err := shell.Process([]string{bits[0], strings.Join(bits[1:], " ")}...); err != nil {
+			shell.Printf("error processing command: %s\n", err)
+		}
+	} else {
+		shell.Run()
+	}
 
+	log.Println("exiting")
 	// This will run after the shell exits
 	if DBChanged {
 		if err := promptAndSave(shell); err != nil {
-			shell.Printf("error attempting to save database: %s\n", err)
+			log.Printf("error attempting to save database: %s\n", err)
 		}
 	}
 
 	if err := removeLockfile(shell); err != nil {
-		shell.Printf("could not remove lock file: %s\n", err)
+		log.Printf("could not remove lock file: %s\n", err)
 	} else {
-		shell.Println("no changes detected since last save.")
+		log.Println("no changes detected since last save.")
 	}
 }
