@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	v1 "github.com/mostfunkyduck/kp/keepass/v1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -64,6 +65,7 @@ func main() {
 	}
 
 	shell.Set("filePath", *dbFile)
+
 	var db *keepass.Database
 	_, exists := os.LookupEnv("KP_DATABASE")
 	if *dbFile == "" && !exists {
@@ -73,6 +75,9 @@ func main() {
 		}
 		db = _db
 	} else {
+		// FIXME refactor this to make openDB a generic function that doesn't need the shell
+		// FIXME that will let this get put in the kp libraries instead of main, will need to
+		// FIXME handle versioning here as well
 		_db, ok := openDB(shell)
 		if !ok {
 			shell.Println("could not open database")
@@ -81,10 +86,16 @@ func main() {
 		db = _db
 	}
 
+	// FIXME eventually this needs to happen in the keepass wrapper library, not here
+	// FIXME main shouldn't have to care about v1 vs v2 unless absolutely necessary
+	dbWrapper := &v1.Database{}
+	dbWrapper.SetDB(db)
 	shell.Printf("opened database at %s\n", shell.Get("filePath").(string))
 
+	// FIXME now that we're using a wrapper around the DB, all this cruft in the shell context vars should go there
+	// FIXME could even make it live as a global instead of a shell var
 	shell.Set("currentLocation", db.Root())
-	shell.Set("db", db)
+	shell.Set("db", dbWrapper)
 	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
 
 	shell.AddCmd(&ishell.Cmd{

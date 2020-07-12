@@ -13,6 +13,7 @@ import (
 
 	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
+	k "github.com/mostfunkyduck/kp/keepass"
 	"github.com/sethvargo/go-password/password"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -22,48 +23,6 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 		return "syntax: " + c.Cmd.Help, false
 	}
 	return "", true
-}
-
-var backupExtension = ".kpbackup"
-
-func backupDB(db *keepass.Database, savePath string) error {
-	backupPath := savePath + backupExtension
-	w, err := os.Create(backupPath)
-	if err != nil {
-		return fmt.Errorf("could not open file '%s': %s", backupPath, err)
-	}
-
-	if err := db.Write(w); err != nil {
-		return fmt.Errorf("could not write to file '%s': %s", backupPath, err)
-	}
-	return nil
-}
-
-func removeBackup(savePath string) error {
-	backupPath := savePath + backupExtension
-	if err := os.Remove(backupPath); err != nil {
-		return fmt.Errorf("could not remove backup file '%s': %s", backupPath, err)
-	}
-	return nil
-}
-
-func saveDB(db *keepass.Database, savePath string) error {
-	if err := backupDB(db, savePath); err != nil {
-		return fmt.Errorf("could not back up database: %s", err)
-	}
-	w, err := os.Create(savePath)
-	if err != nil {
-		return fmt.Errorf("could not open/create db save location [%s]: %s", savePath, err)
-	}
-
-	if err = db.Write(w); err != nil {
-		return fmt.Errorf("error writing database to [%s]: %s", savePath, err)
-	}
-
-	if err := removeBackup(savePath); err != nil {
-		return fmt.Errorf("could not remove backup after saving: %s", err)
-	}
-	return nil
 }
 
 func getRoot(location *keepass.Group) (root *keepass.Group) {
@@ -421,10 +380,14 @@ func promptAndSave(shell *ishell.Shell) error {
 		return nil
 	}
 
-	db := shell.Get("db").(*keepass.Database)
-	if err := saveDB(db, filePath); err != nil {
+	db := shell.Get("db").(k.Database)
+	oldPath := db.SavePath()
+	db.SetSavePath(filePath)
+	if err := db.Save(); err != nil {
+		db.SetSavePath(oldPath)
 		return fmt.Errorf("could not save database: %s", err)
 	}
+
 	DBChanged = false
 	shell.Println("database saved!")
 	return nil

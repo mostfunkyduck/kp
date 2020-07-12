@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
-	"zombiezen.com/go/sandpass/pkg/keepass"
+	k "github.com/mostfunkyduck/kp/keepass"
 )
 
 func generateRandomString(length int) (str string) {
@@ -66,7 +66,7 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			file = _file
 		}
 
-		db := shell.Get("db").(*keepass.Database)
+		db := shell.Get("db").(k.Database)
 		shell.Printf("enter password: ")
 		pw, err := shell.ReadPasswordErr()
 		if err != nil {
@@ -85,16 +85,20 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		opts := &keepass.Options{
-			Password: pw,
-			KeyFile:  file,
+		opts := k.Options{
+			Password:  pw,
+			KeyReader: file,
 		}
-		if err := db.SetOpts(opts); err != nil {
-			shell.Printf("could not set DB options: %s", err)
+
+		if err := db.SetOptions(opts); err != nil {
+			shell.Printf("could not set db opts: %s", err)
 			return
 		}
 
-		if err := saveDB(db, c.Args[0]); err != nil {
+		oldPath := db.SavePath()
+		db.SetSavePath(c.Args[0])
+		if err := db.Save(); err != nil {
+			db.SetSavePath(oldPath)
 			shell.Printf("could not save database: %s\n", err)
 			return
 		}

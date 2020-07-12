@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/abiosoft/ishell"
-	"zombiezen.com/go/sandpass/pkg/keepass"
+	"github.com/mostfunkyduck/kp/keepass"
 )
 
 func Save(shell *ishell.Shell) (f func(c *ishell.Context)) {
@@ -13,9 +13,12 @@ func Save(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		db := shell.Get("db").(*keepass.Database)
-		if err := saveDB(db, filePath); err != nil {
+		db := shell.Get("db").(keepass.Database)
+		oldPath := db.SavePath()
+		db.SetSavePath(filePath)
+		if err := db.Save(); err != nil {
 			shell.Printf("error saving database: %s\n", err)
+			db.SetSavePath(oldPath)
 			return
 		}
 		shell.Printf("saved to '%s'\n", filePath)
