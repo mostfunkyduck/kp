@@ -10,7 +10,7 @@ type Entry struct {
 }
 
 func NewEntry(entry *keepass.Entry) k.Entry {
-	return Entry{
+	return &Entry{
 		entry: entry,
 	}
 }
@@ -18,4 +18,3 @@ func NewEntry(entry *keepass.Entry) k.Entry {
 func (e Entry) Title() string {
 	return e.entry.Title
 }
-

@@ -5,33 +5,33 @@ package keepassv1
 
 import (
 	"fmt"
+	k "github.com/mostfunkyduck/kp/keepass"
 	"os"
 	"strconv"
 	"strings"
-	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 type Database struct {
 	currentLocation k.Group
-	db       *keepass.Database
-	savePath string
+	db              *keepass.Database
+	savePath        string
 }
 
 var backupExtension = ".kpbackup"
 
 func NewDatabase(db *keepass.Database, savePath string) k.Database {
-	rv := Database{
+	rv := &Database{
 		currentLocation: NewGroup(db.Root()),
-		db: db,
-		savePath: savePath,
+		db:              db,
+		savePath:        savePath,
 	}
 	return rv
 }
 
 // traversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
 // if the path points to an entry, the parent group is returned, otherwise the target group is returned
-func (d Database) TraversePath(startingLocation k.Group, fullPath string) (finalLocation k.Group, err error) {
+func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (finalLocation k.Group, err error) {
 	currentLocation := startingLocation
 	root := d.Root()
 	if fullPath == "/" {
@@ -87,12 +87,13 @@ func (d Database) TraversePath(startingLocation k.Group, fullPath string) (final
 }
 
 // Root returns the DB root
-func (d Database) Root() k.Group {
+func (d *Database) Root() k.Group {
 	return NewGroup(d.db.Root())
 }
+
 // Backup will create a backup of the current database to a temporary location
 // in case saving the database causes some kind of corruption
-func (d Database) Backup() error {
+func (d *Database) Backup() error {
 	backupPath := d.SavePath() + backupExtension
 	w, err := os.Create(backupPath)
 	if err != nil {
@@ -106,7 +107,7 @@ func (d Database) Backup() error {
 }
 
 // RemoveBackup removes a temporary backup file
-func (d Database) RemoveBackup() error {
+func (d *Database) RemoveBackup() error {
 	backupPath := d.SavePath() + backupExtension
 	if err := os.Remove(backupPath); err != nil {
 		return fmt.Errorf("could not remove backup file '%s': %s", backupPath, err)
@@ -115,16 +116,16 @@ func (d Database) RemoveBackup() error {
 }
 
 // SavePath returns the current save location for the DB
-func (d Database) SavePath() string {
+func (d *Database) SavePath() string {
 	return d.savePath
 }
 
-func (d Database) SetSavePath(newPath string) {
+func (d *Database) SetSavePath(newPath string) {
 	d.savePath = newPath
 }
 
 // Save will backup the DB, save it, then remove the backup is the save was successful
-func (d Database) Save() error {
+func (d *Database) Save() error {
 	savePath := d.SavePath()
 
 	if err := d.Backup(); err != nil {
@@ -146,10 +147,10 @@ func (d Database) Save() error {
 	return nil
 }
 
-func (d Database) SetOptions(o k.Options) error {
+func (d *Database) SetOptions(o k.Options) error {
 	opts := &keepass.Options{
 		Password: o.Password,
-		KeyFile:	o.KeyReader,
+		KeyFile:  o.KeyReader,
 	}
 	if err := d.db.SetOpts(opts); err != nil {
 		return fmt.Errorf("could not set DB options: %s", err)
@@ -157,18 +158,10 @@ func (d Database) SetOptions(o k.Options) error {
 	return nil
 }
 
-func (d Database) SetDB(db *keepass.Database) {
-	d.db = db
-}
-
-func (d Database) DB() *keepass.Database {
-	return d.db
-}
-
-func (d Database) CurrentLocation() k.Group {
+func (d *Database) CurrentLocation() k.Group {
 	return d.currentLocation
 }
 
-func (d Database) SetCurrentLocation(g k.Group) {
+func (d *Database) SetCurrentLocation(g k.Group) {
 	d.currentLocation = g
 }

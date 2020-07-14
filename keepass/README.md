@@ -1,0 +1,1 @@
+This subpackage abstracts interactions with keepass groups, databases, entries. The subgroups for v1/v2 implement the interfaces in this package so as to allow the main package to use one set of commands for both.

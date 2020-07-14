@@ -4,13 +4,13 @@ import (
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
+
 type Group struct {
 	group *keepass.Group
 }
 
-
 func NewGroup(group *keepass.Group) k.Group {
-	return Group{
+	return &Group{
 		group: group,
 	}
 }

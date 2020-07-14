@@ -33,11 +33,6 @@ type Options struct {
 	Password	string
 }
 
-type Commands interface {
-	Cd() error
-	Save() error
-}
-
 type Group interface {
 	// Returns all entries in this group
 	Entries() []Entry
