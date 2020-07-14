@@ -15,24 +15,28 @@ func NewGroup(group *keepass.Group) k.Group {
 	}
 }
 
-func (g Group) Name() string {
+func (g *Group) Name() string {
 	return g.group.Name
 }
 
-func (g Group) Parent() k.Group {
+func (g *Group) Parent() k.Group {
 	return NewGroup(g.group.Parent())
 }
 
-func (g Group) Entries() (rv []k.Entry) {
+func (g *Group) Entries() (rv []k.Entry) {
 	for _, each := range g.group.Entries() {
 		rv = append(rv, NewEntry(each))
 	}
 	return rv
 }
 
-func (g Group) Groups() (rv []k.Group) {
+func (g *Group) Groups() (rv []k.Group) {
 	for _, each := range g.group.Groups() {
 		rv = append(rv, NewGroup(each))
 	}
 	return rv
+}
+
+func (g *Group) IsRoot() bool {
+	return g.Parent() == nil
 }

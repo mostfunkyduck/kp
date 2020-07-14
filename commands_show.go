@@ -46,6 +46,7 @@ func formatTime(t time.Time) (formatted string) {
 	return
 }
 
+// TODO this needs to move to the v1 code
 func outputEntry(e keepass.Entry, s *ishell.Shell, path string, full bool) {
 	s.Printf("\n")
 	s.Printf("UUID:\t%s\n", e.UUID)

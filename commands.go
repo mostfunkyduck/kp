@@ -194,9 +194,9 @@ func removeLockfile(shell *ishell.Shell) error {
 }
 
 // getEntryByPath returns the entry at path 'path' using context variables in shell 'shell'
-func getEntryByPath(shell *ishell.Shell, path string) (entry *keepass.Entry, ok bool) {
-	currentLocation := shell.Get("currentLocation").(*keepass.Group)
-	location, err := traversePath(currentLocation, path)
+func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
+	db := shell.Get("db").(k.Database)
+	location, err := db.TraversePath(db.CurrentLocation(), path)
 	if err != nil {
 		return nil, false
 	}
@@ -207,8 +207,8 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry *keepass.Entry, ok 
 	entryName := entryNameBits[len(entryNameBits)-1]
 	for i, entry := range location.Entries() {
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == entry.Title ||
-			entryName == entry.UUID.String() {
+			entryName == entry.Title() ||
+			entryName == entry.UUIDString() {
 			return entry, true
 		}
 	}
@@ -216,8 +216,8 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry *keepass.Entry, ok 
 }
 
 func isPresent(shell *ishell.Shell, path string) (ok bool) {
-	currentLocation := shell.Get("currentLocation").(*keepass.Group)
-	_, err := traversePath(currentLocation, path)
+	db := shell.Get("db").(k.Database)
+	_, err := db.TraversePath(db.CurrentLocation(), path)
 	return err == nil
 }
 
@@ -237,31 +237,37 @@ func doPrompt(shell *ishell.Shell, prompt string, deflt string) (string, error) 
 	return input, nil
 }
 
-func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
+// TODO this will need to be refactored when we do v2
+func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	var err error
-	// store all the changes in a temporary entry
-	tempEntry := keepass.Entry{}
-	if tempEntry.Title, err = doPrompt(shell, "Title", title); err != nil {
+	var url, un, pw, notes string
+	// store all the changes in a temporary entry, don't update the target until all user input is collected
+	if title, err = doPrompt(shell, "Title", title); err != nil {
 		return fmt.Errorf("could not set title: %s", err)
 	}
 
-	if tempEntry.URL, err = doPrompt(shell, "URL", e.URL); err != nil {
+	if url, err = doPrompt(shell, "URL", e.Get("url").Value().(string)); err != nil {
 		return fmt.Errorf("could not set URL: %s", err)
 	}
 
-	if tempEntry.Username, err = doPrompt(shell, "Username", e.Username); err != nil {
+	if un, err = doPrompt(shell, "Username", e.Get("username").Value().(string)); err != nil {
 		return fmt.Errorf("could not set username: %s", err)
 	}
 
-	if tempEntry.Password, err = getPassword(shell, e.Password); err != nil {
+	if pw, err = getPassword(shell, e.Get("password").Value().(string)); err != nil {
 		return fmt.Errorf("could not set password: %s", err)
 	}
 
-	if tempEntry.Notes, err = getNotes(shell, e.Notes); err != nil {
+	if notes, err = getNotes(shell, e.Get("notes").Value().(string)); err != nil {
 		return fmt.Errorf("could not get notes: %s", err)
 	}
 
-	if changed := copyEntry(tempEntry, e); changed {
+	if e.Set("title", title) ||
+		e.Set("url", url) ||
+		e.Set("username", un) ||
+		e.Set("password", pw) ||
+		e.Set("notes", notes) {
+
 		shell.Println("edit successful, database has changed!")
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
@@ -272,6 +278,8 @@ func promptForEntry(shell *ishell.Shell, e *keepass.Entry, title string) error {
 	return nil
 }
 
+// TODO this should be converted into a generic function for handling long-form value entry
+// FIXME this code is also sucky and awkward
 func getNotes(shell *ishell.Shell, existingNotes string) (string, error) {
 	shell.Printf("Enter notes ('ctrl-c' to terminate)\nExisting notes:\n---\n%s\n---\n", existingNotes)
 	// allow a single newline at the beginning to short circuit editing
@@ -350,13 +358,13 @@ func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err er
 }
 
 // getPwd will walk up the group hierarchy to determine the path to the current location
-func getPwd(shell *ishell.Shell, group *keepass.Group) (fullPath string) {
+func getPwd(shell *ishell.Shell, group k.Group) (fullPath string) {
 	for ; group != nil; group = group.Parent() {
 		if group.IsRoot() {
 			fullPath = "/" + fullPath
 			break
 		}
-		fullPath = group.Name + "/" + fullPath
+		fullPath = group.Name() + "/" + fullPath
 	}
 	return fullPath
 }
@@ -388,6 +396,7 @@ func promptAndSave(shell *ishell.Shell) error {
 		return fmt.Errorf("could not save database: %s", err)
 	}
 
+	// FIXME this should be a property of the DB, not a global
 	DBChanged = false
 	shell.Println("database saved!")
 	return nil
@@ -403,38 +412,26 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 
 	var data string
 	switch entryData {
+	// FIXME hardcoded values
 	case "username":
-		data = entry.Username
+		data = entry.Get("username").Value().(string)
 	case "password":
-		data = entry.Password
+		data = entry.Get("password").Value().(string)
 	case "url":
-		data = entry.URL
+		data = entry.Get("url").Value().(string)
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}
+
+	if data == "" {
+		shell.Printf("warning! '%s' is an empty field!\n", entryData)
+	}
+
 	if err := clipboard.WriteAll(data); err != nil {
 		return fmt.Errorf("could not write %s to clipboard: %s\n", entryData, err)
 	}
-	entry.LastAccessTime = time.Now()
+	entry.SetLastAccessTime(time.Now())
 	shell.Printf("%s copied!\n", entryData)
 	shell.Println("(access time has been updated, will be persisted on next save)")
 	return nil
-}
-
-// copyEntry puts all the data in 'src' into 'dest' (timestamps are not affected)
-func copyEntry(src keepass.Entry, dest *keepass.Entry) (changed bool) {
-	changed = false
-	if dest.Title != src.Title ||
-		dest.Username != src.Username ||
-		dest.Password != src.Password ||
-		dest.Notes != src.Notes ||
-		dest.URL != src.URL {
-		changed = true
-	}
-	dest.Title = src.Title
-	dest.Username = src.Username
-	dest.Password = src.Password
-	dest.Notes = src.Notes
-	dest.URL = src.URL
-	return changed
 }

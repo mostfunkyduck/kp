@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/v1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -28,8 +29,9 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 		baseGroup = baseGroup[0 : len(baseGroup)-1]
 		rawPath = strings.Join(baseGroup, "/")
 
-		location := shell.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(location, rawPath)
+		db := shell.Get("db").(k.Database)
+		location := db.CurrentLocation()
+		location, err := db.TraversePath(location, rawPath)
 		if err != nil {
 			return []string{}
 		}
@@ -39,12 +41,12 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 				rawPath = rawPath + "/"
 			}
 			for _, g := range location.Groups() {
-				ret = append(ret, rawPath+strings.ReplaceAll(g.Name, " ", "\\ ")+"/")
+				ret = append(ret, rawPath+strings.ReplaceAll(g.Name(), " ", "\\ ")+"/")
 			}
 
 			if printEntries {
 				for _, e := range location.Entries() {
-					ret = append(ret, rawPath+strings.ReplaceAll(e.Title, " ", "\\ "))
+					ret = append(ret, rawPath+strings.ReplaceAll(e.Title(), " ", "\\ "))
 				}
 			}
 		}

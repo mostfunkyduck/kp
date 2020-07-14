@@ -7,28 +7,41 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	"zombiezen.com/go/sandpass/pkg/keepass"
+	k "github.com/mostfunkyduck/kp/keepass"
 )
 
-func listAttachment(entry *keepass.Entry) (s string, err error) {
-	s = fmt.Sprintf("Name: %s\nSize: %d bytes", entry.Attachment.Name, len(entry.Attachment.Data))
+func listAttachment(entry k.Entry) (s string, err error) {
+	// FIXME hardcoded values
+	attachment := entry.Get("attachment")
+	if attachment == nil {
+		err = fmt.Errorf("entry has no attachment")
+		return
+	}
+	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name(), len(attachment.Value().([]byte)))
 	return
 }
 
-func getAttachment(entry *keepass.Entry, outputLocation string) (s string, err error) {
+func getAttachment(entry k.Entry, outputLocation string) (s string, err error) {
 	f, err := os.Create(outputLocation)
 	if err != nil {
-		return "", fmt.Errorf("could not open [%s]", outputLocation)
+		err = fmt.Errorf("could not open [%s]", outputLocation)
+		return
 	}
 	defer f.Close()
 
-	written, err := f.Write(entry.Attachment.Data)
+	attachment := entry.Get("attachment")
+	if attachment == nil {
+		err = fmt.Errorf("entry has no attachment")
+		return
+	}
+	written, err := f.Write(attachment.Value().([]byte))
 	if err != nil {
-		return "", fmt.Errorf("could not write to [%s]", outputLocation)
+		err = fmt.Errorf("could not write to [%s]", outputLocation)
+		return
 	}
 
-	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", entry.Attachment.Name, written, outputLocation)
-	return s, nil
+	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", attachment.Name(), written, outputLocation)
+	return
 }
 
 func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
@@ -40,8 +53,9 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 
 		args := c.Args
 		path := args[0]
-		currentLocation := shell.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(currentLocation, path)
+		db := shell.Get("db").(k.Database)
+		currentLocation := db.CurrentLocation()
+		location, err := db.TraversePath(currentLocation, path)
 		if err != nil {
 			shell.Printf("error traversing path: %s\n", err)
 			return
@@ -56,7 +70,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 		}
 		for i, entry := range location.Entries() {
 
-			if entry.Title == name || (intVersion >= 0 && i == intVersion) {
+			if entry.Title() == name || (intVersion >= 0 && i == intVersion) {
 				output, err := runAttachCommands(args, cmd, entry)
 				if err != nil {
 					shell.Printf("could not run command [%s]: %s\n", cmd, err)
@@ -72,7 +86,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 
 // helper function run running attach commands. 'args' are all arguments after the attach command
 // for instance, 'attach get foo bar' will result in args being '[foo, bar]'
-func runAttachCommands(args []string, cmd string, entry *keepass.Entry) (output string, err error) {
+func runAttachCommands(args []string, cmd string, entry k.Entry) (output string, err error) {
 	switch cmd {
 	case "get":
 		if len(args) < 2 {
