@@ -22,7 +22,7 @@ func Edit(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		if err := promptForEntry(shell, entry, entry.Get("title").Value().(string)); err != nil {
 			shell.Printf("couldn't edit entry: %s\n", err)
 		}
-		entry.LastModificationTime = time.Now()
+		entry.SetLastModificationTime(time.Now())
 
 		shell.ShowPrompt(true)
 	}

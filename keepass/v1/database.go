@@ -74,7 +74,7 @@ func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (fina
 
 		for i, entry := range currentLocation.Entries() {
 			// is the entity we're looking for this index or this entry?
-			if entry.Title() == part || strconv.Itoa(i) == part {
+			if entry.Get("title").Value().(string) == part || strconv.Itoa(i) == part {
 				found = true
 				break
 			}
@@ -164,4 +164,8 @@ func (d *Database) CurrentLocation() k.Group {
 
 func (d *Database) SetCurrentLocation(g k.Group) {
 	d.currentLocation = g
+}
+
+func (d *Database) Raw() interface{} {
+	return d.db
 }

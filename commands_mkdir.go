@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -20,14 +21,14 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 		path := strings.Split(c.Args[0], "/")
-		currentLocation := shell.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
+		db := shell.Get("db").(k.Database)
+		location, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
 		if err != nil {
 			shell.Printf("invalid path: " + err.Error())
 			return
 		}
 
-		location.NewSubgroup().Name = path[len(path)-1]
+		location.NewSubgroup(path[len(path)-1])
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("could not save database: %s\n", err)

@@ -207,7 +207,7 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 	entryName := entryNameBits[len(entryNameBits)-1]
 	for i, entry := range location.Entries() {
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == entry.Title() ||
+			entryName == entry.Get("title").Value().(string) ||
 			entryName == entry.UUIDString() {
 			return entry, true
 		}

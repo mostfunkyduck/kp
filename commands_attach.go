@@ -70,7 +70,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 		}
 		for i, entry := range location.Entries() {
 
-			if entry.Title() == name || (intVersion >= 0 && i == intVersion) {
+			if entry.Get("title").Value().(string) == name || (intVersion >= 0 && i == intVersion) {
 				output, err := runAttachCommands(args, cmd, entry)
 				if err != nil {
 					shell.Printf("could not run command [%s]: %s\n", cmd, err)

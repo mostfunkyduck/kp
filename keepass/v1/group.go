@@ -40,3 +40,19 @@ func (g *Group) Groups() (rv []k.Group) {
 func (g *Group) IsRoot() bool {
 	return g.Parent() == nil
 }
+
+func (g *Group) NewSubgroup(name string) k.Group {
+	newGroup := g.group.NewSubgroup()
+	newGroup.Name = name
+	return &Group{
+		group: newGroup,
+	}
+}
+
+func (g *Group) Raw() interface{} {
+	return g.group
+}
+
+func (g *Group) RemoveEntry(e k.Entry) error {
+	return g.group.RemoveEntry(e.Raw().(*keepass.Entry))
+}

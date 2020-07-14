@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -32,25 +33,25 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				return
 			}
 			if err := srcEntry.SetParent(existingEntry.Parent()); err != nil {
-				shell.Printf("could move entry '%s' to group '%s': %s\n", srcEntry.Title, existingEntry.Parent().Name, err)
+				shell.Printf("could move entry '%s' to group '%s': %s\n", srcEntry.Get("title").Value().(string), existingEntry.Parent().Name, err)
 				return
 			}
 			if err := existingEntry.Parent().RemoveEntry(existingEntry); err != nil {
-				shell.Printf("error removing entry '%s' from group '%s': %s\n", existingEntry.Title, existingEntry.Parent().Name, err)
+				shell.Printf("error removing entry '%s' from group '%s': %s\n", existingEntry.Get("title").Value(), existingEntry.Parent().Name, err)
 				return
 			}
 			return
 		}
 
 		title := ""
-		currentLocation := shell.Get("currentLocation").(*keepass.Group)
-		location, err := traversePath(currentLocation, dstPath)
+		db := shell.Get("db").(k.Database)
+		location, err := db.TraversePath(db.CurrentLocation(), dstPath)
 		if err != nil {
 			// there's no group or entry at this location, attempt to process this as a rename
 			// and set the location to be the group
 			pathBits := strings.Split(dstPath, "/")
 			path := strings.Join(pathBits[0:len(pathBits)-1], "/")
-			location, err = traversePath(currentLocation, path)
+			location, err = db.TraversePath(db.CurrentLocation(), path)
 			if err != nil {
 				shell.Printf("error finding path '%s': %s\n", dstPath, err)
 				return
@@ -59,11 +60,11 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		if err := srcEntry.SetParent(location); err != nil {
-			shell.Printf("error moving entry '%s' to new location '%s': %s\n", srcEntry.Title, location.Name, err)
+			shell.Printf("error moving entry '%s' to new location '%s': %s\n", srcEntry.Get("title").Value().(string), location.Name, err)
 			return
 		}
 		if title != "" {
-			srcEntry.Title = title
+			srcEntry.Set("title", title)
 		}
 
 		DBChanged = true

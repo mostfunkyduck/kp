@@ -10,7 +10,7 @@ func TestTitle(t *testing.T) {
 	title := "test"
 	e := &keepass.Entry{Title: title}
 	wrapper := v1.NewEntry(e)
-	wrapperTitle := wrapper.Title()
+	wrapperTitle := wrapper.Get("title").Value().(string)
 	if wrapperTitle != title {
 		t.Fatalf("%s != %s", title, wrapperTitle)
 	}

@@ -12,7 +12,13 @@ const (
 )
 
 // abstracts a wrapper for v1 or v2 implementations to use to describe the database and to implement shell commands
+type KeepassWrapper interface {
+	// Returns the underlying object that the wrapper wraps aroud
+	Raw() interface{}
+}
+
 type Database interface {
+	KeepassWrapper
 	// Returns the current location for the shell
 	CurrentLocation() Group
 	// Returns the root of the database
@@ -35,20 +41,31 @@ type Options struct {
 }
 
 type Group interface {
+	KeepassWrapper
 	// Returns all entries in this group
 	Entries() []Entry
+
 	// Returns all groups nested in this group
 	Groups() []Group
+
+	// Returns this group's parent, if it has one
 	Parent() Group
+
 	Name() string
+
 	IsRoot() bool
+
+	// Creates a new subgroup with a given name under this group
+	NewSubgroup(name string) Group
+
+	RemoveEntry(Entry) error
 }
 
 type Entry interface {
-	Title() string
+	KeepassWrapper
 	// We only need the string version of the UUID for this application
 	UUIDString() string
-	// Returns the value for a given field, or "" if the field doesn't exist
+	// Returns the value for a given field, or nil if the field doesn't exist
 	Get(string) Value
 
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
@@ -56,6 +73,11 @@ type Entry interface {
 
 	// Sets the last accessed time on the entry
 	SetLastAccessTime(time.Time)
+
+	SetLastModificationTime(time.Time)
+
+	Parent() Group
+	SetParent(Group) error
 }
 
 type Value interface {

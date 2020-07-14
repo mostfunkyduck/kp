@@ -1,6 +1,7 @@
 package keepassv1
 
 import (
+	"fmt"
 	"strings"
 	"time"
 	k "github.com/mostfunkyduck/kp/keepass"
@@ -25,14 +26,6 @@ func NewEntry(entry *keepass.Entry) k.Entry {
 	return &Entry{
 		entry: entry,
 	}
-}
-
-func (e *Entry) Title() string {
-	return e.entry.Title
-}
-
-func (e *Entry) SetTitle(title string) {
-	e.entry.Title = title
 }
 
 func (e *Entry) UUIDString() string {
@@ -86,21 +79,31 @@ func (e *Entry) Set(field string, value string) (updated bool) {
 	}
 	return
 }
-func (e *Entry) Username() string {
-	return e.entry.Username
-}
 
-func (e *Entry) Password() string {
-	return e.entry.Password
-}
-
-func (e *Entry) URL() string {
-	return e.entry.URL
-}
 func (e *Entry) SetLastAccessTime(t time.Time) {
 	e.entry.LastAccessTime = t
 }
 
+func (e *Entry) SetLastModificationTime(t time.Time) {
+	e.entry.LastModificationTime = t
+}
+
+func (e *Entry) SetParent(g k.Group) error {
+	if err := e.entry.SetParent(g.Raw().(*keepass.Group)); err != nil {
+		return fmt.Errorf("could not set entry's group: %s", err)
+	}
+	return nil
+}
+
+func (e *Entry) Parent() k.Group {
+	return &Group{
+		group: e.entry.Parent(),
+	}
+}
+
+func (e *Entry) Raw() interface{} {
+	return e.entry
+}
 /**
 // Copy returns a new copy of this wrapper, complete with a new keepass entry underneath it
 // it also returns a boolean indicating whether the two entries differ
