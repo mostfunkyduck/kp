@@ -55,6 +55,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
+		// FIXME this needs removal, db will currently prompt twice
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("failed to save database: %s\n", err)

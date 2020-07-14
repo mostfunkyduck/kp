@@ -80,7 +80,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			}
 
 			if currentLocation == newLocation {
-				changeDirectory(currentLocation.Parent(), shell)
+				changeDirectoryV1(currentLocation.Parent(), shell)
 			}
 
 			if err := newLocation.Parent().RemoveSubgroup(newLocation); err != nil {
@@ -101,4 +101,10 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("could not save: %s\n", err)
 		}
 	}
+}
+
+// temporary function to support v1 while i incrementally port everything to be v2 compatible
+func changeDirectoryV1(newLocation *keepass.Group, shell *ishell.Shell) {
+	shell.Set("currentLocation", newLocation)
+	shell.SetPrompt(fmt.Sprintf("%s > ", newLocation.Name))
 }

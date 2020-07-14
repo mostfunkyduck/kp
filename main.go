@@ -88,8 +88,7 @@ func main() {
 
 	// FIXME eventually this needs to happen in the keepass wrapper library, not here
 	// FIXME main shouldn't have to care about v1 vs v2 unless absolutely necessary
-	dbWrapper := &v1.Database{}
-	dbWrapper.SetDB(db)
+	dbWrapper := v1.NewDatabase(db, shell.Get("filePath").(string))
 	shell.Printf("opened database at %s\n", shell.Get("filePath").(string))
 
 	// FIXME now that we're using a wrapper around the DB, all this cruft in the shell context vars should go there
