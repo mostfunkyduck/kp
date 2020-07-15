@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	k "github.com/mostfunkyduck/kp/keepass"
 	"github.com/abiosoft/ishell"
+	k "github.com/mostfunkyduck/kp/keepass"
 )
 
 func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {

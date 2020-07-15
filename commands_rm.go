@@ -6,30 +6,30 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	"zombiezen.com/go/sandpass/pkg/keepass"
+	k "github.com/mostfunkyduck/kp/keepass"
 )
 
 // purgeGroup recursively removes all subgroups and entries from a group
-func purgeGroup(group *keepass.Group) error {
+func purgeGroup(group k.Group) error {
 	for _, e := range group.Entries() {
 		if err := group.RemoveEntry(e); err != nil {
-			return fmt.Errorf("could not remove entry '%s' from group '%s': %s", e.Title, group.Name, err)
+			return fmt.Errorf("could not remove entry '%s' from group '%s': %s", string(e.Get("title").Value()), group.Name(), err)
 		}
 	}
 	for _, g := range group.Groups() {
 		if err := purgeGroup(g); err != nil {
-			return fmt.Errorf("could not purge group %s: %s", g.Name, err)
+			return fmt.Errorf("could not purge group %s: %s", g.Name(), err)
 		}
 		if err := group.RemoveSubgroup(g); err != nil {
-			return fmt.Errorf("could not remove group %s: %s", g.Name, err)
+			return fmt.Errorf("could not remove group %s: %s", g.Name(), err)
 		}
 	}
 	return nil
 }
 
-func removeEntry(parentLocation *keepass.Group, entryName string) error {
+func removeEntry(parentLocation k.Group, entryName string) error {
 	for i, e := range parentLocation.Entries() {
-		if e.Title == entryName || strconv.Itoa(i) == entryName {
+		if string(e.Get("title").Value()) == entryName || strconv.Itoa(i) == entryName {
 			if err := parentLocation.RemoveEntry(e); err != nil {
 				return fmt.Errorf("could not remove entry: %s", err)
 			}
@@ -54,13 +54,9 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			targetPath = c.Args[1]
 		}
 
-		currentLocation := shell.Get("currentLocation").(*keepass.Group)
-		if currentLocation == nil {
-			shell.Println("not at valid location, cannot remove group")
-			return
-		}
-
-		newLocation, err := traversePath(currentLocation, targetPath)
+		db := shell.Get("db").(k.Database)
+		currentLocation := db.CurrentLocation()
+		newLocation, err := db.TraversePath(currentLocation, targetPath)
 		if err != nil {
 			shell.Printf("could not reach location %s: %s", targetPath, err)
 			return
@@ -80,7 +76,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			}
 
 			if currentLocation == newLocation {
-				changeDirectoryV1(currentLocation.Parent(), shell)
+				changeDirectory(db, currentLocation.Parent(), shell)
 			}
 
 			if err := newLocation.Parent().RemoveSubgroup(newLocation); err != nil {
@@ -101,10 +97,4 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("could not save: %s\n", err)
 		}
 	}
-}
-
-// temporary function to support v1 while i incrementally port everything to be v2 compatible
-func changeDirectoryV1(newLocation *keepass.Group, shell *ishell.Shell) {
-	shell.Set("currentLocation", newLocation)
-	shell.SetPrompt(fmt.Sprintf("%s > ", newLocation.Name))
 }

@@ -3,6 +3,7 @@ package keepass
 import (
 	"io"
 	"time"
+	"github.com/abiosoft/ishell"
 )
 
 type version int
@@ -15,6 +16,9 @@ const (
 type KeepassWrapper interface {
 	// Returns the underlying object that the wrapper wraps aroud
 	Raw() interface{}
+
+	// returns the path to the object's location
+	Pwd() string
 }
 
 type Database interface {
@@ -58,7 +62,10 @@ type Group interface {
 	// Creates a new subgroup with a given name under this group
 	NewSubgroup(name string) Group
 
+	RemoveSubgroup(Group) error
+
 	NewEntry() (Entry, error)
+
 	RemoveEntry(Entry) error
 }
 
@@ -74,15 +81,16 @@ type Entry interface {
 
 	// Sets the last accessed time on the entry
 	SetLastAccessTime(time.Time)
-
 	SetLastModificationTime(time.Time)
-
 	SetCreationTime(time.Time)
+
 	Parent() Group
 	SetParent(Group) error
+
+	Output(shell *ishell.Shell, full bool)
 }
 
 type Value interface {
-	Name() string
-	Value() interface{}
+	Value()	[]byte
+	Name() string // v1 compatibility - attachments have their own name within entries
 }

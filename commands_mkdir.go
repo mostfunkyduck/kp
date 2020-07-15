@@ -5,7 +5,6 @@ import (
 
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {

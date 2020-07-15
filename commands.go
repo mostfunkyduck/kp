@@ -31,62 +31,6 @@ func getRoot(location *keepass.Group) (root *keepass.Group) {
 	return root
 }
 
-// traversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
-// if the path points to an entry, the parent group is returned, otherwise the target group is returned
-func traversePath(startingLocation *keepass.Group, fullPath string) (finalLocation *keepass.Group, err error) {
-	currentLocation := startingLocation
-	root := getRoot(currentLocation)
-	if fullPath == "/" {
-		// short circuit now
-		return root, nil
-	}
-
-	if strings.HasPrefix(fullPath, "/") {
-		// the user entered a fully qualified path, so start at the top
-		currentLocation = root
-	}
-
-	// break the path up into components
-	path := strings.Split(fullPath, "/")
-	for _, part := range path {
-		if part == "." || part == "" {
-			continue
-		}
-
-		if part == ".." {
-			// if we're not at the root, go up a level
-			if currentLocation.Parent() != nil {
-				currentLocation = currentLocation.Parent()
-				continue
-			}
-			// we're at the root, the user wanted to go higher, that's no bueno
-			return nil, fmt.Errorf("root group has no parent")
-		}
-
-		// regular traversal
-		found := false
-		for _, group := range currentLocation.Groups() {
-			// was the entity being searched for this group?
-			if group.Name == part {
-				currentLocation = group
-				found = true
-				break
-			}
-		}
-		for i, entry := range currentLocation.Entries() {
-			// is the entity we're looking for this index or this entry?
-			if entry.Title == part || strconv.Itoa(i) == part {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("could not find a group or entry named [%s]", part)
-		}
-	}
-	return currentLocation, nil
-}
-
 // TODO break this function down, it's too long and mildly complicated
 func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 	for {
@@ -207,7 +151,7 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 	entryName := entryNameBits[len(entryNameBits)-1]
 	for i, entry := range location.Entries() {
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == entry.Get("title").Value().(string) ||
+			entryName == string(entry.Get("title").Value()) ||
 			entryName == entry.UUIDString() {
 			return entry, true
 		}
@@ -246,19 +190,19 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 		return fmt.Errorf("could not set title: %s", err)
 	}
 
-	if url, err = doPrompt(shell, "URL", e.Get("url").Value().(string)); err != nil {
+	if url, err = doPrompt(shell, "URL", string(e.Get("url").Value())); err != nil {
 		return fmt.Errorf("could not set URL: %s", err)
 	}
 
-	if un, err = doPrompt(shell, "Username", e.Get("username").Value().(string)); err != nil {
+	if un, err = doPrompt(shell, "Username", string(e.Get("username").Value())); err != nil {
 		return fmt.Errorf("could not set username: %s", err)
 	}
 
-	if pw, err = getPassword(shell, e.Get("password").Value().(string)); err != nil {
+	if pw, err = getPassword(shell, string(e.Get("password").Value())); err != nil {
 		return fmt.Errorf("could not set password: %s", err)
 	}
 
-	if notes, err = getNotes(shell, e.Get("notes").Value().(string)); err != nil {
+	if notes, err = getNotes(shell, string(e.Get("notes").Value())); err != nil {
 		return fmt.Errorf("could not get notes: %s", err)
 	}
 
@@ -357,18 +301,6 @@ func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err er
 	return pw, nil
 }
 
-// getPwd will walk up the group hierarchy to determine the path to the current location
-func getPwd(shell *ishell.Shell, group k.Group) (fullPath string) {
-	for ; group != nil; group = group.Parent() {
-		if group.IsRoot() {
-			fullPath = "/" + fullPath
-			break
-		}
-		fullPath = group.Name() + "/" + fullPath
-	}
-	return fullPath
-}
-
 // promptAndSave prompts the user to save and returns whether or not they agreed to do so.
 // it also makes sure that there's actually a path to save to
 func promptAndSave(shell *ishell.Shell) error {
@@ -414,11 +346,11 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	switch entryData {
 	// FIXME hardcoded values
 	case "username":
-		data = entry.Get("username").Value().(string)
+		data = string(entry.Get("username").Value())
 	case "password":
-		data = entry.Get("password").Value().(string)
+		data = string(entry.Get("password").Value())
 	case "url":
-		data = entry.Get("url").Value().(string)
+		data = string(entry.Get("url").Value())
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}

@@ -56,7 +56,7 @@ func TestGroupFunctions (t *testing.T) {
 
 	for i, each := range groupWrapper.Entries() {
 		name := "entry #" + strconv.Itoa(i)
-		title := each.Get("title").Value().(string)
+		title := string(each.Get("title").Value())
 		if title != name {
 			t.Errorf("%s != %s", title, name)
 		}

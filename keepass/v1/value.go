@@ -5,13 +5,13 @@ type Value struct {
 	// field name
 	name	string
 	// arbitrary datas
-	value interface{}
+	value []byte
 }
 
 func (v Value) Name() string {
 	return v.name
 }
 
-func (v Value) Value() interface{} {
+func (v Value) Value() []byte {
 	return v.value
 }

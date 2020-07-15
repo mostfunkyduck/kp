@@ -46,7 +46,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 
 			if printEntries {
 				for _, e := range location.Entries() {
-					ret = append(ret, rawPath+strings.ReplaceAll(e.Title(), " ", "\\ "))
+					ret = append(ret, rawPath+strings.ReplaceAll(string(e.Get("title").Value()), " ", "\\ "))
 				}
 			}
 		}

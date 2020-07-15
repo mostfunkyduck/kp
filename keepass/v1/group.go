@@ -49,6 +49,22 @@ func (g *Group) NewSubgroup(name string) k.Group {
 	}
 }
 
+func (g *Group) RemoveSubgroup(subgroup k.Group) error {
+	return g.group.RemoveSubgroup(subgroup.Raw().(*keepass.Group))
+}
+
+func (g *Group) Pwd() (fullPath string) {
+	group := g.group
+	for ; group != nil; group = group.Parent() {
+		if group.IsRoot() {
+			fullPath = "/" + fullPath
+			break
+		}
+		fullPath = group.Name + "/" + fullPath
+	}
+	return fullPath
+}
+
 func (g *Group) Raw() interface{} {
 	return g.group
 }

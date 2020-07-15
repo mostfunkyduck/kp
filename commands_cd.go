@@ -21,12 +21,11 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Println(fmt.Sprintf("invalid path: %s", err))
 			return
 		}
-		changeDirectory(newLocation, shell)
-		db.SetCurrentLocation(newLocation)
+		changeDirectory(db, newLocation, shell)
 	}
 }
 
-func changeDirectory(newLocation k.Group, shell *ishell.Shell) {
-	shell.Set("currentLocation", newLocation)
+func changeDirectory(db k.Database, newLocation k.Group, shell *ishell.Shell) {
+	db.SetCurrentLocation(newLocation)
 	shell.SetPrompt(fmt.Sprintf("%s > ", newLocation.Name()))
 }

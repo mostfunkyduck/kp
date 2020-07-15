@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -34,7 +35,7 @@ func (e *Entry) UUIDString() string {
 
 func (e *Entry) Get(field string) (rv k.Value) {
 	name := field
-	var value interface{}
+	var value string
 	switch strings.ToLower(field) {
 	case fieldTitle:
 		value = e.entry.Title
@@ -48,16 +49,18 @@ func (e *Entry) Get(field string) (rv k.Value) {
 		value = e.entry.Notes
 	case fieldAttachment:
 		if ! e.entry.HasAttachment() {
-			return nil
+			return Value{}
 		}
-		value = e.entry.Attachment.Data
-		name = e.entry.Attachment.Name
+		return Value{
+			name: e.entry.Attachment.Name,
+			value: e.entry.Attachment.Data,
+		}
 	default:
-		return nil
+		return Value{}
 	}
-	return Value{
+	return Value {
 		name: name,
-		value: value,
+		value: []byte(value),
 	}
 }
 
@@ -91,6 +94,7 @@ func (e *Entry) SetLastModificationTime(t time.Time) {
 func (e *Entry) SetCreationTime(t time.Time) {
 	e.entry.CreationTime = t
 }
+
 func (e *Entry) SetParent(g k.Group) error {
 	if err := e.entry.SetParent(g.Raw().(*keepass.Group)); err != nil {
 		return fmt.Errorf("could not set entry's group: %s", err)
@@ -104,8 +108,72 @@ func (e *Entry) Parent() k.Group {
 	}
 }
 
+func (e *Entry) Pwd() string {
+	groupPath := e.Parent().Pwd()
+	return groupPath + "/" + string(e.Get("title").Value())
+}
+
 func (e *Entry) Raw() interface{} {
 	return e.entry
+}
+
+func formatTime(t time.Time) (formatted string) {
+	timeFormat := "Mon Jan 2 15:04:05 MST 2006"
+	if (t == time.Time{}) {
+		formatted = "unknown"
+	} else {
+		since := time.Since(t).Round(time.Duration(1) * time.Second)
+		sinceString := since.String()
+
+		// greater than or equal to 1 day
+		if since.Hours() >= 24 {
+			sinceString = fmt.Sprintf("%d days ago", int(since.Hours()/24))
+		}
+
+		// greater than or equal to ~1 month
+		if since.Hours() >= 720 {
+			// rough estimate, not accounting for non-30-day months
+			months := int(since.Hours() / 720)
+			sinceString = fmt.Sprintf("about %d months ago", months)
+		}
+
+		// greater or equal to 1 year
+		if since.Hours() >= 8760 {
+			// yes yes yes, leap years aren't 365 days long
+			years := int(since.Hours() / 8760)
+			sinceString = fmt.Sprintf("about %d years ago", years)
+		}
+
+		// less than a second
+		if since.Seconds() < 1.0 {
+			sinceString = "less than a second ago"
+		}
+
+		formatted = fmt.Sprintf("%s (%s)", t.Local().Format(timeFormat), sinceString)
+	}
+	return
+}
+
+func (e *Entry) Output(s *ishell.Shell, full bool) {
+	s.Printf("\n")
+	s.Printf("UUID:\t%s\n", e.entry.UUID)
+
+	s.Printf("Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
+	s.Printf("Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
+	s.Printf("Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
+	s.Printf("Location:\t%s\n", e.Pwd())
+	s.Printf("Title:\t%s\n", string(e.Get("title").Value()))
+	s.Printf("URL:\t%s\n", string(e.Get("url").Value()))
+	s.Printf("Username:\t%s\n", string(e.Get("username").Value()))
+	password := "[redacted]"
+	if full {
+		password = string(e.Get("password").Value())
+	}
+	s.Printf("Password:\t%s\n", password)
+	s.Printf("Notes:\n%s\n", string(e.Get("notes").Value()))
+	if e.entry.HasAttachment() {
+		s.Printf("Attachment:\t%s\n", e.Get("attachment").Name())
+	}
 }
 /**
 // Copy returns a new copy of this wrapper, complete with a new keepass entry underneath it
