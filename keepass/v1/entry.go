@@ -88,6 +88,9 @@ func (e *Entry) SetLastModificationTime(t time.Time) {
 	e.entry.LastModificationTime = t
 }
 
+func (e *Entry) SetCreationTime(t time.Time) {
+	e.entry.CreationTime = t
+}
 func (e *Entry) SetParent(g k.Group) error {
 	if err := e.entry.SetParent(g.Raw().(*keepass.Group)); err != nil {
 		return fmt.Errorf("could not set entry's group: %s", err)

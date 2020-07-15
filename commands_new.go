@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
+	k "github.com/mostfunkyduck/kp/keepass"
 	"github.com/abiosoft/ishell"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
@@ -21,10 +21,10 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		currentLocation := shell.Get("currentLocation").(*keepass.Group)
+		db := shell.Get("db").(k.Database)
 
 		path := strings.Split(args[0], "/")
-		location, err := traversePath(currentLocation, strings.Join(path[0:len(path)-1], "/"))
+		location, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
 		if err != nil {
 			shell.Println("invalid path: " + err.Error())
 			return
@@ -41,9 +41,9 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
 		}
-		entry.CreationTime = time.Now()
-		entry.LastModificationTime = time.Now()
-		entry.LastAccessTime = time.Now()
+		entry.SetCreationTime(time.Now())
+		entry.SetLastModificationTime(time.Now())
+		entry.SetLastAccessTime(time.Now())
 
 		err = promptForEntry(shell, entry, path[len(path)-1])
 		shell.ShowPrompt(true)

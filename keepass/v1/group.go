@@ -53,6 +53,16 @@ func (g *Group) Raw() interface{} {
 	return g.group
 }
 
+func (g *Group) NewEntry() (k.Entry, error) {
+	entry, err := g.group.NewEntry()
+	if err != nil {
+		return nil, err
+	}
+	return &Entry{
+		entry: entry,
+	}, nil
+}
+
 func (g *Group) RemoveEntry(e k.Entry) error {
 	return g.group.RemoveEntry(e.Raw().(*keepass.Entry))
 }

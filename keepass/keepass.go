@@ -58,6 +58,7 @@ type Group interface {
 	// Creates a new subgroup with a given name under this group
 	NewSubgroup(name string) Group
 
+	NewEntry() (Entry, error)
 	RemoveEntry(Entry) error
 }
 
@@ -76,6 +77,7 @@ type Entry interface {
 
 	SetLastModificationTime(time.Time)
 
+	SetCreationTime(time.Time)
 	Parent() Group
 	SetParent(Group) error
 }
