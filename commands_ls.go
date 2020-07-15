@@ -37,8 +37,8 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		lines = append(lines, "\n=== Entries ===")
 		for i, entry := range location.Entries() {
-			lines = append(lines, fmt.Sprintf("%d: %s", i, string(entry.Get("title").Value())))
-			title := string(entry.Get("title").Value())
+			lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Get("title").Value.(string)))
+			title := entry.Get("title").Value.(string)
 			if title == entityName {
 				shell.Println(title)
 				return

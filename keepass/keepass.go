@@ -77,7 +77,7 @@ type Entry interface {
 	Get(string) Value
 
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
-	Set(field string, value string) bool
+	Set(field string, value Value) bool
 
 	// Sets the last accessed time on the entry
 	SetLastAccessTime(time.Time)
@@ -90,7 +90,7 @@ type Entry interface {
 	Output(shell *ishell.Shell, full bool)
 }
 
-type Value interface {
-	Value()	[]byte
-	Name() string // v1 compatibility - attachments have their own name within entries
+type Value struct {
+	Value	interface{} // can be either binary or string data
+	Name string // v1 compatibility - attachments have their own name within entries
 }

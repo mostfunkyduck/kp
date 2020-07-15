@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -46,7 +45,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 
 			if printEntries {
 				for _, e := range location.Entries() {
-					ret = append(ret, rawPath+strings.ReplaceAll(string(e.Get("title").Value()), " ", "\\ "))
+					ret = append(ret, rawPath+strings.ReplaceAll(e.Get("title").Value.(string), " ", "\\ "))
 				}
 			}
 		}
@@ -145,6 +144,13 @@ func main() {
 		LongHelp: "manages the attachment for a given entry",
 		Help:     "attach <get|show|delete> <entry> <filesystem location>",
 	}
+	attachCmd.AddCmd(&ishell.Cmd{
+		Name:                "create",
+		Help:                "attach create <entry> <name> <filesystem location>",
+		LongHelp:            "creates a new attachment based on a local file",
+		CompleterWithPrefix: fileCompleter(shell, true),
+		Func:                Attach(shell, "create"),
+	})
 	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "get",
 		Help:                "attach get <entry> <filesystem location>",
@@ -256,17 +262,17 @@ func main() {
 		shell.Run()
 	}
 
-	log.Println("exiting")
+	fmt.Println("exiting")
 	// This will run after the shell exits
 	if DBChanged {
 		if err := promptAndSave(shell); err != nil {
-			log.Printf("error attempting to save database: %s\n", err)
+			fmt.Printf("error attempting to save database: %s\n", err)
 		}
 	}
 
-	if err := removeLockfile(shell); err != nil {
-		log.Printf("could not remove lock file: %s\n", err)
+	if err := removeLockfile(dbWrapper.SavePath()); err != nil {
+		fmt.Printf("could not remove lock file: %s\n", err)
 	} else {
-		log.Println("no changes detected since last save.")
+		fmt.Println("no changes detected since last save.")
 	}
 }

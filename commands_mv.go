@@ -32,11 +32,11 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				return
 			}
 			if err := srcEntry.SetParent(existingEntry.Parent()); err != nil {
-				shell.Printf("could move entry '%s' to group '%s': %s\n", string(srcEntry.Get("title").Value()), existingEntry.Parent().Name, err)
+				shell.Printf("could move entry '%s' to group '%s': %s\n", srcEntry.Get("title").Value.(string), existingEntry.Parent().Name, err)
 				return
 			}
 			if err := existingEntry.Parent().RemoveEntry(existingEntry); err != nil {
-				shell.Printf("error removing entry '%s' from group '%s': %s\n", existingEntry.Get("title").Value(), existingEntry.Parent().Name, err)
+				shell.Printf("error removing entry '%s' from group '%s': %s\n", existingEntry.Get("title").Value.(string), existingEntry.Parent().Name, err)
 				return
 			}
 			return
@@ -59,11 +59,11 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		if err := srcEntry.SetParent(location); err != nil {
-			shell.Printf("error moving entry '%s' to new location '%s': %s\n", string(srcEntry.Get("title").Value()), location.Name, err)
+			shell.Printf("error moving entry '%s' to new location '%s': %s\n", srcEntry.Get("title").Value.(string), location.Name, err)
 			return
 		}
 		if title != "" {
-			srcEntry.Set("title", title)
+			srcEntry.Set("title", k.Value{Value: title})
 		}
 
 		DBChanged = true

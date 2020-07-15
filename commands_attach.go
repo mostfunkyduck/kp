@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -11,13 +12,12 @@ import (
 )
 
 func listAttachment(entry k.Entry) (s string, err error) {
-	// FIXME hardcoded values
 	attachment := entry.Get("attachment")
-	if attachment == nil {
+	if attachment == (k.Value{}) {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name(), len(attachment.Value()))
+	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name, len(attachment.Value.([]byte)))
 	return
 }
 
@@ -30,17 +30,17 @@ func getAttachment(entry k.Entry, outputLocation string) (s string, err error) {
 	defer f.Close()
 
 	attachment := entry.Get("attachment")
-	if attachment == nil {
+	if attachment == (k.Value{}) {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	written, err := f.Write(attachment.Value())
+	written, err := f.Write(attachment.Value.([]byte))
 	if err != nil {
 		err = fmt.Errorf("could not write to [%s]", outputLocation)
 		return
 	}
 
-	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", attachment.Name(), written, outputLocation)
+	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", attachment.Name, written, outputLocation)
 	return
 }
 
@@ -70,8 +70,8 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 		}
 		for i, entry := range location.Entries() {
 
-			if string(entry.Get("title").Value()) == name || (intVersion >= 0 && i == intVersion) {
-				output, err := runAttachCommands(args, cmd, entry)
+			if entry.Get("title").Value.(string) == name || (intVersion >= 0 && i == intVersion) {
+				output, err := runAttachCommands(args, cmd, entry, shell)
 				if err != nil {
 					shell.Printf("could not run command [%s]: %s\n", cmd, err)
 					return
@@ -84,16 +84,41 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 	}
 }
 
+func createAttachment(entry k.Entry, name string, path string) (output string, err error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("could not open %s: %s", path, err)
+	}
+
+	blob := k.Value{
+		Name:  name,
+		Value: data,
+	}
+	entry.Set("attachment", blob)
+	DBChanged = true
+	return "added attachment to database", nil
+}
+
 // helper function run running attach commands. 'args' are all arguments after the attach command
 // for instance, 'attach get foo bar' will result in args being '[foo, bar]'
-func runAttachCommands(args []string, cmd string, entry k.Entry) (output string, err error) {
+func runAttachCommands(args []string, cmd string, entry k.Entry, shell *ishell.Shell) (output string, err error) {
 	switch cmd {
+	// attach create attachmentName /path/to/file
+	case "create":
+		if len(args) < 3 {
+			return "", fmt.Errorf("bad syntax")
+		}
+		return createAttachment(entry, args[1], args[2])
 	case "get":
 		if len(args) < 2 {
 			return "", fmt.Errorf("bad syntax")
 		}
 
-		return getAttachment(entry, args[1])
+		outputLocation := args[1]
+		if !confirmOverwrite(shell, outputLocation) {
+			return "aborting", nil
+		}
+		return getAttachment(entry, outputLocation)
 	case "details":
 		return listAttachment(entry)
 	default:

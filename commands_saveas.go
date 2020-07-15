@@ -24,6 +24,7 @@ func generateRandomString(length int) (str string) {
 
 // loadOrGenerateKey will return a file handle for the key, will prompt the user to generate a key if they so desire.
 // if the key doesn't exist and the user declines to generate it, will return a nil reader and a nil error
+// FIXME user should provide key, or utility should use actual key gen utility to do ti, this utility has no business generating one
 func loadOrGenerateKey(shell *ishell.Shell, path string) (f io.Reader, err error) {
 	if _, err := os.Stat(path); err != nil {
 		shell.Printf("%s does not exist: generate a key at that location? [yes]\n", path)
@@ -54,6 +55,13 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Println(errString)
 			return
 		}
+
+		savePath := c.Args[0]
+		if !confirmOverwrite(shell, savePath) {
+			shell.Println("not overwriting existing file")
+			return
+		}
+
 		var file io.Reader
 		if len(c.Args) >= 2 {
 			_file, err := loadOrGenerateKey(shell, c.Args[1])
@@ -96,14 +104,17 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		oldPath := db.SavePath()
-		db.SetSavePath(c.Args[0])
+		if err := removeLockfile(oldPath); err != nil {
+			shell.Printf("could not remove lockfile from old path '%s'\n", oldPath)
+		}
+		db.SetSavePath(savePath)
 		if err := db.Save(); err != nil {
 			db.SetSavePath(oldPath)
 			shell.Printf("could not save database: %s\n", err)
-			return
+			// fall through to get the lock file back in place
 		}
-		shell.Set("filePath", c.Args[0])
-		if err := setLockfile(shell); err != nil {
+
+		if err := setLockfile(db.SavePath()); err != nil {
 			shell.Printf("could not create lock file, data corruption may occur!: %s", err)
 			return
 		}

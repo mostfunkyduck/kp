@@ -49,34 +49,37 @@ func (e *Entry) Get(field string) (rv k.Value) {
 		value = e.entry.Notes
 	case fieldAttachment:
 		if ! e.entry.HasAttachment() {
-			return Value{}
+			return k.Value{}
 		}
-		return Value{
-			name: e.entry.Attachment.Name,
-			value: e.entry.Attachment.Data,
+		return k.Value{
+			Name: e.entry.Attachment.Name,
+			Value: e.entry.Attachment.Data,
 		}
 	default:
-		return Value{}
+		return k.Value{}
 	}
-	return Value {
-		name: name,
-		value: []byte(value),
+	return k.Value {
+		Name: name,
+		Value: value,
 	}
 }
 
-func (e *Entry) Set(field string, value string) (updated bool) {
+func (e *Entry) Set(field string, value k.Value) (updated bool) {
 	updated = true
 	switch strings.ToLower(field) {
 	case fieldTitle:
-		e.entry.Title = value
+		e.entry.Title = value.Value.(string)
 	case fieldUn:
-		e.entry.Username = value
+		e.entry.Username = value.Value.(string)
 	case fieldPw:
-		e.entry.Password = value
+		e.entry.Password = value.Value.(string)
 	case fieldUrl:
-		e.entry.URL = value
+		e.entry.URL = value.Value.(string)
 	case fieldNotes:
-		e.entry.Notes = value
+		e.entry.Notes = value.Value.(string)
+	case fieldAttachment:
+		e.entry.Attachment.Name = value.Name
+		e.entry.Attachment.Data = value.Value.([]byte)
 	default:
 		updated = false
 	}
@@ -110,7 +113,7 @@ func (e *Entry) Parent() k.Group {
 
 func (e *Entry) Pwd() string {
 	groupPath := e.Parent().Pwd()
-	return groupPath + "/" + string(e.Get("title").Value())
+	return groupPath + e.Get("title").Value.(string)
 }
 
 func (e *Entry) Raw() interface{} {
@@ -162,17 +165,17 @@ func (e *Entry) Output(s *ishell.Shell, full bool) {
 	s.Printf("Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
 	s.Printf("Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
 	s.Printf("Location:\t%s\n", e.Pwd())
-	s.Printf("Title:\t%s\n", string(e.Get("title").Value()))
-	s.Printf("URL:\t%s\n", string(e.Get("url").Value()))
-	s.Printf("Username:\t%s\n", string(e.Get("username").Value()))
+	s.Printf("Title:\t%s\n", e.Get("title").Value.(string))
+	s.Printf("URL:\t%s\n", e.Get("url").Value.(string))
+	s.Printf("Username:\t%s\n", e.Get("username").Value.(string))
 	password := "[redacted]"
 	if full {
-		password = string(e.Get("password").Value())
+		password = e.Get("password").Value.(string)
 	}
 	s.Printf("Password:\t%s\n", password)
-	s.Printf("Notes:\n%s\n", string(e.Get("notes").Value()))
+	s.Printf("Notes:\n%s\n", e.Get("notes").Value.(string))
 	if e.entry.HasAttachment() {
-		s.Printf("Attachment:\t%s\n", e.Get("attachment").Name())
+		s.Printf("Attachment:\t%s\n", e.Get("attachment").Name)
 	}
 }
 /**

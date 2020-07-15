@@ -25,12 +25,6 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 	return "", true
 }
 
-func getRoot(location *keepass.Group) (root *keepass.Group) {
-	for root = location; root.Parent() != nil; root = root.Parent() {
-	}
-	return root
-}
-
 // TODO break this function down, it's too long and mildly complicated
 func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 	for {
@@ -108,8 +102,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 			return nil, false
 		}
 
-		shell.Set("filePath", dbPath)
-		if err := setLockfile(shell); err != nil {
+		if err := setLockfile(dbPath); err != nil {
 			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
 			return nil, false
 		}
@@ -117,8 +110,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 	}
 }
 
-func setLockfile(shell *ishell.Shell) error {
-	filePath := shell.Get("filePath").(string)
+func setLockfile(filePath string) error {
 	if filePath != "" {
 		if _, err := os.Create(filePath + ".lock"); err != nil {
 			return fmt.Errorf("could not create lock file at path '%s.lock': %s", filePath, err)
@@ -127,8 +119,8 @@ func setLockfile(shell *ishell.Shell) error {
 	return nil
 }
 
-func removeLockfile(shell *ishell.Shell) error {
-	filePath := shell.Get("filePath").(string)
+// removeLockfile removes the lock file on the current savepath of the database
+func removeLockfile(filePath string) error {
 	if filePath != "" {
 		if err := os.Remove(filePath + ".lock"); err != nil {
 			return fmt.Errorf("could not remove lockfile: %s", err)
@@ -151,7 +143,7 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 	entryName := entryNameBits[len(entryNameBits)-1]
 	for i, entry := range location.Entries() {
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == string(entry.Get("title").Value()) ||
+			entryName == entry.Get("title").Value.(string) ||
 			entryName == entry.UUIDString() {
 			return entry, true
 		}
@@ -190,27 +182,27 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 		return fmt.Errorf("could not set title: %s", err)
 	}
 
-	if url, err = doPrompt(shell, "URL", string(e.Get("url").Value())); err != nil {
+	if url, err = doPrompt(shell, "URL", e.Get("url").Value.(string)); err != nil {
 		return fmt.Errorf("could not set URL: %s", err)
 	}
 
-	if un, err = doPrompt(shell, "Username", string(e.Get("username").Value())); err != nil {
+	if un, err = doPrompt(shell, "Username", e.Get("username").Value.(string)); err != nil {
 		return fmt.Errorf("could not set username: %s", err)
 	}
 
-	if pw, err = getPassword(shell, string(e.Get("password").Value())); err != nil {
+	if pw, err = getPassword(shell, e.Get("password").Value.(string)); err != nil {
 		return fmt.Errorf("could not set password: %s", err)
 	}
 
-	if notes, err = getNotes(shell, string(e.Get("notes").Value())); err != nil {
+	if notes, err = getNotes(shell, e.Get("notes").Value.(string)); err != nil {
 		return fmt.Errorf("could not get notes: %s", err)
 	}
 
-	if e.Set("title", title) ||
-		e.Set("url", url) ||
-		e.Set("username", un) ||
-		e.Set("password", pw) ||
-		e.Set("notes", notes) {
+	if e.Set("title", k.Value{Value: title}) ||
+		e.Set("url", k.Value{Value: url}) ||
+		e.Set("username", k.Value{Value: un}) ||
+		e.Set("password", k.Value{Value: pw}) ||
+		e.Set("notes", k.Value{Value: notes}) {
 
 		shell.Println("edit successful, database has changed!")
 		DBChanged = true
@@ -304,10 +296,6 @@ func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err er
 // promptAndSave prompts the user to save and returns whether or not they agreed to do so.
 // it also makes sure that there's actually a path to save to
 func promptAndSave(shell *ishell.Shell) error {
-	filePath := shell.Get("filePath").(string)
-	if filePath == "" {
-		return fmt.Errorf("no file path for database")
-	}
 
 	shell.Printf("save database?: [Y/n]  ")
 	line, err := shell.ReadLineErr()
@@ -321,10 +309,7 @@ func promptAndSave(shell *ishell.Shell) error {
 	}
 
 	db := shell.Get("db").(k.Database)
-	oldPath := db.SavePath()
-	db.SetSavePath(filePath)
 	if err := db.Save(); err != nil {
-		db.SetSavePath(oldPath)
 		return fmt.Errorf("could not save database: %s", err)
 	}
 
@@ -346,11 +331,11 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	switch entryData {
 	// FIXME hardcoded values
 	case "username":
-		data = string(entry.Get("username").Value())
+		data = entry.Get("username").Value.(string)
 	case "password":
-		data = string(entry.Get("password").Value())
+		data = entry.Get("password").Value.(string)
 	case "url":
-		data = string(entry.Get("url").Value())
+		data = entry.Get("url").Value.(string)
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}
@@ -366,4 +351,21 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	shell.Printf("%s copied!\n", entryData)
 	shell.Println("(access time has been updated, will be persisted on next save)")
 	return nil
+}
+
+// confirmOverwrite prompts the user about overwriting a given file
+// it returns whether or not the user wants to overwrite
+func confirmOverwrite(shell *ishell.Shell, path string) bool {
+	shell.Printf("'%s' exists, overwrite? [y/N]  ", path)
+	line, err := shell.ReadLineErr()
+	if err != nil {
+		shell.Printf("could not read user input: %s\n", line)
+		return false
+	}
+
+	if line == "y" {
+		shell.Println("overwriting")
+		return true
+	}
+	return false
 }

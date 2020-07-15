@@ -74,7 +74,7 @@ func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (fina
 
 		for i, entry := range currentLocation.Entries() {
 			// is the entity we're looking for this index or this entry?
-			if string(entry.Get("title").Value()) == part || strconv.Itoa(i) == part {
+			if entry.Get("title").Value.(string) == part || strconv.Itoa(i) == part {
 				found = true
 				break
 			}
