@@ -19,9 +19,10 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("cannot create duplicate entity '%s'\n", c.Args[0])
 			return
 		}
+
 		path := strings.Split(c.Args[0], "/")
 		db := shell.Get("db").(k.Database)
-		location, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
+		location, _, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
 		if err != nil {
 			shell.Printf("invalid path: " + err.Error())
 			return

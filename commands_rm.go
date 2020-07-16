@@ -56,7 +56,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		db := shell.Get("db").(k.Database)
 		currentLocation := db.CurrentLocation()
-		newLocation, err := db.TraversePath(currentLocation, targetPath)
+		newLocation, entry, err := db.TraversePath(currentLocation, targetPath)
 		if err != nil {
 			shell.Printf("could not reach location %s: %s", targetPath, err)
 			return
@@ -65,7 +65,14 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		// trim down to the actual name of the entity we want to kill
 		pathbits := strings.Split(targetPath, "/")
 		target := pathbits[len(pathbits)-1]
-		if groupMode {
+
+		// only remove groups if the specified target was a group
+		if entry != nil {
+			if err := removeEntry(newLocation, target); err != nil {
+				shell.Printf("error removing entry: %s\n", err)
+				return
+			}
+		} else if groupMode {
 			if newLocation.Parent() == nil {
 				shell.Println("cannot remove root node")
 				return
@@ -84,12 +91,11 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 				return
 			}
 			return
-		}
-
-		if err := removeEntry(newLocation, target); err != nil {
-			shell.Printf("error removing entry: %s\n", err)
+		} else {
+			shell.Printf("'%s' is a group - try rerunning with '-r'\n", targetPath)
 			return
 		}
+
 		shell.Printf("successfully removed '%s'\n", targetPath)
 
 		DBChanged = true

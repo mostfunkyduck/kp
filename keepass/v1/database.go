@@ -31,13 +31,14 @@ func NewDatabase(db *keepass.Database, savePath string) k.Database {
 }
 
 // traversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
-// if the path points to an entry, the parent group is returned, otherwise the target group is returned
-func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (finalLocation k.Group, err error) {
+// if the path points to an entry, the parent group is returned as well as the entry.
+// If the path points to a group, the entry will be nil
+func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (finalLocation k.Group, finalEntry k.Entry, err error) {
 	currentLocation := startingLocation
 	root := d.Root()
 	if fullPath == "/" {
 		// short circuit now
-		return root, nil
+		return root, nil, nil
 	}
 
 	if strings.HasPrefix(fullPath, "/") {
@@ -45,9 +46,11 @@ func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (fina
 		currentLocation = root
 	}
 
-	// break the path up into components
-	path := strings.Split(fullPath, "/")
-	for _, part := range path {
+	// break the path up into components, remove terminal slashes since they don't actually do anything
+	path := strings.Split(strings.TrimSuffix(fullPath, "/"), "/")
+	// tracks whether or not the traversal encountered an entry
+loop:
+	for i, part := range path {
 		if part == "." || part == "" {
 			continue
 		}
@@ -59,32 +62,37 @@ func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (fina
 				continue
 			}
 			// we're at the root, the user wanted to go higher, that's no bueno
-			return nil, fmt.Errorf("root group has no parent")
+			return nil, nil, fmt.Errorf("tried to go to parent directory of '/'")
 		}
 
 		// regular traversal
-		found := false
 		for _, group := range currentLocation.Groups() {
 			// was the entity being searched for this group?
 			if group.Name() == part {
 				currentLocation = group
-				found = true
-				break
+				continue loop
 			}
 		}
 
-		for i, entry := range currentLocation.Entries() {
+		for j, entry := range currentLocation.Entries() {
 			// is the entity we're looking for this index or this entry?
-			if entry.Get("title").Value.(string) == part || strconv.Itoa(i) == part {
-				found = true
-				break
+			if entry.Get("title").Value.(string) == part || strconv.Itoa(j) == part {
+				if i != len(path)-1 {
+					// we encountered an entry before the end of the path, entries have no subgroups,
+					// so this path is invalid
+					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Pwd(), fullPath)
+				}
+				// this is the end of the path, return the parent group and the entry
+				return currentLocation, entry, nil
 			}
 		}
-		if !found {
-			return nil, fmt.Errorf("could not find a group or entry named [%s]", part)
-		}
+		// getting here means that we found neither a group nor an entry that matched 'part'
+		// both of the loops looking for those short circuit when they find what they need
+		return nil, nil, fmt.Errorf("could not find a group or entry named '%s'", part)
 	}
-	return currentLocation, nil
+	// we went all the way through the path and it points to currentLocation,
+	// if it pointed to an entry, it would have returned above
+	return currentLocation, nil, nil
 }
 
 // Root returns the DB root

@@ -15,9 +15,14 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		if len(c.Args) == 0 {
 			currentLocation = db.Root()
 		} else {
-			newLocation, err := db.TraversePath(currentLocation, args[0])
+			newLocation, entry, err := db.TraversePath(currentLocation, args[0])
 			if err != nil {
 				shell.Println(fmt.Sprintf("invalid path: %s", err))
+				return
+			}
+
+			if entry != nil {
+				shell.Printf("'%s' is an entry, not a group\n", args[0])
 				return
 			}
 			currentLocation = newLocation

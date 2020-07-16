@@ -30,7 +30,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 
 		db := shell.Get("db").(k.Database)
 		location := db.CurrentLocation()
-		location, err := db.TraversePath(location, rawPath)
+		location, _, err := db.TraversePath(location, rawPath)
 		if err != nil {
 			return []string{}
 		}

@@ -1,6 +1,7 @@
 package keepassv1
 
 import (
+	"fmt"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -19,8 +20,19 @@ func (g *Group) Name() string {
 	return g.group.Name
 }
 
+func (g *Group) SetName(name string) {
+	g.group.Name = name
+}
+
 func (g *Group) Parent() k.Group {
 	return NewGroup(g.group.Parent())
+}
+
+func (g *Group) SetParent(parent k.Group) error {
+	if err := g.group.SetParent(parent.Raw().(*keepass.Group)); err != nil {
+		return fmt.Errorf("could not change group parent: %s", err)
+	}
+	return nil
 }
 
 func (g *Group) Entries() (rv []k.Entry) {

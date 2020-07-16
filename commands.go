@@ -132,15 +132,21 @@ func removeLockfile(filePath string) error {
 // getEntryByPath returns the entry at path 'path' using context variables in shell 'shell'
 func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 	db := shell.Get("db").(k.Database)
-	location, err := db.TraversePath(db.CurrentLocation(), path)
+	location, entry, err := db.TraversePath(db.CurrentLocation(), path)
 	if err != nil {
 		return nil, false
 	}
 
+	if entry == nil {
+		return nil, false
+	}
+
+	// a little extra work so that we can search by criteria other than 'title'
 	// get the base name of the entry so that we can compare it to the actual
 	// entries in this group
 	entryNameBits := strings.Split(path, "/")
 	entryName := entryNameBits[len(entryNameBits)-1]
+	// loop so that we can compare entry indices
 	for i, entry := range location.Entries() {
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
 			entryName == entry.Get("title").Value.(string) ||
@@ -153,7 +159,7 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 
 func isPresent(shell *ishell.Shell, path string) (ok bool) {
 	db := shell.Get("db").(k.Database)
-	_, err := db.TraversePath(db.CurrentLocation(), path)
+	_, _, err := db.TraversePath(db.CurrentLocation(), path)
 	return err == nil
 }
 

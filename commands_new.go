@@ -23,10 +23,16 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		db := shell.Get("db").(k.Database)
 
-		path := strings.Split(args[0], "/")
-		location, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
+		pathBits := strings.Split(args[0], "/")
+		parentPath := strings.Join(pathBits[0:len(pathBits)-1], "/")
+		location, entry, err := db.TraversePath(db.CurrentLocation(), parentPath)
 		if err != nil {
 			shell.Println("invalid path: " + err.Error())
+			return
+		}
+
+		if entry != nil {
+			shell.Printf("entry '%s' already exists!\n", entry.Pwd())
 			return
 		}
 
@@ -36,7 +42,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		shell.ShowPrompt(false)
-		entry, err := location.NewEntry()
+		entry, err = location.NewEntry()
 		if err != nil {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
@@ -45,7 +51,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		entry.SetLastModificationTime(time.Now())
 		entry.SetLastAccessTime(time.Now())
 
-		err = promptForEntry(shell, entry, path[len(path)-1])
+		err = promptForEntry(shell, entry, pathBits[len(pathBits)-1])
 		shell.ShowPrompt(true)
 		if err != nil {
 			shell.Printf("could not collect user input: %s\n", err)

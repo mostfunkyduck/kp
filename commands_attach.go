@@ -55,7 +55,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 		path := args[0]
 		db := shell.Get("db").(k.Database)
 		currentLocation := db.CurrentLocation()
-		location, err := db.TraversePath(currentLocation, path)
+		location, _, err := db.TraversePath(currentLocation, path)
 		if err != nil {
 			shell.Printf("error traversing path: %s\n", err)
 			return
