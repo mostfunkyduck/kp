@@ -213,7 +213,7 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 		shell.Println("edit successful, database has changed!")
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
-			return fmt.Errorf("could not save database: %s", err)
+			shell.Printf("could not save: %s", err)
 		}
 	}
 
