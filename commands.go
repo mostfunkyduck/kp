@@ -159,8 +159,8 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 
 func isPresent(shell *ishell.Shell, path string) (ok bool) {
 	db := shell.Get("db").(k.Database)
-	_, _, err := db.TraversePath(db.CurrentLocation(), path)
-	return err == nil
+	l, e, err := db.TraversePath(db.CurrentLocation(), path)
+	return err == nil && (l != nil || e != nil)
 }
 
 // doPrompt is a convenience function that takes a prompt and a default and

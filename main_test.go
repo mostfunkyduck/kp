@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/abiosoft/ishell"
+	"github.com/abiosoft/readline"
 	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/v1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -30,20 +31,25 @@ func (f FakeWriter) Write(p []byte) (n int, err error) {
 }
 
 type testResources struct {
-	Shell   *ishell.Shell
-	Context *ishell.Context
-	Group   k.Group
-	Path    string
-	Db      k.Database
-	Entry   k.Entry
-	F       FakeWriter
+	Shell    *ishell.Shell
+	Context  *ishell.Context
+	Group    k.Group
+	Path     string
+	Db       k.Database
+	Entry    k.Entry
+	F        FakeWriter
+	Readline *readline.Instance
 }
 
 func createTestResources(t *testing.T) (r testResources) {
-	r.Shell = ishell.New()
+	var err error
+	r.Readline, err = readline.New("")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	r.Shell = ishell.NewWithReadline(r.Readline)
 	r.Path = "test/test"
 	r.Context = &ishell.Context{}
-	var err error
 	db, err := keepass.New(&keepass.Options{})
 	if err != nil {
 		t.Fatalf("could not open test db: %s", err)

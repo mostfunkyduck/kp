@@ -10,14 +10,22 @@ import (
 func TestMkdir(t *testing.T) {
 	// Happy path
 	r := createTestResources(t)
-	groupName := "test"
+	groupName := "test2"
+	r.Db.SetCurrentLocation(r.Group)
 	r.Context.Args = []string{
 		groupName,
 	}
+	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
+		t.Fatalf(err.Error())
+	}
 	main.NewGroup(r.Shell)(r.Context)
-	l, _, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Pwd()+groupName)
+	l, e, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Pwd()+groupName)
 	if err != nil {
 		t.Fatalf("could not traverse path: %s", err)
+	}
+
+	if e != nil {
+		t.Fatalf("entry found instead of target for new group\n")
 	}
 
 	expected := r.Db.CurrentLocation().Pwd() + groupName + "/"
