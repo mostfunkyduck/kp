@@ -3,10 +3,12 @@ package main_test
 import (
 	"strings"
 	"testing"
+
+	"github.com/abiosoft/ishell"
 	main "github.com/mostfunkyduck/kp"
 	k "github.com/mostfunkyduck/kp/keepass"
-	"github.com/abiosoft/ishell"
 )
+
 func testShowOutput(output string, substr string, t *testing.T) {
 	if !strings.Contains(output, substr) {
 		t.Errorf("output [%s] does not contain expected string [%s]", output, substr)
@@ -40,7 +42,7 @@ func TestShowAttachment(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{r.Path}
 	att := k.Value{
-		Name: "asdf",
+		Name:  "asdf",
 		Value: []byte("yaakov is cool"),
 	}
 	r.Entry.Set("attachment", att)
@@ -56,5 +58,3 @@ func TestShowFullMode(t *testing.T) {
 	main.Show(r.Shell)(r.Context)
 	testEntry(false, t, r)
 }
-
-

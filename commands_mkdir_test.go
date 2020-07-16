@@ -3,6 +3,7 @@ package main_test
 import (
 	"strings"
 	"testing"
+
 	main "github.com/mostfunkyduck/kp"
 )
 
@@ -14,12 +15,12 @@ func TestMkdir(t *testing.T) {
 		groupName,
 	}
 	main.NewGroup(r.Shell)(r.Context)
-	l, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Pwd() + groupName)
+	l, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Pwd()+groupName)
 	if err != nil {
 		t.Fatalf("could not traverse path: %s", err)
 	}
 
-	expected := r.Db.CurrentLocation().Pwd() + groupName + "/" 
+	expected := r.Db.CurrentLocation().Pwd() + groupName + "/"
 	if l.Pwd() != expected {
 		t.Fatalf("[%s] != [%s]", l.Pwd(), expected)
 	}

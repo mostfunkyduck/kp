@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -11,11 +12,11 @@ import (
 
 // field name constants
 const (
-	fieldUn = "username"
-	fieldPw = "password"
-	fieldUrl = "url"
-	fieldNotes = "notes"
-	fieldTitle = "title"
+	fieldUn         = "username"
+	fieldPw         = "password"
+	fieldUrl        = "url"
+	fieldNotes      = "notes"
+	fieldTitle      = "title"
 	fieldAttachment = "attachment"
 )
 
@@ -48,18 +49,18 @@ func (e *Entry) Get(field string) (rv k.Value) {
 	case fieldNotes:
 		value = e.entry.Notes
 	case fieldAttachment:
-		if ! e.entry.HasAttachment() {
+		if !e.entry.HasAttachment() {
 			return k.Value{}
 		}
 		return k.Value{
-			Name: e.entry.Attachment.Name,
+			Name:  e.entry.Attachment.Name,
 			Value: e.entry.Attachment.Data,
 		}
 	default:
 		return k.Value{}
 	}
-	return k.Value {
-		Name: name,
+	return k.Value{
+		Name:  name,
 		Value: value,
 	}
 }
@@ -178,6 +179,7 @@ func (e *Entry) Output(s *ishell.Shell, full bool) {
 		s.Printf("Attachment:\t%s\n", e.Get("attachment").Name)
 	}
 }
+
 /**
 // Copy returns a new copy of this wrapper, complete with a new keepass entry underneath it
 // it also returns a boolean indicating whether the two entries differ

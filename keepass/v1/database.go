@@ -5,10 +5,11 @@ package keepassv1
 
 import (
 	"fmt"
-	k "github.com/mostfunkyduck/kp/keepass"
 	"os"
 	"strconv"
 	"strings"
+
+	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -175,4 +176,3 @@ func (d *Database) Pwd() (fullPath string) {
 	group := d.CurrentLocation()
 	return group.Pwd()
 }
-

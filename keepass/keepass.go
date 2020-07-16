@@ -3,10 +3,12 @@ package keepass
 import (
 	"io"
 	"time"
+
 	"github.com/abiosoft/ishell"
 )
 
 type version int
+
 const (
 	V1 version = iota
 	V2
@@ -40,8 +42,8 @@ type Database interface {
 
 // Options for SetOptions in the database interface
 type Options struct {
-	KeyReader	io.Reader
-	Password	string
+	KeyReader io.Reader
+	Password  string
 }
 
 type Group interface {
@@ -91,6 +93,6 @@ type Entry interface {
 }
 
 type Value struct {
-	Value	interface{} // can be either binary or string data
-	Name string // v1 compatibility - attachments have their own name within entries
+	Value interface{} // can be either binary or string data
+	Name  string      // v1 compatibility - attachments have their own name within entries
 }

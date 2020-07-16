@@ -3,6 +3,7 @@ package keepassv1_test
 import (
 	"strconv"
 	"testing"
+
 	v1 "github.com/mostfunkyduck/kp/keepass/v1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -19,7 +20,7 @@ func TestProperties(t *testing.T) {
 	}
 }
 
-func TestGroupFunctions (t *testing.T) {
+func TestGroupFunctions(t *testing.T) {
 	ttlEntries := 50
 	testName := "test name"
 	db, err := keepass.New(&keepass.Options{})

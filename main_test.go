@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/v1"
-	"github.com/abiosoft/ishell"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -57,16 +57,16 @@ func createTestResources(t *testing.T) (r testResources) {
 	if err != nil {
 		t.Fatalf("could not create entry: %s", err)
 	}
-	settings := map[string]string {
-		"title": "test",
-		"url": "example.com",
+	settings := map[string]string{
+		"title":    "test",
+		"url":      "example.com",
 		"username": "username",
 		"password": "password",
-		"notes": "notes",
+		"notes":    "notes",
 	}
 	for key, v := range settings {
 		val := k.Value{
-			Name: key,
+			Name:  key,
 			Value: v,
 		}
 		r.Entry.Set(key, val)

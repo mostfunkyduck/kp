@@ -13,3 +13,8 @@ cscope:
 	find . -name "*.go" -print > cscope.files
 	# running cscope, the -b and -k flags will keep things narrowly scoped
 	cscope -b -k
+
+goimports:
+	goimports -w *.go
+	goimports -w keepass/*.go
+	goimports -w keepass/v1/*.go

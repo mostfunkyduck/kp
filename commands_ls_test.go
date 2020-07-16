@@ -3,6 +3,7 @@ package main_test
 import (
 	"strings"
 	"testing"
+
 	main "github.com/mostfunkyduck/kp"
 )
 
@@ -13,7 +14,7 @@ func TestLsNoArgsFromGroup(t *testing.T) {
 	r.Group.NewSubgroup("test")
 	r.Db.SetCurrentLocation(r.Group)
 	main.Ls(r.Shell)(r.Context)
-	if ! strings.Contains(r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test") {
+	if !strings.Contains(r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test") {
 		t.Fatalf("[%s] does not contain  [%s]", r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test")
 	}
 }

@@ -1,9 +1,11 @@
 package main_test
 
 import (
-	main "github.com/mostfunkyduck/kp"
 	"testing"
+
+	main "github.com/mostfunkyduck/kp"
 )
+
 func TestCdToGroup(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{
@@ -31,4 +33,3 @@ func TestCdToRoot(t *testing.T) {
 		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Pwd(), r.Db.Root().Pwd())
 	}
 }
-
