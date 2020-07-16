@@ -1,13 +1,14 @@
-package main
+package main_test
 
-// Tests the shell commands
-// This will test shell output because there's not really any other way to do it.
+// Scaffolding for running shell command tests
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
+	k "github.com/mostfunkyduck/kp/keepass"
+	v1 "github.com/mostfunkyduck/kp/keepass/v1"
 	"github.com/abiosoft/ishell"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -31,10 +32,10 @@ func (f FakeWriter) Write(p []byte) (n int, err error) {
 type testResources struct {
 	Shell   *ishell.Shell
 	Context *ishell.Context
-	Group   *keepass.Group
+	Group   k.Group
 	Path    string
-	Db      *keepass.Database
-	Entry   *keepass.Entry
+	Db      k.Database
+	Entry   k.Entry
 	F       FakeWriter
 }
 
@@ -43,25 +44,34 @@ func createTestResources(t *testing.T) (r testResources) {
 	r.Path = "test/test"
 	r.Context = &ishell.Context{}
 	var err error
-	r.Db, err = keepass.New(&keepass.Options{})
+	db, err := keepass.New(&keepass.Options{})
 	if err != nil {
 		t.Fatalf("could not open test db: %s", err)
 	}
 
-	r.Group = r.Db.Root().NewSubgroup()
-	r.Group.Name = "test"
+	r.Db = v1.NewDatabase(db, "")
+	r.Shell.Set("db", r.Db)
+	r.Group = r.Db.Root().NewSubgroup("test")
 
 	r.Entry, err = r.Group.NewEntry()
 	if err != nil {
 		t.Fatalf("could not create entry: %s", err)
 	}
-	r.Entry.Title = "test"
-	r.Entry.URL = "example.com"
-	r.Entry.Username = "username"
-	r.Entry.Password = "password"
-	r.Entry.Notes = "Notes"
+	settings := map[string]string {
+		"title": "test",
+		"url": "example.com",
+		"username": "username",
+		"password": "password",
+		"notes": "notes",
+	}
+	for key, v := range settings {
+		val := k.Value{
+			Name: key,
+			Value: v,
+		}
+		r.Entry.Set(key, val)
+	}
 
-	r.Context.Set("currentLocation", r.Db.Root())
 	r.F = FakeWriter{
 		outputHolder: &outputHolder{},
 	}
@@ -71,128 +81,20 @@ func createTestResources(t *testing.T) (r testResources) {
 
 func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	o := r.F.outputHolder.output
-	testShowOutput(o, fmt.Sprintf("Location: %s", r.Path), t)
-	testShowOutput(o, fmt.Sprintf("Title: %s", r.Entry.Title), t)
-	testShowOutput(o, fmt.Sprintf("URL: %s", r.Entry.URL), t)
-	testShowOutput(o, fmt.Sprintf("Username: %s", r.Entry.Username), t)
+	testShowOutput(o, fmt.Sprintf("Location:\t%s", r.Entry.Pwd()), t)
+	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Get("title").Value), t)
+	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("url").Value), t)
+	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("username").Value), t)
 	if redactedPassword {
-		testShowOutput(o, "Password: [redacted]", t)
+		testShowOutput(o, "Password:\t[redacted]", t)
 	} else {
-		testShowOutput(o, fmt.Sprintf("Password: %s", r.Entry.Password), t)
+		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Get("password").Value), t)
 	}
 
-	testShowOutput(o, fmt.Sprintf("Notes: %s", r.Entry.Notes), t)
+	testShowOutput(o, fmt.Sprintf("Notes: %s", r.Entry.Get("notes").Value), t)
 
-	if r.Entry.HasAttachment() {
-		testShowOutput(o, fmt.Sprintf("Attachment: %s", r.Entry.Attachment.Name), t)
-	}
-}
-
-func testShowOutput(output string, substr string, t *testing.T) {
-	if !strings.Contains(output, substr) {
-		t.Errorf("output [%s] does not contain expected string [%s]", output, substr)
-	}
-}
-
-func TestShowNoArgs(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{}
-	cmd := ishell.Cmd{
-		Help: "test string",
-	}
-	r.Context.Cmd = cmd
-	Show(r.Shell)(r.Context)
-	expected := "syntax: " + r.Context.Cmd.Help
-	if r.F.outputHolder.output != expected {
-		t.Fatalf("output was incorrect: %s != %s", r.F.outputHolder.output, expected)
-	}
-}
-
-func TestShowValidArgs(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{r.Path}
-	Show(r.Shell)(r.Context)
-
-	testEntry(true, t, r)
-}
-
-func TestShowAttachment(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{r.Path}
-	r.Entry.Attachment.Name = "asdf"
-
-	Show(r.Shell)(r.Context)
-
-	testEntry(true, t, r)
-}
-
-func TestShowFullMode(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{"-f", r.Path}
-	Show(r.Shell)(r.Context)
-	testEntry(false, t, r)
-}
-
-func TestCdToGroup(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{
-		r.Group.Name,
-	}
-
-	r.Shell.Set("currentLocation", r.Group)
-
-	Cd(r.Shell)(r.Context)
-
-	l := r.Shell.Get("currentLocation").(*keepass.Group)
-	if l.ID != r.Db.Root().ID {
-		t.Fatalf("new location was not the one specified: %d != %d", l.ID, r.Group.ID)
-	}
-}
-
-func TestCdToRoot(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{}
-
-	r.Shell.Set("currentLocation", r.Group)
-
-	Cd(r.Shell)(r.Context)
-
-	l := r.Shell.Get("currentLocation").(*keepass.Group)
-	if l.ID != r.Db.Root().ID {
-		t.Fatalf("new location was not the one specified: %d != %d", l.ID, r.Group.ID)
-	}
-}
-
-func TestCdToSubgroup(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{
-		r.Group.Name,
-	}
-
-	r.Shell.Set("currentLocation", r.Db.Root())
-
-	Cd(r.Shell)(r.Context)
-
-	l := r.Shell.Get("currentLocation").(*keepass.Group)
-	if l.ID != r.Group.ID {
-		t.Fatalf("new location was not the one specified: %d != %d", l.ID, r.Group.ID)
-	}
-}
-
-func TestLsNoArgs(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{}
-	Ls(r.Shell)(r.Context)
-	if r.F.outputHolder.output != "test/" {
-		t.Fatalf("output did not contain group: %s != %s", r.F.outputHolder.output, "test/")
-	}
-}
-
-func TestLsArgs(t *testing.T) {
-	r := createTestResources(t)
-	r.Context.Args = []string{r.Path}
-	Ls(r.Shell)(r.Context)
-	if r.F.outputHolder.output != "0: test" {
-		t.Fatalf("output did not contain group: %s != %s", r.F.outputHolder.output, "test/")
+	att := r.Entry.Get("attachment")
+	if att != (k.Value{}) {
+		testShowOutput(o, fmt.Sprintf("Attachment:\t%s", att.Name), t)
 	}
 }
