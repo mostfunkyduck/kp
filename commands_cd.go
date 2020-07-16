@@ -14,14 +14,15 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		currentLocation := db.CurrentLocation()
 		if len(c.Args) == 0 {
 			currentLocation = db.Root()
+		} else {
+			newLocation, err := db.TraversePath(currentLocation, args[0])
+			if err != nil {
+				shell.Println(fmt.Sprintf("invalid path: %s", err))
+				return
+			}
+			currentLocation = newLocation
 		}
-
-		newLocation, err := db.TraversePath(currentLocation, args[0])
-		if err != nil {
-			shell.Println(fmt.Sprintf("invalid path: %s", err))
-			return
-		}
-		changeDirectory(db, newLocation, shell)
+		changeDirectory(db, currentLocation, shell)
 	}
 }
 
