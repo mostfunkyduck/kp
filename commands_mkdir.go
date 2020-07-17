@@ -28,7 +28,11 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		location.NewSubgroup(path[len(path)-1])
+		if _, err := location.NewSubgroup(path[len(path)-1]); err != nil {
+			shell.Printf("could not create subgroup: %s\n", err)
+			return
+		}
+	
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("could not save database: %s\n", err)

@@ -94,7 +94,7 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 		Name:  name,
 		Value: data,
 	}
-	entry.Set("attachment", blob)
+	entry.Set(k.Value{Name: "attachment", Value: blob})
 	DBChanged = true
 	return "added attachment to database", nil
 }

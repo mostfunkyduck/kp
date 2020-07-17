@@ -45,7 +45,7 @@ func TestShowAttachment(t *testing.T) {
 		Name:  "asdf",
 		Value: []byte("yaakov is cool"),
 	}
-	r.Entry.Set("attachment", att)
+	r.Entry.Set(att)
 
 	main.Show(r.Shell)(r.Context)
 

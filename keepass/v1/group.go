@@ -80,12 +80,12 @@ func (g *Group) IsRoot() bool {
 	return g.Parent() == nil
 }
 
-func (g *Group) NewSubgroup(name string) k.Group {
+func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	newGroup := g.group.NewSubgroup()
 	newGroup.Name = name
 	return &Group{
 		group: newGroup,
-	}
+	}, nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
@@ -120,4 +120,8 @@ func (g *Group) NewEntry() (k.Entry, error) {
 
 func (g *Group) RemoveEntry(e k.Entry) error {
 	return g.group.RemoveEntry(e.Raw().(*keepass.Entry))
+}
+
+func (g *Group) UUIDString() (string, error) {
+	return string(g.group.ID), nil
 }

@@ -4,8 +4,6 @@ import (
 	"io"
 	"regexp"
 	"time"
-
-	"github.com/abiosoft/ishell"
 )
 
 type version int
@@ -22,6 +20,7 @@ type KeepassWrapper interface {
 
 	// returns the path to the object's location
 	Path() string
+
 }
 
 type Database interface {
@@ -45,8 +44,13 @@ type Options struct {
 	Password  string
 }
 
+type UUIDer interface {
+	// We only need the string version of the UUID for this application
+	UUIDString() (string, error)
+}
 type Group interface {
 	KeepassWrapper
+	UUIDer
 	// Returns all entries in this group
 	Entries() []Entry
 
@@ -63,7 +67,7 @@ type Group interface {
 	IsRoot() bool
 
 	// Creates a new subgroup with a given name under this group
-	NewSubgroup(name string) Group
+	NewSubgroup(name string) (Group, error)
 
 	RemoveSubgroup(Group) error
 
@@ -75,14 +79,18 @@ type Group interface {
 }
 
 type Entry interface {
+	UUIDer
 	KeepassWrapper
-	// We only need the string version of the UUID for this application
-	UUIDString() string
 	// Returns the value for a given field, or nil if the field doesn't exist
 	Get(string) Value
 
+	// GetTitle and GetPassword are needed to ensure that v1 and v2 both render
+	// their specific representations of that data (they access it in different ways, fun times)
+	GetTitle() string
+	GetPassword() string
+
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
-	Set(field string, value Value) bool
+	Set(value Value) bool
 
 	// Sets the last accessed time on the entry
 	SetLastAccessTime(time.Time)
@@ -92,10 +100,12 @@ type Entry interface {
 	Parent() Group
 	SetParent(Group) error
 
-	Output(shell *ishell.Shell, full bool)
+	// Formats an entry for printing
+	Output(full bool) string
 }
 
 type Value struct {
 	Value interface{} // can be either binary or string data
 	Name  string      // v1 compatibility - attachments have their own name within entries
+	Protected bool    // only useable in v2, whether the value should be encrypted
 }

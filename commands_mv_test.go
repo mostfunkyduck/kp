@@ -22,7 +22,7 @@ func TestMv(t *testing.T) {
 func TestMvGroupOverwriteGroup(t *testing.T) {
 	r := createTestResources(t)
 	originalGroupCount := len(r.Db.Root().Groups())
-	g := r.Group.NewSubgroup(r.Group.Name())
+	g, _ := r.Group.NewSubgroup(r.Group.Name())
 	r.Db.SetCurrentLocation(r.Db.Root())
 	originalGroupPath := g.Path()
 	r.Context.Args = []string{
@@ -64,7 +64,7 @@ func TestMvEntryIntoGroup(t *testing.T) {
 	r := createTestResources(t)
 
 	newName := "test2"
-	g := r.Db.Root().NewSubgroup(newName)
+	g, _ := r.Db.Root().NewSubgroup(newName)
 	r.Db.SetCurrentLocation(r.Db.Root())
 
 	originalEntryPath := r.Entry.Path()
@@ -83,7 +83,7 @@ func TestMvEntryIntoGroup(t *testing.T) {
 func TestMvGroupIntoGroup(t *testing.T) {
 	r := createTestResources(t)
 	newName := "test"
-	g := r.Group.NewSubgroup(newName)
+	g, _ := r.Group.NewSubgroup(newName)
 	r.Db.SetCurrentLocation(r.Db.Root())
 
 	r.Context.Args = []string{

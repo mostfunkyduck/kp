@@ -11,7 +11,7 @@ import (
 func TestLsNoArgsFromGroup(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{}
-	r.Group.NewSubgroup("test")
+	_, _ = r.Group.NewSubgroup("test")
 	r.Db.SetCurrentLocation(r.Group)
 	main.Ls(r.Shell)(r.Context)
 	if !strings.Contains(r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test") {

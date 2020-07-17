@@ -148,9 +148,15 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 	entryName := entryNameBits[len(entryNameBits)-1]
 	// loop so that we can compare entry indices
 	for i, entry := range location.Entries() {
+		uuidString, err := entry.UUIDString()
+		if err != nil {
+			// TODO we're swallowing this error :(
+			// this is an edge case though
+			return nil, false
+		}
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
 			entryName == entry.Get("title").Value.(string) ||
-			entryName == entry.UUIDString() {
+			entryName == uuidString {
 			return entry, true
 		}
 	}
@@ -204,11 +210,11 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 		return fmt.Errorf("could not get notes: %s", err)
 	}
 
-	updated := e.Set("title", k.Value{Value: title})
-	updated = e.Set("url", k.Value{Value: url}) || updated
-	updated = e.Set("username", k.Value{Value: un}) || updated
-	updated = e.Set("password", k.Value{Value: pw}) || updated
-	updated = e.Set("notes", k.Value{Value: notes}) || updated
+	updated := e.Set(k.Value{Name: "title", Value: title})
+	updated = e.Set(k.Value{Name: "url", Value: url}) || updated
+	updated = e.Set(k.Value{Name: "username", Value: un}) || updated
+	updated = e.Set(k.Value{Name: "password", Value: pw}) || updated
+	updated = e.Set(k.Value{Name: "notes", Value: notes}) || updated
 
 	if updated {
 		shell.Println("edit successful, database has changed!")

@@ -62,7 +62,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 	}
 
 	if title != "" {
-		e.Set("title", k.Value{Value: title})
+		e.Set(k.Value{Name: "title", Value: title})
 	}
 	return nil
 }

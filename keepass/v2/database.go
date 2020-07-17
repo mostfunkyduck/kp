@@ -2,24 +2,25 @@ package keepassv2
 
 import (
 	"fmt"
-	"os"
 	k "github.com/mostfunkyduck/kp/keepass"
 	g "github.com/tobischo/gokeepasslib/v3"
+	"os"
 )
 
 type Database struct {
-	db *g.Database
+	db              *g.Database
 	currentLocation k.Group
-	savePath string
-	options k.Options
+	savePath        string
+	options         k.Options
 }
-	//KeepassWrapper
+
+//KeepassWrapper
 func (d *Database) Raw() interface{} {
 	return d.db
 }
 
 func (d *Database) Root() k.Group {
-	return &RootGroup {
+	return &RootGroup{
 		root: d.db.Content.Root,
 	}
 }
@@ -68,6 +69,15 @@ func writeDb(db *g.Database, path string) error {
 	return nil
 }
 func (d *Database) Save() error {
+	if err := d.db.LockProtectedEntries(); err != nil {
+		return fmt.Errorf("could not lock (encrypt) protected entries: %s", err)
+	}
+	defer func() {
+		if err := d.db.UnlockProtectedEntries(); err != nil {
+			fmt.Printf("error unlocking protected entries, database may be corrupted")
+		}
+	}()
+
 	if err := d.Backup(); err != nil {
 		return fmt.Errorf("could not back up database: %s", err)
 	}

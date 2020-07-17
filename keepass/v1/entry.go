@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -30,8 +29,8 @@ func NewEntry(entry *keepass.Entry) k.Entry {
 	}
 }
 
-func (e *Entry) UUIDString() string {
-	return e.entry.UUID.String()
+func (e *Entry) UUIDString() (string, error) {
+	return e.entry.UUID.String(), nil
 }
 
 func (e *Entry) Get(field string) (rv k.Value) {
@@ -65,8 +64,9 @@ func (e *Entry) Get(field string) (rv k.Value) {
 	}
 }
 
-func (e *Entry) Set(field string, value k.Value) (updated bool) {
+func (e *Entry) Set(value k.Value) (updated bool) {
 	updated = true
+	field := value.Name
 	switch strings.ToLower(field) {
 	case fieldTitle:
 		e.entry.Title = value.Value.(string)
@@ -158,45 +158,35 @@ func formatTime(t time.Time) (formatted string) {
 	return
 }
 
-func (e *Entry) Output(s *ishell.Shell, full bool) {
-	s.Printf("\n")
-	s.Printf("UUID:\t%s\n", e.entry.UUID)
+func (e *Entry) Output(full bool) (val string) {
+	var b strings.Builder
+	val = "\n"
+	fmt.Fprintf(&b, "\n")
+	fmt.Fprintf(&b, "UUID:\t%s\n", e.entry.UUID)
 
-	s.Printf("Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
-	s.Printf("Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
-	s.Printf("Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
-	s.Printf("Location:\t%s\n", e.Path())
-	s.Printf("Title:\t%s\n", e.Get("title").Value.(string))
-	s.Printf("URL:\t%s\n", e.Get("url").Value.(string))
-	s.Printf("Username:\t%s\n", e.Get("username").Value.(string))
+	fmt.Fprintf(&b, "Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
+	fmt.Fprintf(&b, "Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
+	fmt.Fprintf(&b, "Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
+	fmt.Fprintf(&b, "Location:\t%s\n", e.Path())
+	fmt.Fprintf(&b, "Title:\t%s\n", e.Get("title").Value.(string))
+	fmt.Fprintf(&b, "URL:\t%s\n", e.Get("url").Value.(string))
+	fmt.Fprintf(&b, "Username:\t%s\n", e.Get("username").Value.(string))
 	password := "[redacted]"
 	if full {
 		password = e.Get("password").Value.(string)
 	}
-	s.Printf("Password:\t%s\n", password)
-	s.Printf("Notes:\n%s\n", e.Get("notes").Value.(string))
+	fmt.Fprintf(&b, "Password:\t%s\n", password)
+	fmt.Fprintf(&b, "Notes:\n%s\n", e.Get("notes").Value.(string))
 	if e.entry.HasAttachment() {
-		s.Printf("Attachment:\t%s\n", e.Get("attachment").Name)
+		fmt.Fprintf(&b, "Attachment:\t%s\n", e.Get("attachment").Name)
 	}
+	return b.String()
 }
 
-/**
-// Copy returns a new copy of this wrapper, complete with a new keepass entry underneath it
-// it also returns a boolean indicating whether the two entries differ
-func Copy() (e Entry, changed bool) {
-	changed = false
-	if dest.Title != src.Title ||
-		dest.Username != src.Username ||
-		dest.Password != src.Password ||
-		dest.Notes != src.Notes ||
-		dest.URL != src.URL {
-		changed = true
-	}
-	dest.Title = src.Title
-	dest.Username = src.Username
-	dest.Password = src.Password
-	dest.Notes = src.Notes
-	dest.URL = src.URL
-	return changed
+func (e *Entry) GetPassword() string {
+	return e.Get("password").Value.(string)
 }
-**/
+
+func (e *Entry) GetTitle() string {
+	return e.Get("title").Value.(string)
+}

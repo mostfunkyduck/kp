@@ -57,7 +57,7 @@ func createTestResources(t *testing.T) (r testResources) {
 
 	r.Db = v1.NewDatabase(db, "")
 	r.Shell.Set("db", r.Db)
-	r.Group = r.Db.Root().NewSubgroup("test")
+	r.Group, _ = r.Db.Root().NewSubgroup("test")
 
 	r.Entry, err = r.Group.NewEntry()
 	if err != nil {
@@ -75,7 +75,7 @@ func createTestResources(t *testing.T) (r testResources) {
 			Name:  key,
 			Value: v,
 		}
-		r.Entry.Set(key, val)
+		r.Entry.Set(val)
 	}
 
 	r.F = FakeWriter{
