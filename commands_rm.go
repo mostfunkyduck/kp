@@ -56,7 +56,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		db := shell.Get("db").(k.Database)
 		currentLocation := db.CurrentLocation()
-		newLocation, entry, err := db.TraversePath(currentLocation, targetPath)
+		newLocation, entry, err := TraversePath(db, currentLocation, targetPath)
 		if err != nil {
 			shell.Printf("could not reach location %s: %s", targetPath, err)
 			return

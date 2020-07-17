@@ -13,7 +13,7 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		currentLocation := db.CurrentLocation()
 		location := currentLocation
 		if len(c.Args) > 0 {
-			newLocation, entry, err := db.TraversePath(currentLocation, c.Args[0])
+			newLocation, entry, err := TraversePath(db, currentLocation, c.Args[0])
 			if err != nil {
 				shell.Printf("invalid path: %s\n", err)
 				return

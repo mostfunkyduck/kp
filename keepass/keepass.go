@@ -37,8 +37,6 @@ type Database interface {
 	SetSavePath(newPath string)
 	// Sets options for interacting with the database file
 	SetOptions(Options) error
-	// Navigates a path starting from the Group provided, will return parent group is an entry is specified
-	TraversePath(Group, string) (Group, Entry, error)
 }
 
 // Options for SetOptions in the database interface

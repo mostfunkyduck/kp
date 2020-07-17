@@ -19,7 +19,7 @@ func TestMkdir(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	main.NewGroup(r.Shell)(r.Context)
-	l, e, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Path()+groupName)
+	l, e, err := main.TraversePath(r.Db, r.Db.CurrentLocation(), r.Db.CurrentLocation().Path()+groupName)
 	if err != nil {
 		t.Fatalf("could not traverse path: %s", err)
 	}

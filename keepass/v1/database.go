@@ -6,8 +6,6 @@ package keepassv1
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -28,71 +26,6 @@ func NewDatabase(db *keepass.Database, savePath string) k.Database {
 		savePath:        savePath,
 	}
 	return rv
-}
-
-// traversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
-// if the path points to an entry, the parent group is returned as well as the entry.
-// If the path points to a group, the entry will be nil
-func (d *Database) TraversePath(startingLocation k.Group, fullPath string) (finalLocation k.Group, finalEntry k.Entry, err error) {
-	currentLocation := startingLocation
-	root := d.Root()
-	if fullPath == "/" {
-		// short circuit now
-		return root, nil, nil
-	}
-
-	if strings.HasPrefix(fullPath, "/") {
-		// the user entered a fully qualified path, so start at the top
-		currentLocation = root
-	}
-
-	// break the path up into components, remove terminal slashes since they don't actually do anything
-	path := strings.Split(strings.TrimSuffix(fullPath, "/"), "/")
-	// tracks whether or not the traversal encountered an entry
-loop:
-	for i, part := range path {
-		if part == "." || part == "" {
-			continue
-		}
-
-		if part == ".." {
-			// if we're not at the root, go up a level
-			if currentLocation.Parent() != nil {
-				currentLocation = currentLocation.Parent()
-				continue
-			}
-			// we're at the root, the user wanted to go higher, that's no bueno
-			return nil, nil, fmt.Errorf("tried to go to parent directory of '/'")
-		}
-
-		// regular traversal
-		for _, group := range currentLocation.Groups() {
-			// was the entity being searched for this group?
-			if group.Name() == part {
-				currentLocation = group
-				continue loop
-			}
-		}
-
-		for j, entry := range currentLocation.Entries() {
-			// is the entity we're looking for this index or this entry?
-			if entry.Get("title").Value.(string) == part || strconv.Itoa(j) == part {
-				if i != len(path)-1 {
-					// we encountered an entry before the end of the path, entries have no subgroups,
-					// so this path is invalid
-					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Path(), fullPath)
-				}
-				// this is the end of the path, return the parent group and the entry
-				return currentLocation, entry, nil
-			}
-		}
-		// getting here means that we found neither a group nor an entry that matched 'part'
-		// both of the loops looking for those short circuit when they find what they need
-		return nil, nil, fmt.Errorf("could not find a group or entry named '%s'", part)
-	}
-	// we went all the way through the path and it points to currentLocation,
-	// if it pointed to an entry, it would have returned above
-	return currentLocation, nil, nil
 }
 
 // Root returns the DB root
@@ -183,7 +116,7 @@ func (d *Database) Raw() interface{} {
 	return d.db
 }
 
-// Pwd will walk up the group hierarchy to determine the path to the current location
+// Path will walk up the group hierarchy to determine the path to the current location
 func (d *Database) Path() (fullPath string) {
 	group := d.CurrentLocation()
 	return group.Path()

@@ -22,7 +22,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		path := strings.Split(c.Args[0], "/")
 		db := shell.Get("db").(k.Database)
-		location, _, err := db.TraversePath(db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
+		location, _, err := TraversePath(db, db.CurrentLocation(), strings.Join(path[0:len(path)-1], "/"))
 		if err != nil {
 			shell.Printf("invalid path: " + err.Error())
 			return

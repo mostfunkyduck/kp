@@ -17,7 +17,7 @@ func finish(shell *ishell.Shell) {
 }
 
 func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) error {
-	parent, existingEntry, err := db.TraversePath(db.CurrentLocation(), location)
+	parent, existingEntry, err := TraversePath(db, db.CurrentLocation(), location)
 	if existingEntry != nil {
 		shell.Printf("'%s' already exists! overwrite? [y/N]  ")
 		input, err := shell.ReadLineErr()
@@ -46,7 +46,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 		pathBits := strings.Split(location, "/")
 		path := strings.Join(pathBits[0:len(pathBits)-1], "/")
 		var entry k.Entry
-		parent, entry, err = db.TraversePath(db.CurrentLocation(), path)
+		parent, entry, err = TraversePath(db, db.CurrentLocation(), path)
 		if err != nil {
 			return fmt.Errorf("error finding path '%s': %s\n", location, err)
 		}
@@ -76,7 +76,7 @@ func moveGroup(g k.Group, db k.Database, location string) error {
 		newName = g.Name()
 	}
 	newNameParent := strings.Join(newNameBits[0:len(newNameBits)-1], "/")
-	parent, _, err := db.TraversePath(db.CurrentLocation(), newNameParent)
+	parent, _, err := TraversePath(db, db.CurrentLocation(), newNameParent)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		dstPath := c.Args[1]
 		db := shell.Get("db").(k.Database)
 
-		l, e, err := db.TraversePath(db.CurrentLocation(), srcPath)
+		l, e, err := TraversePath(db, db.CurrentLocation(), srcPath)
 		if err != nil {
 			shell.Printf("error parsing path %s: %s", srcPath, err)
 			return

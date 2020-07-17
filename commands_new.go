@@ -25,7 +25,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		pathBits := strings.Split(args[0], "/")
 		parentPath := strings.Join(pathBits[0:len(pathBits)-1], "/")
-		location, entry, err := db.TraversePath(db.CurrentLocation(), parentPath)
+		location, entry, err := TraversePath(db, db.CurrentLocation(), parentPath)
 		if err != nil {
 			shell.Println("invalid path: " + err.Error())
 			return
