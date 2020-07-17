@@ -204,19 +204,19 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 		return fmt.Errorf("could not get notes: %s", err)
 	}
 
-	if e.Set("title", k.Value{Value: title}) ||
-		e.Set("url", k.Value{Value: url}) ||
-		e.Set("username", k.Value{Value: un}) ||
-		e.Set("password", k.Value{Value: pw}) ||
-		e.Set("notes", k.Value{Value: notes}) {
+	updated := e.Set("title", k.Value{Value: title})
+	updated = e.Set("url", k.Value{Value: url}) || updated
+	updated = e.Set("username", k.Value{Value: un}) || updated
+	updated = e.Set("password", k.Value{Value: pw}) || updated
+	updated = e.Set("notes", k.Value{Value: notes}) || updated
 
+	if updated {
 		shell.Println("edit successful, database has changed!")
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("could not save: %s", err)
 		}
 	}
-
 	return nil
 }
 
@@ -251,7 +251,7 @@ func getNotes(shell *ishell.Shell, existingNotes string) (string, error) {
 			shell.Println("discarding notes changes, other edits will be saved")
 			return existingNotes, nil
 		case "o":
-			shell.Println("oerwriting existing notes")
+			shell.Println("overwriting existing notes")
 			return newNotes, nil
 		default:
 			shell.Println("appending to existing notes")

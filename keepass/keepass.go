@@ -2,6 +2,7 @@ package keepass
 
 import (
 	"io"
+	"regexp"
 	"time"
 
 	"github.com/abiosoft/ishell"
@@ -71,6 +72,8 @@ type Group interface {
 	NewEntry() (Entry, error)
 
 	RemoveEntry(Entry) error
+
+	Search(*regexp.Regexp) []string
 }
 
 type Entry interface {

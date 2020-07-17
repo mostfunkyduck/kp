@@ -2,6 +2,7 @@ package keepassv1
 
 import (
 	"fmt"
+	"regexp"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -14,6 +15,33 @@ func NewGroup(group *keepass.Group) k.Group {
 	return &Group{
 		group: group,
 	}
+}
+
+
+// FIXME the keepass library has a bug where you can't get the parent
+// unless the entry is a pointer to the one in the db (it's comparing pointer values)
+// this can/should/will be fixed in my fork
+func (g *Group) searchEntries(term *regexp.Regexp) (titles []string) {
+	for _, e := range g.Entries() {
+		if term.FindString(e.Get("title").Value.(string)) != "" ||
+			term.FindString(e.Get("notes").Value.(string)) != "" ||
+			term.FindString(e.Get("attachment").Name) != "" ||
+			term.FindString(e.Get("username").Value.(string)) != "" {
+			titles = append(titles, e.Get("title").Value.(string))
+		}
+	}
+	return titles
+}
+
+func (g *Group) Search(term *regexp.Regexp) (paths []string) {
+
+	for _, title := range g.searchEntries(term) {
+		paths = append(paths, "./"+title)
+	}
+	for _, g := range g.Groups() {
+		paths = append(paths, g.Search(term)...)
+	}
+	return paths
 }
 
 func (g *Group) Name() string {
@@ -37,7 +65,7 @@ func (g *Group) SetParent(parent k.Group) error {
 
 func (g *Group) Entries() (rv []k.Entry) {
 	for _, each := range g.group.Entries() {
-		rv = append(rv, NewEntry(each))
+		rv = append(rv, &Entry{entry: each})
 	}
 	return rv
 }
