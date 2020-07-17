@@ -21,23 +21,22 @@ func NewGroup(group *keepass.Group) k.Group {
 // FIXME the keepass library has a bug where you can't get the parent
 // unless the entry is a pointer to the one in the db (it's comparing pointer values)
 // this can/should/will be fixed in my fork
-func (g *Group) searchEntries(term *regexp.Regexp) (titles []string) {
+func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
 	for _, e := range g.Entries() {
 		if term.FindString(e.Get("title").Value.(string)) != "" ||
 			term.FindString(e.Get("notes").Value.(string)) != "" ||
 			term.FindString(e.Get("attachment").Name) != "" ||
 			term.FindString(e.Get("username").Value.(string)) != "" {
-			titles = append(titles, e.Get("title").Value.(string))
+			paths = append(paths, e.Path())
 		}
 	}
-	return titles
+	return
 }
 
 func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 
-	for _, title := range g.searchEntries(term) {
-		paths = append(paths, "./"+title)
-	}
+	paths = append(paths, g.searchEntries(term)...)
+
 	for _, g := range g.Groups() {
 		paths = append(paths, g.Search(term)...)
 	}
