@@ -32,7 +32,7 @@ func TestShowNoArgs(t *testing.T) {
 
 func TestShowValidArgs(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string{r.Entry.Pwd()}
+	r.Context.Args = []string{r.Entry.Path()}
 	main.Show(r.Shell)(r.Context)
 
 	testEntry(true, t, r)

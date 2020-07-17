@@ -9,12 +9,12 @@ func TestMv(t *testing.T) {
 	r := createTestResources(t)
 	newName := "example"
 	r.Context.Args = []string{
-		r.Group.Pwd(),
-		r.Db.Root().Pwd() + newName,
+		r.Group.Path(),
+		r.Db.Root().Path() + newName,
 	}
 	main.Mv(r.Shell)(r.Context)
-	if r.Group.Pwd() != r.Db.Root().Pwd()+newName+"/" {
-		t.Fatalf("[%s] != [%s]", r.Group.Pwd(), r.Db.Root().Pwd()+newName+"/")
+	if r.Group.Path() != r.Db.Root().Path()+newName+"/" {
+		t.Fatalf("[%s] != [%s]", r.Group.Path(), r.Db.Root().Path()+newName+"/")
 	}
 }
 
@@ -24,15 +24,15 @@ func TestMvGroupOverwriteGroup(t *testing.T) {
 	originalGroupCount := len(r.Db.Root().Groups())
 	g := r.Group.NewSubgroup(r.Group.Name())
 	r.Db.SetCurrentLocation(r.Db.Root())
-	originalGroupPath := g.Pwd()
+	originalGroupPath := g.Path()
 	r.Context.Args = []string{
 		originalGroupPath,
-		r.Db.Root().Pwd(),
+		r.Db.Root().Path(),
 	}
 	main.Mv(r.Shell)(r.Context)
 	// test that the group didn't get moved
-	if g.Pwd() != originalGroupPath {
-		t.Fatalf("[%s] != [%s] (%s)", g.Pwd(), originalGroupPath, r.F.outputHolder.output)
+	if g.Path() != originalGroupPath {
+		t.Fatalf("[%s] != [%s] (%s)", g.Path(), originalGroupPath, r.F.outputHolder.output)
 	}
 
 	// make sure it didn't add a spurious third group during a botched move
@@ -43,20 +43,20 @@ func TestMvGroupOverwriteGroup(t *testing.T) {
 
 func TestMvGroupOverwriteEntry(t *testing.T) {
 	r := createTestResources(t)
-	originalGroupPwd := r.Group.Pwd()
-	originalEntryPwd := r.Entry.Pwd()
+	originalGroupPath := r.Group.Path()
+	originalEntryPath := r.Entry.Path()
 	r.Context.Args = []string{
-		originalGroupPwd,
-		r.Entry.Pwd(),
+		originalGroupPath,
+		r.Entry.Path(),
 	}
 	main.Mv(r.Shell)(r.Context)
 	// test that the group didn't get moved
-	if r.Group.Pwd() != originalGroupPwd {
-		t.Fatalf("[%s] != [%s]", r.Group.Pwd(), originalGroupPwd)
+	if r.Group.Path() != originalGroupPath {
+		t.Fatalf("[%s] != [%s]", r.Group.Path(), originalGroupPath)
 	}
 
-	if r.Entry.Pwd() != originalEntryPwd {
-		t.Fatalf("[%s] != [%s]", r.Entry.Pwd(), originalEntryPwd)
+	if r.Entry.Path() != originalEntryPath {
+		t.Fatalf("[%s] != [%s]", r.Entry.Path(), originalEntryPath)
 	}
 }
 
@@ -67,16 +67,16 @@ func TestMvEntryIntoGroup(t *testing.T) {
 	g := r.Db.Root().NewSubgroup(newName)
 	r.Db.SetCurrentLocation(r.Db.Root())
 
-	originalEntryPwd := r.Entry.Pwd()
+	originalEntryPath := r.Entry.Path()
 	r.Context.Args = []string{
-		originalEntryPwd,
-		g.Pwd(),
+		originalEntryPath,
+		g.Path(),
 	}
 	main.Mv(r.Shell)(r.Context)
 
-	expectedPath := g.Pwd() + r.Entry.Get("title").Value.(string)
-	if r.Entry.Pwd() != expectedPath {
-		t.Fatalf("[%s] != [%s]", r.Entry.Pwd(), expectedPath)
+	expectedPath := g.Path() + r.Entry.Get("title").Value.(string)
+	if r.Entry.Path() != expectedPath {
+		t.Fatalf("[%s] != [%s]", r.Entry.Path(), expectedPath)
 	}
 }
 
@@ -87,14 +87,14 @@ func TestMvGroupIntoGroup(t *testing.T) {
 	r.Db.SetCurrentLocation(r.Db.Root())
 
 	r.Context.Args = []string{
-		g.Pwd(),
-		r.Group.Pwd(),
+		g.Path(),
+		r.Group.Path(),
 	}
 
 	// testing that the group is now a subgroup
-	expectedPath := r.Group.Pwd() + g.Name() + "/"
-	if g.Pwd() != expectedPath {
-		t.Fatalf("[%s] != [%s] (%s)", g.Pwd(), expectedPath, r.F.outputHolder.output)
+	expectedPath := r.Group.Path() + g.Name() + "/"
+	if g.Path() != expectedPath {
+		t.Fatalf("[%s] != [%s] (%s)", g.Path(), expectedPath, r.F.outputHolder.output)
 	}
 
 }

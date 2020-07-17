@@ -21,7 +21,7 @@ type KeepassWrapper interface {
 	Raw() interface{}
 
 	// returns the path to the object's location
-	Pwd() string
+	Path() string
 }
 
 type Database interface {

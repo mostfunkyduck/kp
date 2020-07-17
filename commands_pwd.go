@@ -8,6 +8,6 @@ import (
 func Pwd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
 		db := shell.Get("db").(k.Database)
-		shell.Println(db.Pwd())
+		shell.Println(db.Path())
 	}
 }

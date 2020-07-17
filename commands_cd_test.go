@@ -16,8 +16,8 @@ func TestCdToGroup(t *testing.T) {
 	main.Cd(r.Shell)(r.Context)
 
 	currentLocation := r.Db.CurrentLocation()
-	if currentLocation.Pwd() != r.Group.Pwd() {
-		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Pwd(), r.Group.Pwd())
+	if currentLocation.Path() != r.Group.Path() {
+		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Path(), r.Group.Path())
 	}
 }
 
@@ -29,7 +29,7 @@ func TestCdToRoot(t *testing.T) {
 	main.Cd(r.Shell)(r.Context)
 
 	currentLocation := r.Db.CurrentLocation()
-	if currentLocation.Pwd() != r.Db.Root().Pwd() {
-		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Pwd(), r.Db.Root().Pwd())
+	if currentLocation.Path() != r.Db.Root().Path() {
+		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Path(), r.Db.Root().Path())
 	}
 }

@@ -112,8 +112,8 @@ func (e *Entry) Parent() k.Group {
 	}
 }
 
-func (e *Entry) Pwd() string {
-	groupPath := e.Parent().Pwd()
+func (e *Entry) Path() string {
+	groupPath := e.Parent().Path()
 	return groupPath + e.Get("title").Value.(string)
 }
 
@@ -165,7 +165,7 @@ func (e *Entry) Output(s *ishell.Shell, full bool) {
 	s.Printf("Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
 	s.Printf("Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
 	s.Printf("Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
-	s.Printf("Location:\t%s\n", e.Pwd())
+	s.Printf("Location:\t%s\n", e.Path())
 	s.Printf("Title:\t%s\n", e.Get("title").Value.(string))
 	s.Printf("URL:\t%s\n", e.Get("url").Value.(string))
 	s.Printf("Username:\t%s\n", e.Get("username").Value.(string))

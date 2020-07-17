@@ -21,7 +21,7 @@ func TestLsNoArgsFromGroup(t *testing.T) {
 
 func TestLsEntryFromRoot(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string{r.Entry.Pwd()}
+	r.Context.Args = []string{r.Entry.Path()}
 	r.Db.SetCurrentLocation(r.Db.Root())
 	main.Ls(r.Shell)(r.Context)
 	if r.F.outputHolder.output != "test" {

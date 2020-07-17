@@ -80,7 +80,7 @@ loop:
 				if i != len(path)-1 {
 					// we encountered an entry before the end of the path, entries have no subgroups,
 					// so this path is invalid
-					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Pwd(), fullPath)
+					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Path(), fullPath)
 				}
 				// this is the end of the path, return the parent group and the entry
 				return currentLocation, entry, nil
@@ -184,7 +184,7 @@ func (d *Database) Raw() interface{} {
 }
 
 // Pwd will walk up the group hierarchy to determine the path to the current location
-func (d *Database) Pwd() (fullPath string) {
+func (d *Database) Path() (fullPath string) {
 	group := d.CurrentLocation()
-	return group.Pwd()
+	return group.Path()
 }

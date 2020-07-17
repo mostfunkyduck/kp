@@ -87,7 +87,7 @@ func createTestResources(t *testing.T) (r testResources) {
 
 func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	o := r.F.outputHolder.output
-	testShowOutput(o, fmt.Sprintf("Location:\t%s", r.Entry.Pwd()), t)
+	testShowOutput(o, fmt.Sprintf("Location:\t%s", r.Entry.Path()), t)
 	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Get("title").Value), t)
 	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("url").Value), t)
 	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("username").Value), t)

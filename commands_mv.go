@@ -52,13 +52,13 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 		}
 
 		if entry != nil {
-			return fmt.Errorf("could not rename '%s' to '%s': '%s' is an existing entry", e.Pwd(), location, path)
+			return fmt.Errorf("could not rename '%s' to '%s': '%s' is an existing entry", e.Path(), location, path)
 		}
 		title = pathBits[len(pathBits)-1]
 	}
 
 	if err := e.SetParent(parent); err != nil {
-		return fmt.Errorf("error moving entry '%s' to new location '%s': %s\n", e.Pwd(), parent.Name(), err)
+		return fmt.Errorf("error moving entry '%s' to new location '%s': %s\n", e.Path(), parent.Name(), err)
 	}
 
 	if title != "" {
@@ -83,7 +83,7 @@ func moveGroup(g k.Group, db k.Database, location string) error {
 
 	for _, e := range parent.Entries() {
 		if e.Get("title").Value.(string) == newName {
-			return fmt.Errorf("entry named '%s' already exists at '%s'", newName, e.Pwd())
+			return fmt.Errorf("entry named '%s' already exists at '%s'", newName, e.Path())
 		}
 	}
 

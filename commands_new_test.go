@@ -34,10 +34,10 @@ func TestNewEntry(t *testing.T) {
 		t.Fatalf("wrong number of entries after initial entry creation: [%d] != [%d] (%s)", len(entries), originalEntriesLen+1, output)
 	}
 
-	expectedPath := r.Group.Pwd() + entryName
+	expectedPath := r.Group.Path() + entryName
 	// assuming that ordering is deterministic, if it isn't then this test will randomly fail
-	if entries[1].Pwd() != expectedPath {
-		t.Fatalf("[%s] != [%s] (%s)", entries[1].Pwd(), expectedPath, output)
+	if entries[1].Path() != expectedPath {
+		t.Fatalf("[%s] != [%s] (%s)", entries[1].Path(), expectedPath, output)
 	}
 }
 

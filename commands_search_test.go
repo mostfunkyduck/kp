@@ -16,7 +16,7 @@ func TestSearchFullPath(t *testing.T) {
 		t.Fatalf("%d != %d", len(paths), 1)
 	}
 
-	if paths[0] != "./" + r.Entry.Get("title").Value.(string) {
+	if paths[0] != "./"+r.Entry.Get("title").Value.(string) {
 		t.Fatalf("[%s] != [%s]", paths[0], r.Entry.Get("title").Value.(string))
 	}
 }

@@ -32,7 +32,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		if entry != nil {
-			shell.Printf("entry '%s' already exists!\n", entry.Pwd())
+			shell.Printf("entry '%s' already exists!\n", entry.Path())
 			return
 		}
 

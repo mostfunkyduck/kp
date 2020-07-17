@@ -19,7 +19,7 @@ func TestMkdir(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	main.NewGroup(r.Shell)(r.Context)
-	l, e, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Pwd()+groupName)
+	l, e, err := r.Db.TraversePath(r.Db.CurrentLocation(), r.Db.CurrentLocation().Path()+groupName)
 	if err != nil {
 		t.Fatalf("could not traverse path: %s", err)
 	}
@@ -28,9 +28,9 @@ func TestMkdir(t *testing.T) {
 		t.Fatalf("entry found instead of target for new group\n")
 	}
 
-	expected := r.Db.CurrentLocation().Pwd() + groupName + "/"
-	if l.Pwd() != expected {
-		t.Fatalf("[%s] != [%s]", l.Pwd(), expected)
+	expected := r.Db.CurrentLocation().Path() + groupName + "/"
+	if l.Path() != expected {
+		t.Fatalf("[%s] != [%s]", l.Path(), expected)
 	}
 
 	r.F.outputHolder.output = ""

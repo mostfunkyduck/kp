@@ -93,7 +93,7 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	return g.group.RemoveSubgroup(subgroup.Raw().(*keepass.Group))
 }
 
-func (g *Group) Pwd() (fullPath string) {
+func (g *Group) Path() (fullPath string) {
 	group := g.group
 	for ; group != nil; group = group.Parent() {
 		if group.IsRoot() {
