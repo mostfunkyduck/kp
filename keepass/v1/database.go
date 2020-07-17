@@ -137,6 +137,10 @@ func (d *Database) SetSavePath(newPath string) {
 func (d *Database) Save() error {
 	savePath := d.SavePath()
 
+	if savePath == "" {
+		return fmt.Errorf("no save path specified")
+	}
+
 	if err := d.Backup(); err != nil {
 		return fmt.Errorf("could not back up database: %s", err)
 	}
