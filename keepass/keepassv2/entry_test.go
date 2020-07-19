@@ -2,7 +2,7 @@ package keepassv2_test
 
 import (
 	k "github.com/mostfunkyduck/kp/keepass"
-	main "github.com/mostfunkyduck/kp/keepass/v2"
+	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	g "github.com/tobischo/gokeepasslib/v3"
 	"testing"
 )

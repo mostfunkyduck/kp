@@ -8,7 +8,7 @@ import (
 
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
-	v1 "github.com/mostfunkyduck/kp/keepass/v1"
+	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
