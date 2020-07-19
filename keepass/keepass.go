@@ -19,8 +19,7 @@ type KeepassWrapper interface {
 	Raw() interface{}
 
 	// returns the path to the object's location
-	Path() string
-
+	Path() (string, error)
 }
 
 type Database interface {
@@ -60,6 +59,8 @@ type Group interface {
 	// Returns this group's parent, if it has one
 	Parent() Group
 	SetParent(Group) error
+	// inverse of 'SetParent', needed mainly for the internals of keepassv2
+	AddEntry(Entry) error
 
 	Name() string
 	SetName(string)
@@ -68,11 +69,10 @@ type Group interface {
 
 	// Creates a new subgroup with a given name under this group
 	NewSubgroup(name string) (Group, error)
-
 	RemoveSubgroup(Group) error
+	AddSubgroup(Group) error
 
-	NewEntry() (Entry, error)
-
+	NewEntry(name string) (Entry, error)
 	RemoveEntry(Entry) error
 
 	Search(*regexp.Regexp) []string
@@ -84,10 +84,10 @@ type Entry interface {
 	// Returns the value for a given field, or nil if the field doesn't exist
 	Get(string) Value
 
-	// GetTitle and GetPassword are needed to ensure that v1 and v2 both render
+	// Title and Password are needed to ensure that v1 and v2 both render
 	// their specific representations of that data (they access it in different ways, fun times)
-	GetTitle() string
-	GetPassword() string
+	Title() string
+	Password() string
 
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
 	Set(value Value) bool
@@ -105,7 +105,7 @@ type Entry interface {
 }
 
 type Value struct {
-	Value interface{} // can be either binary or string data
-	Name  string      // v1 compatibility - attachments have their own name within entries
-	Protected bool    // only useable in v2, whether the value should be encrypted
+	Value     interface{} // can be either binary or string data
+	Name      string      // v1 compatibility - attachments have their own name within entries
+	Protected bool        // only useable in v2, whether the value should be encrypted
 }

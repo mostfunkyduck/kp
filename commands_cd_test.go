@@ -16,8 +16,17 @@ func TestCdToGroup(t *testing.T) {
 	main.Cd(r.Shell)(r.Context)
 
 	currentLocation := r.Db.CurrentLocation()
-	if currentLocation.Path() != r.Group.Path() {
-		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Path(), r.Group.Path())
+	clPath, err := currentLocation.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	rGrpPath, err := r.Group.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if clPath != rGrpPath {
+		t.Fatalf("new location was not the one specified: %s != %s", clPath, rGrpPath)
 	}
 }
 
@@ -29,7 +38,15 @@ func TestCdToRoot(t *testing.T) {
 	main.Cd(r.Shell)(r.Context)
 
 	currentLocation := r.Db.CurrentLocation()
-	if currentLocation.Path() != r.Db.Root().Path() {
-		t.Fatalf("new location was not the one specified: %s != %s", currentLocation.Path(), r.Db.Root().Path())
+	clPath, err := currentLocation.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	rDbPath, err := r.Db.Root().Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if clPath != rDbPath {
+		t.Fatalf("new location was not the one specified: %s != %s", clPath, rDbPath)
 	}
 }

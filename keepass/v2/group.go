@@ -9,7 +9,7 @@ import (
 )
 
 type Group struct {
-	group gokeepasslib.Group
+	group *gokeepasslib.Group
 	db    k.Database
 }
 
@@ -17,7 +17,8 @@ func (g *Group) Raw() interface{} {
 	return g.group
 }
 
-func newGroup(g gokeepasslib.Group, db k.Database) k.Group {
+// WrapGroup wraps a bare gokeepasslib.Group and a database in a Group wrapper
+func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
 	return &Group{
 		group: g,
 		db:    db,
@@ -26,7 +27,8 @@ func newGroup(g gokeepasslib.Group, db k.Database) k.Group {
 
 func (g *Group) Groups() (rv []k.Group) {
 	for _, each := range g.group.Groups {
-		rv = append(rv, newGroup(each, g.db))
+		_each := each
+		rv = append(rv, WrapGroup(&_each, g.db))
 	}
 	return
 }
@@ -34,54 +36,66 @@ func (g *Group) Groups() (rv []k.Group) {
 // findPathToGroup will attempt to find the path between 'source' and 'target', returning an
 // ordered slice of groups leading up to *but not including* the target
 // TODO this needs rigorous testing
-func findPathToGroup(source k.Group, target k.Group) (rv []k.Group) {
+func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, group := range source.Groups() {
 		uuidString, err := target.UUIDString()
 		if err != nil {
 			// TODO swallowing this error
-			return []k.Group{}
+			return []k.Group{}, fmt.Errorf("could not parse UUID string in group '%s'", target.Name())
 		}
 		groupUUIDString, err := group.UUIDString()
 		if err != nil {
-			return []k.Group{}
+			return []k.Group{}, fmt.Errorf("could not parse UUID string in group '%s'", group.Name())
 		}
 		if groupUUIDString == uuidString {
-			return append(rv, source)
+			return append(rv, source), nil
 		}
-		if pathGroups := findPathToGroup(group, target); len(pathGroups) != 0 {
-			return append([]k.Group{source}, rv...)
+		pathGroups, err := findPathToGroup(group, target)
+		if err != nil {
+			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
+		}
+		if len(pathGroups) != 0 {
+			return append([]k.Group{source}, rv...), nil
 		}
 	}
-	return []k.Group{}
+	return []k.Group{}, nil
 }
 
-func (g *Group) Path() (rv string) {
-	pathGroups := findPathToGroup(g.db.Root(), g)
-	for _, each := range pathGroups {
-		rv = rv + "/" + each.Name()
+func (g *Group) Path() (rv string, err error) {
+	pathGroups, err := findPathToGroup(g.db.Root(), g)
+	if err != nil {
+		return rv, fmt.Errorf("could not find path to group '%s'", g.Name())
 	}
-	return rv + "/" + g.Name()
+	for _, each := range pathGroups {
+		rv = rv + each.Name() + "/"
+	}
+	return rv + g.Name(), nil
 }
 
 func (g *Group) Entries() (rv []k.Entry) {
 	for _, entry := range g.group.Entries {
-		rv = append(rv, newEntry(entry, g.db))
+		_entry := entry
+		rv = append(rv, WrapEntry(&_entry, g.db))
 	}
 	return
 }
 
 func (g *Group) Parent() k.Group {
-	if pathGroups := findPathToGroup(g.db.Root(), g); len(pathGroups) > 0 {
+	pathGroups, err := findPathToGroup(g.db.Root(), g)
+	if err != nil {
+		return nil
+	}
+	if len(pathGroups) > 0 {
 		return pathGroups[len(pathGroups)-1]
 	}
 	return nil
 }
 
 func (g *Group) SetParent(parent k.Group) error {
-	rawParent := parent.Raw().(Group)
-	rawParent.group.Groups = append(rawParent.group.Groups, g.group)
-	return nil
+	// Since there's no child->parent relationship in this library, we need
+	// to rely on the parent->child connection to get this to work
+	return parent.AddSubgroup(g)
 }
 
 func (g *Group) Name() string {
@@ -99,25 +113,41 @@ func (g *Group) IsRoot() bool {
 
 // Creates a new subgroup with a given name under this group
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
-	newGroup := newGroup(gokeepasslib.NewGroup(), g.db)
-	if err := newGroup.SetParent(g); err != nil {
-		return &Group{}, fmt.Errorf("couldn't assign new group to parent '%s'; %s", g.Path(), err)
+	newGroup := gokeepasslib.NewGroup()
+	newGroupWrapper := WrapGroup(&newGroup, g.db)
+	if err := newGroupWrapper.SetParent(g); err != nil {
+		return &Group{}, fmt.Errorf("couldn't assign new group to parent '%s'; %s", g.Name(), err)
 	}
-	newGroup.SetName(name)
-	return newGroup, nil
+	newGroupWrapper.SetName(name)
+	return newGroupWrapper, nil
+}
+
+func (g *Group) updateWrapper(group *gokeepasslib.Group) {
+	g.group = group
+}
+
+func (g *Group) AddSubgroup(subgroup k.Group) error {
+	for _, each := range g.group.Groups {
+		if each.Name == subgroup.Name() {
+			return fmt.Errorf("group named '%s' already exists", each.Name)
+		}
+	}
+	g.group.Groups = append(g.group.Groups, *subgroup.Raw().(*gokeepasslib.Group))
+	subgroup.(*Group).updateWrapper(&g.group.Groups[len(g.group.Groups)-1])
+	return nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	subUUID, err := subgroup.UUIDString()
 	if err != nil {
-		return fmt.Errorf("could not read UUID on '%s': %s", subgroup.Path(), err)
+		return fmt.Errorf("could not read UUID on subgroup '%s': %s", subgroup.Name(), err)
 	}
 
 	for i, each := range g.group.Groups {
-		eachWrapper := newGroup(each, g.db)
+		eachWrapper := WrapGroup(&each, g.db)
 		eachUUID, err := eachWrapper.UUIDString()
 		if err != nil {
-			return fmt.Errorf("could not read UUID on '%s': %s", eachWrapper.Path(), err)
+			return fmt.Errorf("could not read UUID on '%s': %s", eachWrapper.Name(), err)
 		}
 
 		if eachUUID == subUUID {
@@ -131,24 +161,37 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	return fmt.Errorf("could not find group with UUID '%s'", subUUID)
 }
 
-func (g *Group) NewEntry() (k.Entry, error) {
+func (g *Group) AddEntry(e k.Entry) error {
+	for _, each := range g.Entries() {
+		if each.Title() == e.Title() {
+			return fmt.Errorf("entry named '%s' already exists", each.Title())
+		}
+	}
+	g.group.Entries = append(g.group.Entries, *e.Raw().(*gokeepasslib.Entry))
+	// TODO update entry wrapper
+	return nil
+}
+func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entry := gokeepasslib.NewEntry()
-	return &Entry{
-		entry: entry,
-	}, nil
+	entryWrapper := WrapEntry(&entry, g.db)
+	entryWrapper.Set(k.Value{Name: "Title", Value: name})
+	if err := entryWrapper.SetParent(g); err != nil {
+		return nil, fmt.Errorf("could not add entry to group: %s", err)
+	}
+	return entryWrapper, nil
 }
 
 func (g *Group) RemoveEntry(entry k.Entry) error {
 	raw := g.group
 	entryUUID, err := entry.UUIDString()
 	if err != nil {
-		return fmt.Errorf("cannot read UUID string on target entry '%s': %s", entry.Path(), err)
+		return fmt.Errorf("cannot read UUID string on target entry '%s': %s", entry.Title(), err)
 	}
 	for i, each := range raw.Entries {
-		eachWrapper := newEntry(each, g.db)
+		eachWrapper := WrapEntry(&each, g.db)
 		eachUUID, err := eachWrapper.UUIDString()
 		if err != nil {
-			return fmt.Errorf("cannot read UUID string on individual entry '%s': %s", eachWrapper.Path(), err)
+			return fmt.Errorf("cannot read UUID string on individual entry '%s': %s", eachWrapper.Title(), err)
 		}
 		if eachUUID == entryUUID {
 			entriesLen := len(raw.Entries)
@@ -166,8 +209,12 @@ func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
 			if term.FindString(val.Value.Content) != "" ||
 				term.FindString(val.Key) != "" {
 				// something in this entry matched, let's return it
-				entryWrapper := newEntry(e, g.db)
-				paths = append(paths, entryWrapper.Path())
+				entryWrapper := WrapEntry(&e, g.db)
+				path, err := entryWrapper.Path()
+				if err != nil {
+					path = fmt.Sprintf("<error: %s>", err)
+				}
+				paths = append(paths, path)
 			}
 		}
 	}

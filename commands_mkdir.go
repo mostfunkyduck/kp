@@ -32,7 +32,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			shell.Printf("could not create subgroup: %s\n", err)
 			return
 		}
-	
+
 		DBChanged = true
 		if err := promptAndSave(shell); err != nil {
 			shell.Printf("could not save database: %s\n", err)

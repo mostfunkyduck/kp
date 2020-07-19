@@ -117,7 +117,7 @@ func (d *Database) Raw() interface{} {
 }
 
 // Path will walk up the group hierarchy to determine the path to the current location
-func (d *Database) Path() (fullPath string) {
+func (d *Database) Path() (fullPath string, err error) {
 	group := d.CurrentLocation()
 	return group.Path()
 }

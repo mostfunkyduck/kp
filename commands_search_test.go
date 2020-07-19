@@ -16,7 +16,11 @@ func TestSearchFullPath(t *testing.T) {
 		t.Fatalf("%d != %d", len(paths), 1)
 	}
 
-	if paths[0] != r.Entry.Path() {
-		t.Fatalf("[%s] != [%s]", paths[0], r.Entry.Path())
+	path, err := r.Entry.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if paths[0] != path {
+		t.Fatalf("[%s] != [%s]", paths[0], path)
 	}
 }

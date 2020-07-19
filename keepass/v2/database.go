@@ -14,6 +14,16 @@ type Database struct {
 	options         k.Options
 }
 
+func NewDatabase(db *g.Database, savePath string, options k.Options) k.Database {
+	dbWrapper := &Database{
+		db:       db,
+		savePath: savePath,
+		options:  options,
+	}
+	dbWrapper.SetCurrentLocation(dbWrapper.Root())
+	return dbWrapper
+}
+
 //KeepassWrapper
 func (d *Database) Raw() interface{} {
 	return d.db
@@ -113,6 +123,10 @@ func (d *Database) SetOptions(opts k.Options) error {
 }
 
 // Path will walk up the group hierarchy to determine the path to the current location
-func (d *Database) Path() string {
-	return d.CurrentLocation().Path()
+func (d *Database) Path() (string, error) {
+	path, err := d.CurrentLocation().Path()
+	if err != nil {
+		return path, fmt.Errorf("could not find path to current location in database: %s", err)
+	}
+	return path, err
 }

@@ -12,36 +12,42 @@ import (
 
 type Entry struct {
 	db    k.Database
-	entry g.Entry
+	entry *g.Entry
 }
 
 // findPathToEntry returns all the groups in the path leading to an entry *but not the entry itself*
-func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group) {
+// the path returned will also not include the source group
+func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, entry := range source.Entries() {
 		uuidString, err := target.UUIDString()
 		if err != nil {
-			// TODO swallowing this error
-			return []k.Group{}
+			return []k.Group{}, fmt.Errorf("could not get UUID for target '%s': %s", target.Title(), err)
 		}
 		entryUUIDString, err := entry.UUIDString()
 		if err != nil {
-			return []k.Group{}
+			return []k.Group{}, fmt.Errorf("could not get UUID for entry '%s': %s", entry.Title(), err)
 		}
 
 		if entryUUIDString == uuidString {
-			return []k.Group{source}
+			return []k.Group{source}, nil
 		}
 	}
-	for _, group := range source.Groups() {
-		if pathGroups := findPathToEntry(group, target); len(pathGroups) != 0 {
-			return append([]k.Group{group}, pathGroups...)
+	var pathGroups []k.Group
+	groups := source.Groups()
+	for _, group := range groups {
+		newGroups, err := findPathToEntry(group, target)
+		if err != nil {
+			// not putting the path in this error message because it might trigger an infinite loop
+			// since this is part of the path traversal algo
+			return []k.Group{}, fmt.Errorf("error finding path to '%s' from '%s': %s", target.Title(), group.Name(), err)
 		}
+		pathGroups = append(pathGroups, newGroups...)
 	}
-	return []k.Group{}
+	return pathGroups, nil
 }
 
-func newEntry(entry g.Entry, db k.Database) k.Entry {
+func WrapEntry(entry *g.Entry, db k.Database) k.Entry {
 	return &Entry{
 		db:    db,
 		entry: entry,
@@ -52,12 +58,22 @@ func (e *Entry) Raw() interface{} {
 	return e.entry
 }
 
-func (e *Entry) Path() (path string) {
-	pathGroups := findPathToEntry(e.db.Root(), e)
-	for _, each := range pathGroups {
-		path = path + "/" + each.Name()
+// returns the fully qualified path to the entry, if there's no parent, only the name is returned
+func (e *Entry) Path() (path string, err error) {
+	pathGroups, err := findPathToEntry(e.db.Root(), e)
+	if err != nil {
+		return path, fmt.Errorf("could not find path from root to %s: %s", e.Title(), err)
 	}
-	path = path + "/"
+
+	if len(pathGroups) > 0 {
+		// if we're about to build a path, start it off properly
+		// otherwise, this string will stay empty until the title is inserted at the end
+		path = "/"
+	}
+	for _, each := range pathGroups {
+		path = path + each.Name() + "/"
+	}
+	path = path + e.Title()
 	return
 }
 
@@ -98,7 +114,15 @@ func (e *Entry) Set(value k.Value) bool {
 			return (oldContent != value.Value) || (oldProtected.Bool != value.Protected)
 		}
 	}
-	return false
+	// no existing value to update, create it fresh
+	e.entry.Values = append(e.entry.Values, g.ValueData{
+		Key: value.Name,
+		Value: g.V{
+			Content:   value.Value.(string),
+			Protected: w.NewBoolWrapper(value.Protected),
+		},
+	})
+	return true
 }
 
 func (e *Entry) SetLastAccessTime(t time.Time) {
@@ -114,7 +138,10 @@ func (e *Entry) SetCreationTime(t time.Time) {
 }
 
 func (e *Entry) Parent() k.Group {
-	pathGroups := findPathToEntry(e.db.Root(), e)
+	pathGroups, err := findPathToEntry(e.db.Root(), e)
+	if err != nil {
+		return nil
+	}
 	if len(pathGroups) == 0 {
 		return nil
 	}
@@ -123,16 +150,24 @@ func (e *Entry) Parent() k.Group {
 }
 
 func (e *Entry) SetParent(g k.Group) error {
-	pathGroups := findPathToGroup(e.db.Root(), g)
-	if len(pathGroups) == 0 {
-		return fmt.Errorf("could not find a path from the db root to '%s', is this a valid group?", g.Name())
+	pathGroups, err := findPathToGroup(e.db.Root(), g)
+	if len(pathGroups) == 0 || err != nil {
+		errorString := fmt.Sprintf("could not find a path from the db root to '%s', is this a valid group?", g.Name())
+
+		if err != nil {
+			errorString = errorString + fmt.Sprintf(" (error occurred: %s)", err)
+		}
+		return fmt.Errorf(errorString)
 	}
 	parent := pathGroups[len(pathGroups)-1]
 	for _, each := range parent.Entries() {
-		if e.GetTitle() == each.GetTitle() {
+		if e.Title() == each.Title() {
 			// no dupes!
 			return fmt.Errorf("could not change parent: duplicate entry exists at target location")
 		}
+	}
+	if err := g.AddEntry(e); err != nil {
+		return fmt.Errorf("cannot add entry to group: %s", err)
 	}
 	return nil
 }
@@ -148,10 +183,10 @@ func (e *Entry) Output(full bool) string {
 	return b.String()
 }
 
-func (e *Entry) GetPassword() string {
+func (e *Entry) Password() string {
 	return e.entry.GetPassword()
 }
 
-func (e *Entry) GetTitle() string {
+func (e *Entry) Title() string {
 	return e.entry.GetTitle()
 }

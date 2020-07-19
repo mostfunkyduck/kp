@@ -2,8 +2,8 @@ package keepassv1
 
 import (
 	"fmt"
-	"regexp"
 	k "github.com/mostfunkyduck/kp/keepass"
+	"regexp"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -17,6 +17,19 @@ func NewGroup(group *keepass.Group) k.Group {
 	}
 }
 
+func (g *Group) AddSubgroup(subgroup k.Group) error {
+	if err := subgroup.SetParent(g); err != nil {
+		return fmt.Errorf("could not set subgroup parent: %s", err)
+	}
+	return nil
+}
+
+func (g *Group) AddEntry(e k.Entry) error {
+	if err := e.SetParent(g); err != nil {
+		return fmt.Errorf("could not add entry: %s", err)
+	}
+	return nil
+}
 
 // FIXME the keepass library has a bug where you can't get the parent
 // unless the entry is a pointer to the one in the db (it's comparing pointer values)
@@ -27,7 +40,11 @@ func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
 			term.FindString(e.Get("notes").Value.(string)) != "" ||
 			term.FindString(e.Get("attachment").Name) != "" ||
 			term.FindString(e.Get("username").Value.(string)) != "" {
-			paths = append(paths, e.Path())
+			path, err := e.Path()
+			if err != nil {
+				path = fmt.Sprintf("<error: %s>", err)
+			}
+			paths = append(paths, path)
 		}
 	}
 	return
@@ -92,7 +109,8 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	return g.group.RemoveSubgroup(subgroup.Raw().(*keepass.Group))
 }
 
-func (g *Group) Path() (fullPath string) {
+func (g *Group) Path() (fullPath string, err error) {
+	// FIXME this shouldn't need access to the bare group
 	group := g.group
 	for ; group != nil; group = group.Parent() {
 		if group.IsRoot() {
@@ -101,18 +119,19 @@ func (g *Group) Path() (fullPath string) {
 		}
 		fullPath = group.Name + "/" + fullPath
 	}
-	return fullPath
+	return fullPath, nil
 }
 
 func (g *Group) Raw() interface{} {
 	return g.group
 }
 
-func (g *Group) NewEntry() (k.Entry, error) {
+func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entry, err := g.group.NewEntry()
 	if err != nil {
 		return nil, err
 	}
+	entry.Title = name
 	return &Entry{
 		entry: entry,
 	}, nil

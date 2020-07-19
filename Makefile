@@ -18,3 +18,6 @@ goimports:
 	goimports -w *.go
 	goimports -w keepass/*.go
 	goimports -w keepass/v1/*.go
+
+install:
+	cp ./kp /usr/local/bin/kp

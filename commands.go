@@ -432,7 +432,8 @@ loop:
 				if i != len(path)-1 {
 					// we encountered an entry before the end of the path, entries have no subgroups,
 					// so this path is invalid
-					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Path(), fullPath)
+
+					return nil, nil, fmt.Errorf("invalid path '%s': '%s' is an entry, not a group", entry.Title(), fullPath)
 				}
 				// this is the end of the path, return the parent group and the entry
 				return currentLocation, entry, nil
@@ -446,4 +447,3 @@ loop:
 	// if it pointed to an entry, it would have returned above
 	return currentLocation, nil, nil
 }
-

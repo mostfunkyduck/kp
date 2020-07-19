@@ -112,9 +112,12 @@ func (e *Entry) Parent() k.Group {
 	}
 }
 
-func (e *Entry) Path() string {
-	groupPath := e.Parent().Path()
-	return groupPath + e.Get("title").Value.(string)
+func (e *Entry) Path() (string, error) {
+	groupPath, err := e.Parent().Path()
+	if err != nil {
+		return "", fmt.Errorf("could not find path to entry: %s", err)
+	}
+	return groupPath + e.Title(), nil
 }
 
 func (e *Entry) Raw() interface{} {
@@ -167,13 +170,18 @@ func (e *Entry) Output(full bool) (val string) {
 	fmt.Fprintf(&b, "Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
 	fmt.Fprintf(&b, "Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
 	fmt.Fprintf(&b, "Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
-	fmt.Fprintf(&b, "Location:\t%s\n", e.Path())
-	fmt.Fprintf(&b, "Title:\t%s\n", e.Get("title").Value.(string))
+
+	path, err := e.Path()
+	if err != nil {
+		path = fmt.Sprintf("<errror: %s", err)
+	}
+	fmt.Fprintf(&b, "Location:\t%s\n", path)
+	fmt.Fprintf(&b, "Title:\t%s\n", e.Title())
 	fmt.Fprintf(&b, "URL:\t%s\n", e.Get("url").Value.(string))
 	fmt.Fprintf(&b, "Username:\t%s\n", e.Get("username").Value.(string))
 	password := "[redacted]"
 	if full {
-		password = e.Get("password").Value.(string)
+		password = e.Password()
 	}
 	fmt.Fprintf(&b, "Password:\t%s\n", password)
 	fmt.Fprintf(&b, "Notes:\n%s\n", e.Get("notes").Value.(string))
@@ -183,10 +191,10 @@ func (e *Entry) Output(full bool) (val string) {
 	return b.String()
 }
 
-func (e *Entry) GetPassword() string {
+func (e *Entry) Password() string {
 	return e.Get("password").Value.(string)
 }
 
-func (e *Entry) GetTitle() string {
+func (e *Entry) Title() string {
 	return e.Get("title").Value.(string)
 }
