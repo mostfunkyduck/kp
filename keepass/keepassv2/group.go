@@ -49,14 +49,14 @@ func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 			return []k.Group{}, fmt.Errorf("could not parse UUID string in group '%s'", group.Name())
 		}
 		if groupUUIDString == uuidString {
-			return append(rv, source), nil
+			return []k.Group{source}, nil
 		}
 		pathGroups, err := findPathToGroup(group, target)
 		if err != nil {
 			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
 		}
 		if len(pathGroups) != 0 {
-			return append([]k.Group{source}, rv...), nil
+			return append([]k.Group{source}, pathGroups...), nil
 		}
 	}
 	return []k.Group{}, nil
@@ -115,10 +115,10 @@ func (g *Group) IsRoot() bool {
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	newGroup := gokeepasslib.NewGroup()
 	newGroupWrapper := WrapGroup(&newGroup, g.db)
+	newGroupWrapper.SetName(name)
 	if err := newGroupWrapper.SetParent(g); err != nil {
 		return &Group{}, fmt.Errorf("couldn't assign new group to parent '%s'; %s", g.Name(), err)
 	}
-	newGroupWrapper.SetName(name)
 	return newGroupWrapper, nil
 }
 

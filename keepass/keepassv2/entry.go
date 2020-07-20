@@ -33,7 +33,6 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 			return []k.Group{source}, nil
 		}
 	}
-	var pathGroups []k.Group
 	groups := source.Groups()
 	for _, group := range groups {
 		newGroups, err := findPathToEntry(group, target)
@@ -42,9 +41,11 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 			// since this is part of the path traversal algo
 			return []k.Group{}, fmt.Errorf("error finding path to '%s' from '%s': %s", target.Title(), group.Name(), err)
 		}
-		pathGroups = append(pathGroups, newGroups...)
+		if len(newGroups) > 0 {
+			return newGroups, nil
+		}
 	}
-	return pathGroups, nil
+	return []k.Group{}, nil
 }
 
 func WrapEntry(entry *g.Entry, db k.Database) k.Entry {
