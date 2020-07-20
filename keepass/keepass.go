@@ -15,11 +15,14 @@ const (
 
 // abstracts a wrapper for v1 or v2 implementations to use to describe the database and to implement shell commands
 type KeepassWrapper interface {
-	// Returns the underlying object that the wrapper wraps aroud
+	// Raw returns the underlying object that the wrapper wraps aroud
 	Raw() interface{}
 
-	// returns the path to the object's location
+	// Path returns the path to the object's location
 	Path() (string, error)
+
+	// Search searches this object and all nested objects for a given regular expression
+	Search(*regexp.Regexp) []string
 }
 
 type Database interface {
@@ -75,7 +78,6 @@ type Group interface {
 	NewEntry(name string) (Entry, error)
 	RemoveEntry(Entry) error
 
-	Search(*regexp.Regexp) []string
 }
 
 type Entry interface {

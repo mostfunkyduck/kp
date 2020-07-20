@@ -209,22 +209,6 @@ func (g *Group) RemoveEntry(entry k.Entry) error {
 	return fmt.Errorf("could not find entry with UUID '%s'", entryUUID)
 }
 
-func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
-	for _, e := range g.Entries() {
-		// FIXME make e.Values part of the entry interface, this whole search shbang might be a util func
-		for _, val := range e.Values() {
-			content := val.Value.(string)
-			if term.FindString(content) != "" ||
-				term.FindString(val.Name) != "" {
-				// something in this entry matched, let's return it
-				path, _ := e.Path()
-				paths = append(paths, path)
-			}
-		}
-	}
-	return
-}
-
 // NOTE this is currently a copy of v1, might be something to make more general
 func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 	if term.FindString(g.Name()) != "" {
@@ -234,7 +218,11 @@ func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 			paths = append(paths, path + "/")
 		}
 	}
-	paths = append(paths, g.searchEntries(term)...)
+
+	for _, e := range g.Entries() {
+		paths = append(paths, e.Search(term)...)
+	}
+
 	for _, g := range g.Groups() {
 		paths = append(paths, g.Search(term)...)
 	}

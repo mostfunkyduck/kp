@@ -2,6 +2,7 @@ package keepassv2
 
 import (
 	"encoding/base64"
+	"regexp"
 	"fmt"
 	k "github.com/mostfunkyduck/kp/keepass"
 	g "github.com/tobischo/gokeepasslib/v3"
@@ -201,4 +202,19 @@ func (e *Entry) Password() string {
 
 func (e *Entry) Title() string {
 	return e.entry.GetTitle()
+}
+
+// TODO test various fields to make sure they are searchable, consider adding searchability toggle
+func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
+	for _, val := range e.Values() {
+		content := val.Value.(string)
+		if term.FindString(content) != "" ||
+			 term.FindString(val.Name) != "" {
+			// something in this entry matched, let's return it
+			path, _ := e.Path()
+			paths = append(paths, path)
+		}
+	}
+
+	return
 }
