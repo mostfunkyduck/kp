@@ -60,10 +60,10 @@ func (r *RootGroup) IsRoot() bool {
 func (r *RootGroup) NewSubgroup(name string) (k.Group, error) {
 	newGroup := g.NewGroup()
 	newGroupWrapper := WrapGroup(&newGroup, r.db)
+	newGroupWrapper.SetName(name)
 	if err := newGroupWrapper.SetParent(r); err != nil {
 		return &Group{}, fmt.Errorf("couldn't assign new group to parent '%s'; %s", r.Name(), err)
 	}
-	newGroupWrapper.SetName(name)
 	return newGroupWrapper, nil
 }
 
@@ -114,11 +114,12 @@ func (r *RootGroup) UUIDString() (string, error) {
 }
 
 func (r *RootGroup) AddSubgroup(subgroup k.Group) error {
-	for _, each := range r.root.Groups {
-		if each.Name == subgroup.Name() {
-			return fmt.Errorf("group named '%s' already exists", each.Name)
+	for _, each := range r.Groups() {
+		if each.Name() == subgroup.Name() {
+			return fmt.Errorf("group named '%s' already exists", each.Name())
 		}
 	}
+
 	// FIXME this pointer abomination needs to go
 	r.root.Groups = append(r.root.Groups, *subgroup.Raw().(*g.Group))
 	subgroup.(*Group).updateWrapper(&r.root.Groups[len(r.root.Groups)-1])

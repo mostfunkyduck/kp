@@ -102,6 +102,14 @@ type Entry interface {
 
 	// Formats an entry for printing
 	Output(full bool) string
+
+	// Values returns all referencable value fields from the database
+	//
+	// NOTE: in keepass 1, this means that the hardcoded fields
+	// will be returned in the Value wrapper.
+	//
+	// NOTE: values are read only
+	Values() (values []Value)
 }
 
 type Value struct {

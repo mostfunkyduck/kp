@@ -31,6 +31,7 @@ func (d *Database) Raw() interface{} {
 
 func (d *Database) Root() k.Group {
 	return &RootGroup{
+		db: d,
 		root: d.db.Content.Root,
 	}
 }

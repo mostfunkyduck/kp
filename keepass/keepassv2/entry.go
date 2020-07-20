@@ -184,6 +184,17 @@ func (e *Entry) Output(full bool) string {
 	return b.String()
 }
 
+func (e *Entry) Values() (values []k.Value) {
+	for _, each := range e.entry.Values {
+		newValue := k.Value{
+			Name: each.Key,
+			Value: each.Value.Content,
+			Protected: each.Value.Protected.Bool,
+		}
+		values = append(values, newValue)
+	}
+	return
+}
 func (e *Entry) Password() string {
 	return e.entry.GetPassword()
 }

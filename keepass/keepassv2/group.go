@@ -127,11 +127,18 @@ func (g *Group) updateWrapper(group *gokeepasslib.Group) {
 }
 
 func (g *Group) AddSubgroup(subgroup k.Group) error {
-	for _, each := range g.group.Groups {
-		if each.Name == subgroup.Name() {
-			return fmt.Errorf("group named '%s' already exists", each.Name)
+	for _, each := range g.Groups() {
+		if each.Name() == subgroup.Name() {
+			return fmt.Errorf("group named '%s' already exists", each.Name())
 		}
 	}
+
+	for _, each := range g.Entries() {
+		if each.Title() == subgroup.Name() {
+			return fmt.Errorf("entry named '%s' already exists", each.Title())
+		}
+	}
+
 	g.group.Groups = append(g.group.Groups, *subgroup.Raw().(*gokeepasslib.Group))
 	subgroup.(*Group).updateWrapper(&g.group.Groups[len(g.group.Groups)-1])
 	return nil
@@ -203,17 +210,14 @@ func (g *Group) RemoveEntry(entry k.Entry) error {
 }
 
 func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
-	for _, e := range g.group.Entries {
+	for _, e := range g.Entries() {
 		// FIXME make e.Values part of the entry interface, this whole search shbang might be a util func
-		for _, val := range e.Values {
-			if term.FindString(val.Value.Content) != "" ||
-				term.FindString(val.Key) != "" {
+		for _, val := range e.Values() {
+			content := val.Value.(string)
+			if term.FindString(content) != "" ||
+				term.FindString(val.Name) != "" {
 				// something in this entry matched, let's return it
-				entryWrapper := WrapEntry(&e, g.db)
-				path, err := entryWrapper.Path()
-				if err != nil {
-					path = fmt.Sprintf("<error: %s>", err)
-				}
+				path, _ := e.Path()
 				paths = append(paths, path)
 			}
 		}
@@ -223,7 +227,13 @@ func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
 
 // NOTE this is currently a copy of v1, might be something to make more general
 func (g *Group) Search(term *regexp.Regexp) (paths []string) {
-
+	if term.FindString(g.Name()) != "" {
+		path, err := g.Path()
+		if err == nil {
+			// append slash so it's clear that it's a group, not an entry
+			paths = append(paths, path + "/")
+		}
+	}
 	paths = append(paths, g.searchEntries(term)...)
 	for _, g := range g.Groups() {
 		paths = append(paths, g.Search(term)...)

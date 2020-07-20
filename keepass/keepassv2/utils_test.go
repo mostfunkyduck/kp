@@ -25,11 +25,11 @@ func createTestResources(t *testing.T) Resources {
 	}
 	newEnt := g.NewEntry()
 	entry := main.WrapEntry(&newEnt, db)
-	if err := entry.SetParent(group); err != nil {
-		t.Fatalf(err.Error())
-	}
 	if !entry.Set(k.Value{Name: "Title", Value: name}) {
 		t.Fatalf("could not set title")
+	}
+	if err := entry.SetParent(group); err != nil {
+		t.Fatalf(err.Error())
 	}
 	return Resources{
 		Db:    db,
