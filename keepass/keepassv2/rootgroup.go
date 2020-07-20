@@ -5,9 +5,10 @@ package keepassv2
 
 import (
 	"fmt"
+	"regexp"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 	g "github.com/tobischo/gokeepasslib/v3"
-	"regexp"
 )
 
 type RootGroup struct {

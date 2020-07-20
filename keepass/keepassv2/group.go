@@ -3,9 +3,10 @@ package keepassv2
 import (
 	"encoding/base64"
 	"fmt"
+	"regexp"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 	gokeepasslib "github.com/tobischo/gokeepasslib/v3"
-	"regexp"
 )
 
 type Group struct {
@@ -215,7 +216,7 @@ func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 		path, err := g.Path()
 		if err == nil {
 			// append slash so it's clear that it's a group, not an entry
-			paths = append(paths, path + "/")
+			paths = append(paths, path+"/")
 		}
 	}
 

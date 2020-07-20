@@ -1,10 +1,11 @@
 package keepassv2_test
 
 import (
+	"testing"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	g "github.com/tobischo/gokeepasslib/v3"
-	"testing"
 )
 
 func TestPathNoParent(t *testing.T) {

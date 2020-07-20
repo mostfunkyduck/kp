@@ -9,7 +9,7 @@ func TestDbPath(t *testing.T) {
 	r := createTestResources(t)
 	path, err := r.Db.Path()
 	if err != nil {
-		t.Fatalf(err.Error())	
+		t.Fatalf(err.Error())
 	}
 
 	expected := "/"

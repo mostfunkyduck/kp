@@ -2,13 +2,14 @@ package keepassv2
 
 import (
 	"encoding/base64"
-	"regexp"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 	g "github.com/tobischo/gokeepasslib/v3"
 	w "github.com/tobischo/gokeepasslib/v3/wrappers"
-	"strings"
-	"time"
 )
 
 type Entry struct {
@@ -188,8 +189,8 @@ func (e *Entry) Output(full bool) string {
 func (e *Entry) Values() (values []k.Value) {
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
-			Name: each.Key,
-			Value: each.Value.Content,
+			Name:      each.Key,
+			Value:     each.Value.Content,
 			Protected: each.Value.Protected.Bool,
 		}
 		values = append(values, newValue)
@@ -209,7 +210,7 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 	for _, val := range e.Values() {
 		content := val.Value.(string)
 		if term.FindString(content) != "" ||
-			 term.FindString(val.Name) != "" {
+			term.FindString(val.Name) != "" {
 			// something in this entry matched, let's return it
 			path, _ := e.Path()
 			paths = append(paths, path)

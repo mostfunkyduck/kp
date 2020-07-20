@@ -23,7 +23,7 @@ func TestNestedSubGroupPath(t *testing.T) {
 	}
 }
 
-func TestDoubleNestedGroupPath (t *testing.T) {
+func TestDoubleNestedGroupPath(t *testing.T) {
 	r := createTestResources(t)
 	sgName := "blipblip"
 	sg, err := r.Group.NewSubgroup(sgName)

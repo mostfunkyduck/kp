@@ -2,10 +2,11 @@ package keepassv2
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 	g "github.com/tobischo/gokeepasslib/v3"
-	"os"
 )
 
 type Database struct {
@@ -28,6 +29,7 @@ func NewDatabase(db *g.Database, savePath string, options k.Options) k.Database 
 func (d *Database) Search(term *regexp.Regexp) (path []string) {
 	return d.Root().Search(term)
 }
+
 //KeepassWrapper
 func (d *Database) Raw() interface{} {
 	return d.db
@@ -35,7 +37,7 @@ func (d *Database) Raw() interface{} {
 
 func (d *Database) Root() k.Group {
 	return &RootGroup{
-		db: d,
+		db:   d,
 		root: d.db.Content.Root,
 	}
 }

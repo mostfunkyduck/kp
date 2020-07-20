@@ -1,12 +1,13 @@
 package keepassv2_test
 
 import (
-	k "github.com/mostfunkyduck/kp/keepass"
 	"regexp"
 	"testing"
+
+	k "github.com/mostfunkyduck/kp/keepass"
 )
 
-func findGroupInGroup(parent k.Group, child k.Group) bool{
+func findGroupInGroup(parent k.Group, child k.Group) bool {
 	for _, group := range parent.Groups() {
 		if group.Name() == child.Name() {
 			return true
@@ -15,7 +16,7 @@ func findGroupInGroup(parent k.Group, child k.Group) bool{
 	return false
 }
 
-func TestGroupFunctions (t *testing.T) {
+func TestGroupFunctions(t *testing.T) {
 	r := createTestResources(t)
 	root := r.Db.Root()
 	name := "TestGroupFunctions"
@@ -53,7 +54,7 @@ func TestGroupFunctions (t *testing.T) {
 	}
 }
 
-func TestParentFunctions (t *testing.T) {
+func TestParentFunctions(t *testing.T) {
 	r := createTestResources(t)
 	if err := r.Db.Root().SetParent(r.Group); err == nil {
 		t.Fatalf("was able to set root's parent")
@@ -65,14 +66,14 @@ func TestParentFunctions (t *testing.T) {
 	}
 }
 
-func TestRootGroupIsRoot (t *testing.T) {
+func TestRootGroupIsRoot(t *testing.T) {
 	r := createTestResources(t)
 	if !r.Db.Root().IsRoot() {
 		t.Fatalf("IsRoot is broken")
 	}
 }
 
-func TestEntryFunctions (t *testing.T) {
+func TestEntryFunctions(t *testing.T) {
 	r := createTestResources(t)
 	e, err := r.Group.NewEntry("test")
 	if err != nil {
@@ -100,7 +101,7 @@ func TestSearch(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	// search for group using partial search
-	paths := r.Db.Root().Search(regexp.MustCompile(name[0:len(name)/2]))
+	paths := r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
 	if len(paths) != 1 {
 		t.Fatalf("too many paths returned from group search: %v", paths)
 	}
@@ -110,12 +111,12 @@ func TestSearch(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	if paths[0] != path + "/" {
+	if paths[0] != path+"/" {
 		t.Fatalf("[%s] != [%s]", paths[0], path)
 	}
 
 	name = r.Entry.Title()
-	paths = r.Db.Root().Search(regexp.MustCompile(name[0:len(name)/2]))
+	paths = r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
 	if len(paths) != 1 {
 		t.Fatalf("wrong count of paths returned from entry search: %v", paths)
 	}
