@@ -27,16 +27,17 @@ type KeepassWrapper interface {
 
 type Database interface {
 	KeepassWrapper
-	// Returns the current location for the shell
+	// CurrentLocation returns the current location for the shell
 	CurrentLocation() Group
-	// Returns the root of the database
+	SetCurrentLocation(Group)
 	Root() Group
 	Save() error
-	// Returns the path of the DB on the filesystem
+
+	// SavePath returns the path to which the database will be saved
 	SavePath() string
-	SetCurrentLocation(Group)
 	SetSavePath(newPath string)
-	// Sets options for interacting with the database file
+
+	// SetOptions sets options for interacting with the database file
 	SetOptions(Options) error
 }
 
@@ -47,7 +48,7 @@ type Options struct {
 }
 
 type UUIDer interface {
-	// We only need the string version of the UUID for this application
+	// UUIDString returns the string form of this object's UUID
 	UUIDString() (string, error)
 }
 type Group interface {

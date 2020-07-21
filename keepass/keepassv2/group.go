@@ -40,22 +40,20 @@ func (g *Group) Groups() (rv []k.Group) {
 func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, group := range source.Groups() {
-		uuidString, err := target.UUIDString()
+		same, err := CompareUUIDs(group, target)
 		if err != nil {
-			// TODO swallowing this error
-			return []k.Group{}, fmt.Errorf("could not parse UUID string in group '%s'", target.Name())
+			return []k.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
 		}
-		groupUUIDString, err := group.UUIDString()
-		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not parse UUID string in group '%s'", group.Name())
-		}
-		if groupUUIDString == uuidString {
+
+		if same {
 			return []k.Group{source}, nil
 		}
+
 		pathGroups, err := findPathToGroup(group, target)
 		if err != nil {
 			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
 		}
+
 		if len(pathGroups) != 0 {
 			return append([]k.Group{source}, pathGroups...), nil
 		}
@@ -230,7 +228,6 @@ func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 	return paths
 }
 
-// FIXME make this a library function, should not require effort
 func (g *Group) UUIDString() (string, error) {
 	encodedUUID, err := g.group.UUID.MarshalText()
 	if err != nil {

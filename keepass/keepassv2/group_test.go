@@ -56,3 +56,51 @@ func TestDoubleNestedGroupPath(t *testing.T) {
 		t.Fatalf("[%s] != [%s]", sgPath, sgExpected)
 	}
 }
+
+func TestPathOnOrphanedGroup(t *testing.T) {
+	r := createTestResources(t)
+	if err := r.Db.Root().RemoveSubgroup(r.Group); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	// if the path is obtained from root, there will be a preceding slash
+	// otherwise, no slash
+	if path, err := r.Group.Path(); path != r.Group.Name() {
+		t.Fatalf("orphaned group somehow had a path: %s: %s", path, err)
+	}
+
+}
+
+func TestGroupParentFunctions(t *testing.T) {
+	r := createTestResources(t)
+	name := "TestGroupParentFunctions"
+
+	// first test 'parent' when it is returning the root group
+	sg, err := r.Db.Root().NewSubgroup(name)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	parent := sg.Parent()
+	if !parent.IsRoot() {
+		t.Fatalf("subgroup of root group was not pointing at root")
+	}
+
+	// now  test when parent returns a regular group
+	subsg, err := sg.NewSubgroup(name)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	parentUUID, err := subsg.Parent().UUIDString()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	sgUUID, err := sg.UUIDString()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if sgUUID != parentUUID {
+		t.Fatalf("[%s] != [%s]", sgUUID, parentUUID)
+	}
+}
