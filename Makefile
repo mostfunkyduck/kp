@@ -4,6 +4,8 @@ DATE=`date -u +%Y-%m-%d-%H-%M`
 BRANCH=`git branch 2>/dev/null | grep '\*' | sed "s/* //"`
 RELEASE=0.1
 
+.PHONY: test cscope goimports install
+
 all: test kp
 kp: *.go
 	go build -gcflags "-N -I ." -ldflags "-X main.VersionRevision=$(REVISION) -X main.VersionBuildDate=$(DATE) -X main.VersionBuildTZ=UTC -X main.VersionBranch=$(BRANCH) -X main.VersionRelease=$(RELEASE) -X main.VersionHostname=$(HOSTNAME)" 
@@ -17,14 +19,14 @@ cscope:
 
 goimports:
 	goimports -w *.go
-	goimports -w keepass/*.go
-	goimports -w keepass/keepassv1/*.go
-	goimports -w keepass/keepassv2/*.go
+	goimports -w ./keepass/*.go
+	goimports -w ./keepass/keepassv1/*.go
+	goimports -w ./keepass/keepassv2/*.go
 
 install:
 	cp ./kp /usr/local/bin/kp
 
 test:
 		go test
-		go test keepass/keepassv1
-		go test keepass/keepassv2
+		go test ./keepass/keepassv1
+		go test ./keepass/keepassv2
