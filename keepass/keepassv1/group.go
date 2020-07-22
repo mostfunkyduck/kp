@@ -100,9 +100,7 @@ func (g *Group) IsRoot() bool {
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	newGroup := g.group.NewSubgroup()
 	newGroup.Name = name
-	return &Group{
-		group: newGroup,
-	}, nil
+	return NewGroup(newGroup), nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {

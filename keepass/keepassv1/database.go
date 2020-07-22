@@ -6,6 +6,7 @@ package keepassv1
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -120,4 +121,8 @@ func (d *Database) Raw() interface{} {
 func (d *Database) Path() (fullPath string, err error) {
 	group := d.CurrentLocation()
 	return group.Path()
+}
+
+func (d* Database) Search(term *regexp.Regexp) (paths []string) {
+	return d.Root().Search(term)
 }

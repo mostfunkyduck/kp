@@ -2,6 +2,7 @@ package keepassv1
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -107,12 +108,21 @@ func (e *Entry) SetParent(g k.Group) error {
 }
 
 func (e *Entry) Parent() k.Group {
+	group := e.entry.Parent()
+	if group == nil {
+		return nil
+	}
 	return &Group{
-		group: e.entry.Parent(),
+		group: group,
 	}
 }
 
 func (e *Entry) Path() (string, error) {
+	parent := e.Parent()
+	if parent == nil {
+		// orphaned entry
+		return e.Title(), nil
+	}
 	groupPath, err := e.Parent().Path()
 	if err != nil {
 		return "", fmt.Errorf("could not find path to entry: %s", err)
@@ -173,7 +183,7 @@ func (e *Entry) Output(full bool) (val string) {
 
 	path, err := e.Path()
 	if err != nil {
-		path = fmt.Sprintf("<errror: %s", err)
+		path = fmt.Sprintf("<error: %s", err)
 	}
 	fmt.Fprintf(&b, "Location:\t%s\n", path)
 	fmt.Fprintf(&b, "Title:\t%s\n", e.Title())
@@ -197,4 +207,30 @@ func (e *Entry) Password() string {
 
 func (e *Entry) Title() string {
 	return e.Get("title").Value.(string)
+}
+
+func (e *Entry) Values() (vals []k.Value) {
+	path, _ := e.Path()
+	vals = append(vals, k.Value{Name: "location", Value: path})
+  vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string)})
+  vals = append(vals, k.Value{Name: "password", Value: e.Password()})
+  vals = append(vals, k.Value{Name: "title", Value: e.Title()})
+  vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string)})
+  vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string)})
+  vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name})
+	return
+}
+
+func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
+	for _, val := range e.Values() {
+		content := val.Value.(string)
+		if term.FindString(content) != "" ||
+			term.FindString(val.Name) != "" {
+			// something in this entry matched, let's return it
+			path, _ := e.Path()
+			paths = append(paths, path)
+			break
+		}
+	}
+	return
 }

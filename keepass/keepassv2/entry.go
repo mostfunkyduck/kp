@@ -214,6 +214,7 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 			// something in this entry matched, let's return it
 			path, _ := e.Path()
 			paths = append(paths, path)
+			break
 		}
 	}
 
