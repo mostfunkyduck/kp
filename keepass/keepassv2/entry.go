@@ -105,7 +105,7 @@ func (e Entry) Get(field string) k.Value {
 }
 
 func (e *Entry) Set(value k.Value) bool {
-	for _, each := range e.entry.Values {
+	for i, each := range e.entry.Values {
 		if each.Key == value.Name {
 			oldContent := each.Value.Content
 			oldProtected := each.Value.Protected
@@ -113,6 +113,9 @@ func (e *Entry) Set(value k.Value) bool {
 			// TODO filter for binaries here, bad shit will happen if you try to attach this way :D
 			each.Value.Content = value.Value.(string)
 			each.Value.Protected = w.NewBoolWrapper(value.Protected)
+
+			// since we don't get to use pointers, update the slice directly
+			e.entry.Values[i] = each
 
 			return (oldContent != value.Value) || (oldProtected.Bool != value.Protected)
 		}

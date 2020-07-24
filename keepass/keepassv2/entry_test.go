@@ -47,3 +47,30 @@ func TestRegularPath(t *testing.T) {
 		t.Fatalf("[%s] != [%s]", path, expected)
 	}
 }
+
+func TestEntrySet (t *testing.T) {
+	r := createTestResources(t)
+	value := k.Value {
+		Name: "TestEntrySet",
+		Value: "test value",
+	}
+	if !r.Entry.Set(value) {
+		t.Fatalf("could not set value")
+	}
+
+	entryValue := r.Entry.Get(value.Name).Value.(string)
+	if entryValue != value.Value {
+		t.Fatalf("[%s] != [%s], %v", entryValue, value.Name, value)
+	}
+
+	secondValue := "asldkfj"
+	value.Value = secondValue
+	if !r.Entry.Set(value) {
+		t.Fatalf("could not overwrite value: %v", value)
+	}
+
+	entryValue = r.Entry.Get(value.Name).Value.(string)
+	if entryValue != secondValue {
+		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
+	}
+}
