@@ -125,7 +125,7 @@ func TestEntryGetSet (t *testing.T) {
 	}
 }
 
-func TestEntrySimpleFuncs (t *testing.T) {
+func TestEntryTimeFuncs (t *testing.T) {
 	r := createTestResources(t)
 	newTime := time.Now().Add(time.Duration(1) * time.Hour)
 	r.Entry.SetCreationTime(newTime)
@@ -143,5 +143,31 @@ func TestEntrySimpleFuncs (t *testing.T) {
 	r.Entry.SetLastAccessTime(newTime)
 	if !r.Entry.LastAccessTime().Equal(newTime) {
 		t.Fatalf("%v, %v", newTime, r.Entry.LastAccessTime())
+	}
+}
+
+func TestEntryPasswordTitleFuncs (t *testing.T) {
+	r := createTestResources(t)
+	password := "swordfish"
+	r.Entry.SetPassword(password)
+	if r.Entry.Password() != password {
+		t.Fatalf("[%s] != [%s]", r.Entry.Password(), password)
+	}
+
+	title := "blobulence"
+	r.Entry.SetTitle(title)
+	if r.Entry.Title() != title {
+		t.Fatalf("[%s] != [%s]", r.Entry.Title(), title)
+	}
+}
+
+func TestOutput (t *testing.T) {
+	r := createTestResources(t)
+	// only testing that it returns SOMETHING and doesn't bork
+	if r.Entry.Output(true) == "" {
+		t.Fatalf("output was empty")
+	}
+	if r.Entry.Output(false) == "" {
+		t.Fatalf("output was empty")
 	}
 }

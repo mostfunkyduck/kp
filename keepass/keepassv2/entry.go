@@ -176,13 +176,7 @@ func (e *Entry) SetParent(g k.Group) error {
 		}
 		return fmt.Errorf(errorString)
 	}
-	parent := pathGroups[len(pathGroups)-1]
-	for _, each := range parent.Entries() {
-		if e.Title() == each.Title() {
-			// no dupes!
-			return fmt.Errorf("could not change parent: duplicate entry exists at target location")
-		}
-	}
+
 	if err := g.AddEntry(e); err != nil {
 		return fmt.Errorf("cannot add entry to group: %s", err)
 	}
@@ -214,7 +208,7 @@ func (e *Entry) Values() (values []k.Value) {
 
 func (e *Entry) SetPassword(password string) {
 	e.Set(k.Value{
-		Name: "password",
+		Name: "Password",
 		Value: password,
 	})
 }
@@ -225,7 +219,7 @@ func (e *Entry) Password() string {
 
 func (e *Entry) SetTitle(title string) {
 	e.Set(k.Value{
-		Name: "title",
+		Name: "Title",
 		Value: title,
 	})
 }
