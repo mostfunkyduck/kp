@@ -8,7 +8,7 @@ import (
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
-func TestPathNoParent(t *testing.T) {
+func TestNoParent(t *testing.T) {
 	name := "shmoo"
 	db := main.NewDatabase(g.NewDatabase(), "/dev/null", k.Options{})
 	newEnt := g.NewEntry()
@@ -23,6 +23,10 @@ func TestPathNoParent(t *testing.T) {
 	// this guy has no parent, shouldn't even have the root "/" in the path
 	if output != name {
 		t.Fatalf("[%s] !+ [%s]", output, name)
+	}
+
+	if parent := e.Parent(); parent != nil {
+		t.Fatalf("%v", parent)
 	}
 }
 
@@ -45,6 +49,46 @@ func TestRegularPath(t *testing.T) {
 	expected += "/" + name
 	if path != expected {
 		t.Fatalf("[%s] != [%s]", path, expected)
+	}
+
+	parent := r.Entry.Parent()
+	if parent == nil {
+		t.Fatalf("%v", r)
+	}
+
+	parentPath, err := parent.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	groupPath, err := r.Group.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if parentPath != groupPath {
+		t.Fatalf("[%s] != [%s]", parentPath, groupPath)
+	}
+
+
+	looseEntry := g.NewEntry()
+	newEntry := main.WrapEntry(&looseEntry, r.Db)
+	if err := newEntry.SetParent(r.Group); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	entryPath, err := newEntry.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	groupPath, err = r.Group.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	expected = groupPath + "/" + newEntry.Title()
+	if entryPath != expected {
+		t.Fatalf("[%s] != [%s]", entryPath, expected)
 	}
 }
 
