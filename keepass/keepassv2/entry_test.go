@@ -48,11 +48,16 @@ func TestRegularPath(t *testing.T) {
 	}
 }
 
-func TestEntrySet (t *testing.T) {
+func TestEntryGetSet (t *testing.T) {
 	r := createTestResources(t)
+
 	value := k.Value {
-		Name: "TestEntrySet",
+		Name: "TestEntryGetSet",
 		Value: "test value",
+	}
+
+	if r.Entry.Get(value.Name) != (k.Value{}) {
+		t.Fatalf("initial get should have returned empty value")
 	}
 	if !r.Entry.Set(value) {
 		t.Fatalf("could not set value")
