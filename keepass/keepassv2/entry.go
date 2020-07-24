@@ -131,12 +131,23 @@ func (e *Entry) Set(value k.Value) bool {
 	return true
 }
 
+func (e *Entry) LastAccessTime() time.Time {
+	return e.entry.Times.LastAccessTime.Time
+}
+
 func (e *Entry) SetLastAccessTime(t time.Time) {
 	e.entry.Times.LastAccessTime = &w.TimeWrapper{Time: t}
 }
 
+func (e *Entry) LastModificationTime() time.Time {
+	return e.entry.Times.LastModificationTime.Time
+}
 func (e *Entry) SetLastModificationTime(t time.Time) {
 	e.entry.Times.LastModificationTime = &w.TimeWrapper{Time: t}
+}
+
+func (e *Entry) CreationTime() time.Time {
+	return e.entry.Times.CreationTime.Time
 }
 
 func (e *Entry) SetCreationTime(t time.Time) {
@@ -200,10 +211,24 @@ func (e *Entry) Values() (values []k.Value) {
 	}
 	return
 }
+
+func (e *Entry) SetPassword(password string) {
+	e.Set(k.Value{
+		Name: "password",
+		Value: password,
+	})
+}
+
 func (e *Entry) Password() string {
 	return e.entry.GetPassword()
 }
 
+func (e *Entry) SetTitle(title string) {
+	e.Set(k.Value{
+		Name: "title",
+		Value: title,
+	})
+}
 func (e *Entry) Title() string {
 	return e.entry.GetTitle()
 }

@@ -2,6 +2,7 @@ package keepassv2_test
 
 import (
 	"testing"
+	"time"
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
@@ -121,5 +122,26 @@ func TestEntryGetSet (t *testing.T) {
 	entryValue = r.Entry.Get(value.Name).Value.(string)
 	if entryValue != secondValue {
 		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
+	}
+}
+
+func TestEntrySimpleFuncs (t *testing.T) {
+	r := createTestResources(t)
+	newTime := time.Now().Add(time.Duration(1) * time.Hour)
+	r.Entry.SetCreationTime(newTime)
+	if !r.Entry.CreationTime().Equal(newTime) {
+		t.Fatalf("%v, %v", newTime, r.Entry.CreationTime())
+	}
+
+	newTime = newTime.Add(time.Duration(1) * time.Hour)
+	r.Entry.SetLastModificationTime(newTime)
+	if !r.Entry.LastModificationTime().Equal(newTime) {
+		t.Fatalf("%v, %v", newTime, r.Entry.LastModificationTime())
+	}
+
+	newTime = newTime.Add(time.Duration(1) * time.Hour)
+	r.Entry.SetLastAccessTime(newTime)
+	if !r.Entry.LastAccessTime().Equal(newTime) {
+		t.Fatalf("%v, %v", newTime, r.Entry.LastAccessTime())
 	}
 }

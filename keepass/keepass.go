@@ -90,14 +90,20 @@ type Entry interface {
 	// Title and Password are needed to ensure that v1 and v2 both render
 	// their specific representations of that data (they access it in different ways, fun times)
 	Title() string
+	SetTitle(string)
 	Password() string
+	SetPassword(string)
 
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
 	Set(value Value) bool
 
-	// Sets the last accessed time on the entry
+	LastAccessTime() time.Time
 	SetLastAccessTime(time.Time)
+
+	LastModificationTime() time.Time
 	SetLastModificationTime(time.Time)
+
+	CreationTime() time.Time
 	SetCreationTime(time.Time)
 
 	Parent() Group
