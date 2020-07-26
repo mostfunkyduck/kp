@@ -78,7 +78,6 @@ type Group interface {
 
 	NewEntry(name string) (Entry, error)
 	RemoveEntry(Entry) error
-
 }
 
 type Entry interface {
@@ -119,6 +118,11 @@ type Entry interface {
 	//
 	// NOTE: values are read only
 	Values() (values []Value)
+
+
+	// DB returns the Database this entry is associated with
+	DB() Database
+	SetDB(Database)
 }
 
 type Value struct {
