@@ -13,7 +13,7 @@ func TestProperties(t *testing.T) {
 	group := &keepass.Group{
 		Name: name,
 	}
-	groupWrapper := v1.NewGroup(group)
+	groupWrapper := v1.WrapGroup(group, &v1.Database{})
 	wrapperName := groupWrapper.Name()
 	if wrapperName != name {
 		t.Fatalf("%s != %s", wrapperName, name)
@@ -40,7 +40,7 @@ func TestGroupFunctions(t *testing.T) {
 		g.Name = "group #" + strconv.Itoa(i)
 	}
 
-	groupWrapper := v1.NewGroup(group)
+	groupWrapper := v1.WrapGroup(group, &v1.Database{})
 	// assuming stable ordering because the shell is premised on that for path traversal
 	// (if the entries and groups change order, the user can't specify which one to change properly)
 	for i, each := range groupWrapper.Groups() {

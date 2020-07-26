@@ -8,11 +8,13 @@ import (
 )
 
 type Group struct {
+	db k.Database
 	group *keepass.Group
 }
 
-func NewGroup(group *keepass.Group) k.Group {
+func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 	return &Group{
+		db: db,
 		group: group,
 	}
 }
@@ -69,7 +71,7 @@ func (g *Group) SetName(name string) {
 }
 
 func (g *Group) Parent() k.Group {
-	return NewGroup(g.group.Parent())
+	return WrapGroup(g.group.Parent(), g.db)
 }
 
 func (g *Group) SetParent(parent k.Group) error {
@@ -88,7 +90,7 @@ func (g *Group) Entries() (rv []k.Entry) {
 
 func (g *Group) Groups() (rv []k.Group) {
 	for _, each := range g.group.Groups() {
-		rv = append(rv, NewGroup(each))
+		rv = append(rv, WrapGroup(each, g.db))
 	}
 	return rv
 }
@@ -100,7 +102,7 @@ func (g *Group) IsRoot() bool {
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	newGroup := g.group.NewSubgroup()
 	newGroup.Name = name
-	return NewGroup(newGroup), nil
+	return WrapGroup(newGroup, g.db), nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
@@ -141,4 +143,8 @@ func (g *Group) RemoveEntry(e k.Entry) error {
 
 func (g *Group) UUIDString() (string, error) {
 	return string(g.group.ID), nil
+}
+
+func (g *Group) DB() k.Database {
+	return g.db
 }

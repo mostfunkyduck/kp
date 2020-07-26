@@ -22,16 +22,16 @@ var backupExtension = ".kpbackup"
 
 func NewDatabase(db *keepass.Database, savePath string) k.Database {
 	rv := &Database{
-		currentLocation: NewGroup(db.Root()),
 		db:              db,
 		savePath:        savePath,
 	}
+	rv.SetCurrentLocation(WrapGroup(db.Root(), rv))
 	return rv
 }
 
 // Root returns the DB root
 func (d *Database) Root() k.Group {
-	return NewGroup(d.db.Root())
+	return WrapGroup(d.db.Root(), d)
 }
 
 // Backup will create a backup of the current database to a temporary location

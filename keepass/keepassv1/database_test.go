@@ -20,8 +20,8 @@ func TestSavePath(t *testing.T) {
 
 func TestCurrentLocation(t *testing.T) {
 	expectedName := "asdf"
-	kdbGroup := v1.NewGroup(&keepass.Group{Name: expectedName})
 	db := &v1.Database{}
+	kdbGroup := v1.WrapGroup(&keepass.Group{Name: expectedName}, db)
 	db.SetCurrentLocation(kdbGroup)
 	l := db.CurrentLocation()
 	if l == nil {

@@ -11,7 +11,7 @@ import (
 func TestTitle(t *testing.T) {
 	title := "test"
 	e := &keepass.Entry{Title: title}
-	wrapper := v1.NewEntry(e)
+	wrapper := v1.WrapEntry(e, &v1.Database{})
 	wrapperTitle := wrapper.Title()
 	if wrapperTitle != title {
 		t.Fatalf("%s != %s", title, wrapperTitle)

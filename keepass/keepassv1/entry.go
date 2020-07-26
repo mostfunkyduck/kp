@@ -21,11 +21,13 @@ const (
 )
 
 type Entry struct {
+	db k.Database
 	entry *keepass.Entry
 }
 
-func NewEntry(entry *keepass.Entry) k.Entry {
+func WrapEntry(entry *keepass.Entry, db k.Database) k.Entry {
 	return &Entry{
+		db: db,
 		entry: entry,
 	}
 }
@@ -253,4 +255,12 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 		}
 	}
 	return
+}
+
+func (e *Entry) DB() k.Database {
+	return e.db
+}
+
+func (e *Entry) SetDB(db k.Database) {
+	e.db = db
 }
