@@ -3,8 +3,6 @@ package tests
 import (
 	"regexp"
 	"testing"
-	gokeepasslib "github.com/tobischo/gokeepasslib/v3"
-	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 )
 
 func RunTestNestedSubGroupPath(t *testing.T, r Resources) {
@@ -105,8 +103,7 @@ func RunTestGroupParentFunctions(t *testing.T, r Resources) {
 }
 
 func RunTestGroupUniqueness (t *testing.T, r Resources) {
-	newGroup := gokeepasslib.NewGroup()
-	newGroupWrapper := main.WrapGroup(&newGroup, r.Db)
+	newGroupWrapper := r.BlankGroup
 	newGroupWrapper.SetName(r.Entry.Title())
 
 	if err := r.Group.AddSubgroup(newGroupWrapper); err == nil {
@@ -194,8 +191,7 @@ func RunTestIsRoot(t *testing.T, r Resources) {
 		t.Fatalf("non root group thinks it's root")
 	}
 
-	newGroup := gokeepasslib.NewGroup()
-	newGroupWrapper := main.WrapGroup(&newGroup, r.Db)
+	newGroupWrapper := r.BlankGroup
 	if newGroupWrapper.IsRoot() {
 		t.Fatalf("orphaned group with no parent thinks it's root")
 	}
