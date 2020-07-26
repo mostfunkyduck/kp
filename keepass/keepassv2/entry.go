@@ -242,3 +242,8 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 
 	return
 }
+
+func (e *Entry) DB() Database {
+	return e.db
+}
+

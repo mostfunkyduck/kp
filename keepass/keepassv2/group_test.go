@@ -1,7 +1,10 @@
 package keepassv2_test
 
 import (
+	"regexp"
 	"testing"
+	gokeepasslib "github.com/tobischo/gokeepasslib/v3"
+	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 )
 
 func TestNestedSubGroupPath(t *testing.T) {
@@ -102,5 +105,107 @@ func TestGroupParentFunctions(t *testing.T) {
 	}
 	if sgUUID != parentUUID {
 		t.Fatalf("[%s] != [%s]", sgUUID, parentUUID)
+	}
+}
+
+func TestGroupUniqueness (t *testing.T) {
+	r := createTestResources(t)
+	newGroup := gokeepasslib.NewGroup()
+	newGroupWrapper := main.WrapGroup(&newGroup, r.Db)
+	newGroupWrapper.SetName(r.Entry.Title())
+
+	if err := r.Group.AddSubgroup(newGroupWrapper); err == nil {
+		t.Fatalf("added subgroup with same name as entry in group")
+	}
+
+	newGroupWrapper.SetName("asdf")
+	if _, err := r.Group.NewSubgroup(newGroupWrapper.Name()); err != nil {
+		t.Fatalf(err.Error())
+	}
+	if err := r.Group.AddSubgroup(newGroupWrapper); err == nil {
+		t.Fatalf("added subgroup with same name as other subgroup in group")
+	}
+}
+
+func TestRemoveSubgroup(t *testing.T) {
+	r := createTestResources(t)
+	name := "TestRemoveSubgroup"
+
+	originalLen := len(r.Group.Groups())
+	sg, err := r.Group.NewSubgroup(name)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if len(r.Group.Groups()) != originalLen + 1 {
+		t.Fatalf("[%d] != [%d]", len(r.Group.Groups()), originalLen + 1)
+	}
+	if err := r.Group.RemoveSubgroup(sg); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if len(r.Group.Groups()) != originalLen {
+		t.Fatalf("[%d] != [%d]", len(r.Group.Groups()), originalLen)
+	}
+
+	if err := r.Group.RemoveSubgroup(sg); err == nil {
+		t.Fatalf("removed subgroup twice")
+	}
+}
+
+func TestGroupEntryFuncs (t *testing.T) {
+	r := createTestResources(t)
+	if err := r.Group.AddEntry(r.Entry); err == nil {
+		t.Fatalf("added duplicate entry: [%v][%v]", r.Entry, r.Group)
+	}
+
+	originalLen := len(r.Group.Entries())
+	if err := r.Group.RemoveEntry(r.Entry); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if len(r.Group.Entries()) != originalLen - 1 {
+		t.Fatalf("[%d] != [%d]", len(r.Group.Entries()), originalLen -1)
+	}
+
+	if err := r.Group.RemoveEntry(r.Entry); err == nil {
+		t.Fatalf("successfully removed non existent entry")
+	}
+}
+
+func TestSubgroupSearch(t *testing.T) {
+	r := createTestResources(t)
+	name := "TestSubgroupSearch"
+	sg, err := r.Group.NewSubgroup(name)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	paths := r.Group.Search(regexp.MustCompile(sg.Name()))
+	if len(paths) != 1 {
+		t.Fatalf("too many search results")
+	}
+
+	sgPath, err := sg.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	sgPath += "/" // subgroups always get at erminal slash in paths
+	if paths[0] != sgPath {
+		t.Fatalf("[%s] != [%s]", paths[0], sgPath)
+	}
+}
+
+func TestIsRoot(t *testing.T) {
+	r := createTestResources(t)
+	if r.Group.IsRoot() {
+		t.Fatalf("non root group thinks it's root")
+	}
+
+	newGroup := gokeepasslib.NewGroup()
+	newGroupWrapper := main.WrapGroup(&newGroup, r.Db)
+	if newGroupWrapper.IsRoot() {
+		t.Fatalf("orphaned group with no parent thinks it's root")
 	}
 }
