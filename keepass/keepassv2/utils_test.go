@@ -6,15 +6,10 @@ import (
 	k "github.com/mostfunkyduck/kp/keepass"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	g "github.com/tobischo/gokeepasslib/v3"
+	runner "github.com/mostfunkyduck/kp/keepass/tests"
 )
 
-type Resources struct {
-	Db    k.Database
-	Group k.Group
-	Entry k.Entry
-}
-
-func createTestResources(t *testing.T) Resources {
+func createTestResources(t *testing.T) runner.Resources {
 	name := "test yo"
 	groupName := "group"
 	db := main.NewDatabase(g.NewDatabase(), "/dev/null", k.Options{})
@@ -32,9 +27,15 @@ func createTestResources(t *testing.T) Resources {
 	if err := entry.SetParent(group); err != nil {
 		t.Fatalf(err.Error())
 	}
-	return Resources{
+
+	rawEnt := g.NewEntry()
+	rawGrp := g.NewGroup()
+
+	return runner.Resources{
 		Db:    db,
 		Group: group,
 		Entry: entry,
+		BlankEntry: main.WrapEntry(&rawEnt, db),
+		BlankGroup: main.WrapGroup(&rawGrp, db),
 	}
 }
