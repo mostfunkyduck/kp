@@ -11,8 +11,8 @@ import (
 )
 
 type Entry struct {
-	db    k.Database
-	entry k.Entry
+	db     k.Database
+	driver k.Entry
 }
 
 // findPathToEntry returns all the groups in the path leading to an entry *but not the entry itself*
@@ -33,6 +33,7 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 			return []k.Group{source}, nil
 		}
 	}
+
 	groups := source.Groups()
 	for _, group := range groups {
 		newGroups, err := findPathToEntry(group, target)
@@ -42,7 +43,7 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 			return []k.Group{}, fmt.Errorf("error finding path to '%s' from '%s': %s", target.Title(), group.Name(), err)
 		}
 		if len(newGroups) > 0 {
-			return newGroups, nil
+			return append([]k.Group{source}, newGroups...), nil
 		}
 	}
 	return []k.Group{}, nil
@@ -50,25 +51,20 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 
 // Path returns the fully qualified path to the entry, if there's no parent, only the name is returned
 func (e *Entry) Path() (path string, err error) {
-	pathGroups, err := findPathToEntry(e.DB().Root(), e.entry)
+	pathGroups, err := findPathToEntry(e.DB().Root(), e.driver)
 	if err != nil {
-		return path, fmt.Errorf("could not find path from root to %s: %s", e.entry.Title(), err)
+		return path, fmt.Errorf("could not find path from root to %s: %s", e.driver.Title(), err)
 	}
 
-	if len(pathGroups) > 0 {
-		// if we're about to build a path, start it off properly
-		// otherwise, this string will stay empty until the title is inserted at the end
-		path = "/"
-	}
 	for _, each := range pathGroups {
 		path = path + each.Name() + "/"
 	}
-	path = path + e.entry.Title()
+	path = path + e.driver.Title()
 	return
 }
 
 func (e *Entry) Parent() k.Group {
-	pathGroups, err := findPathToEntry(e.DB().Root(), e.entry)
+	pathGroups, err := findPathToEntry(e.DB().Root(), e.driver)
 	if err != nil {
 		return nil
 	}
@@ -90,7 +86,7 @@ func (e *Entry) SetParent(g k.Group) error {
 		return fmt.Errorf(errorString)
 	}
 
-	if err := g.AddEntry(e.entry); err != nil {
+	if err := g.AddEntry(e.driver); err != nil {
 		return fmt.Errorf("cannot add entry to group: %s", err)
 	}
 	return nil
@@ -101,7 +97,7 @@ func (e *Entry) Output(full bool) string {
 	fmt.Fprintf(&b, "\n")
 	fmt.Fprintf(&b, "=== Values ===\n")
 	fmt.Fprintf(&b, "index\tkey\tvalue\tprotected\n")
-	for idx, val := range e.entry.Values() {
+	for idx, val := range e.driver.Values() {
 		fmt.Fprintf(&b, "%d\t|\t%s\t|\t%s\t|\t%t\n", idx, val.Name, val.Value.(string), val.Protected)
 	}
 	return b.String()
@@ -109,13 +105,17 @@ func (e *Entry) Output(full bool) string {
 
 // TODO test various fields to make sure they are searchable, consider adding searchability toggle
 func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
-	for _, val := range e.entry.Values() {
+	for _, val := range e.driver.Values() {
+		if !val.Searchable {
+			fmt.Printf("skipping %s\n", val.Name)
+			continue
+		}
 		content := val.Value.(string)
-		if term.FindString(content) != "" ||
-			term.FindString(val.Name) != "" {
+		if term.FindString(content) != "" {
 			// something in this entry matched, let's return it
 			path, _ := e.Path()
 			paths = append(paths, path)
+			fmt.Printf("appending path '%s': %s\n", path, val.Name)
 			break
 		}
 	}
@@ -132,6 +132,6 @@ func (e *Entry) SetDB(db k.Database) {
 }
 
 // SetEntry sets the internal entry driver for this wrapper
-func (e *Entry) SetEntry(entry k.Entry) {
-	e.entry = entry
+func (e *Entry) SetDriver(entry k.Entry) {
+	e.driver = entry
 }

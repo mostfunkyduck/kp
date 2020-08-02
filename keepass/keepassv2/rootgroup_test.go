@@ -111,7 +111,7 @@ func TestSearch(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	if paths[0] != path+"/" {
+	if paths[0] != path {
 		t.Fatalf("[%s] != [%s]", paths[0], path)
 	}
 

@@ -23,16 +23,18 @@ func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
 	if g == nil {
 		return nil
 	}
-	return &Group{
+	gr := &Group{
 		group: g,
-		db:    db,
 	}
+	gr.SetDB(db)
+	gr.SetDriver(gr)
+	return gr
 }
 
 func (g *Group) Groups() (rv []k.Group) {
 	for _, each := range g.group.Groups {
 		_each := each
-		rv = append(rv, WrapGroup(&_each, g.db))
+		rv = append(rv, WrapGroup(&_each, g.DB()))
 	}
 	return
 }
@@ -65,7 +67,7 @@ func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 }
 
 func (g *Group) Path() (rv string, err error) {
-	pathGroups, err := findPathToGroup(g.db.Root(), g)
+	pathGroups, err := findPathToGroup(g.DB().Root(), g)
 	if err != nil {
 		return rv, fmt.Errorf("could not find path to group '%s'", g.Name())
 	}
@@ -78,13 +80,13 @@ func (g *Group) Path() (rv string, err error) {
 func (g *Group) Entries() (rv []k.Entry) {
 	for _, entry := range g.group.Entries {
 		_entry := entry
-		rv = append(rv, WrapEntry(&_entry, g.db))
+		rv = append(rv, WrapEntry(&_entry, g.DB()))
 	}
 	return
 }
 
 func (g *Group) Parent() k.Group {
-	pathGroups, err := findPathToGroup(g.db.Root(), g)
+	pathGroups, err := findPathToGroup(g.DB().Root(), g)
 	if err != nil {
 		return nil
 	}
@@ -116,7 +118,7 @@ func (g *Group) IsRoot() bool {
 // Creates a new subgroup with a given name under this group
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	newGroup := gokeepasslib.NewGroup()
-	newGroupWrapper := WrapGroup(&newGroup, g.db)
+	newGroupWrapper := WrapGroup(&newGroup, g.DB())
 	newGroupWrapper.SetName(name)
 	if err := newGroupWrapper.SetParent(g); err != nil {
 		return &Group{}, fmt.Errorf("couldn't assign new group to parent '%s'; %s", g.Name(), err)
@@ -147,7 +149,7 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	}
 
 	for i, each := range g.group.Groups {
-		eachWrapper := WrapGroup(&each, g.db)
+		eachWrapper := WrapGroup(&each, g.DB())
 		eachUUID, err := eachWrapper.UUIDString()
 		if err != nil {
 			return fmt.Errorf("could not read UUID on '%s': %s", eachWrapper.Name(), err)
@@ -176,7 +178,7 @@ func (g *Group) AddEntry(e k.Entry) error {
 }
 func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entry := gokeepasslib.NewEntry()
-	entryWrapper := WrapEntry(&entry, g.db)
+	entryWrapper := WrapEntry(&entry, g.DB())
 	entryWrapper.Set(k.Value{Name: "Title", Value: name})
 	if err := entryWrapper.SetParent(g); err != nil {
 		return nil, fmt.Errorf("could not add entry to group: %s", err)
@@ -191,7 +193,7 @@ func (g *Group) RemoveEntry(entry k.Entry) error {
 		return fmt.Errorf("cannot read UUID string on target entry '%s': %s", entry.Title(), err)
 	}
 	for i, each := range raw.Entries {
-		eachWrapper := WrapEntry(&each, g.db)
+		eachWrapper := WrapEntry(&each, g.DB())
 		eachUUID, err := eachWrapper.UUIDString()
 		if err != nil {
 			return fmt.Errorf("cannot read UUID string on individual entry '%s': %s", eachWrapper.Title(), err)

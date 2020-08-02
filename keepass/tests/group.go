@@ -169,7 +169,6 @@ func RunTestSubgroupSearch(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	sgPath += "/" // subgroups always get at erminal slash in paths
 	if paths[0] != sgPath {
 		t.Fatalf("[%s] != [%s]", paths[0], sgPath)
 	}

@@ -22,7 +22,7 @@ func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 	}
 
 	g.SetDB(db)
-	g.SetGroup(g)
+	g.SetDriver(g)
 	return g
 }
 

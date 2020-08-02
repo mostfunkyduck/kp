@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"regexp"
 	"testing"
 	"time"
 
@@ -129,5 +130,24 @@ func RunTestOutput(t *testing.T, r Resources) {
 	}
 	if r.Entry.Output(false) == "" {
 		t.Fatalf("output was empty")
+	}
+}
+
+func RunTestSearchInNestedSubgroup(t *testing.T, r Resources) {
+	sg, err := r.Group.NewSubgroup("RunTestSearchInNestedSubgroup")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	e, err := sg.NewEntry("askdfhjaskjfhasf")
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	paths := r.Db.Root().Search(regexp.MustCompile(e.Title()))
+
+	expected := "/" + r.Group.Name() + "/" + sg.Name() + "/" + e.Title()
+	if paths[0] != expected {
+		t.Fatalf("[%s] != [%s]", paths[0], expected)
 	}
 }

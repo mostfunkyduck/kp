@@ -50,7 +50,7 @@ func createTestResources(t *testing.T) (r testResources) {
 	r.Shell = ishell.NewWithReadline(r.Readline)
 	r.Path = "test/test"
 	r.Context = &ishell.Context{}
-	db, err := keepass.New(&keepass.Options{})
+	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
 	if err != nil {
 		t.Fatalf("could not open test db: %s", err)
 	}

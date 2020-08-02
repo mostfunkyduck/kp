@@ -30,7 +30,7 @@ func WrapEntry(entry *keepass.Entry, db k.Database) k.Entry {
 		entry: entry,
 	}
 	e.SetDB(db)
-	e.SetEntry(e)
+	e.SetDriver(e)
 	return e
 }
 
@@ -230,12 +230,12 @@ func (e *Entry) SetTitle(title string) {
 
 func (e *Entry) Values() (vals []k.Value) {
 	path, _ := e.Path()
-	vals = append(vals, k.Value{Name: "location", Value: path})
-	vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string)})
-	vals = append(vals, k.Value{Name: "password", Value: e.Password()})
-	vals = append(vals, k.Value{Name: "title", Value: e.Title()})
-	vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string)})
-	vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string)})
-	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name})
+	vals = append(vals, k.Value{Name: "location", Value: path, Searchable: false})
+	vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string), Searchable: true})
+	vals = append(vals, k.Value{Name: "password", Value: e.Password(), Searchable: true})
+	vals = append(vals, k.Value{Name: "title", Value: e.Title(), Searchable: true})
+	vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string), Searchable: true})
+	vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string), Searchable: true})
+	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name, Searchable: true})
 	return
 }

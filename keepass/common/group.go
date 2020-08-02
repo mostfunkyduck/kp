@@ -8,23 +8,26 @@ import (
 )
 
 type Group struct {
-	db    k.Database
-	group k.Group
+	db     k.Database
+	driver k.Group
 }
 
 func (g *Group) Path() (rv string, err error) {
-	pathGroups, err := findPathToGroup(g.db.Root(), g.group)
+	if g.driver.IsRoot() {
+		return "/", nil
+	}
+	pathGroups, err := findPathToGroup(g.db.Root(), g.driver)
 	if err != nil {
-		return rv, fmt.Errorf("could not find path to group '%s'", g.group.Name())
+		return rv, fmt.Errorf("could not find path to group '%s'", g.driver.Name())
 	}
 	for _, each := range pathGroups {
 		rv = rv + each.Name() + "/"
 	}
-	return rv + g.group.Name() + "/", nil
+	return rv + g.driver.Name() + "/", nil
 }
 
 func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
-	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
+	// the v2 library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, group := range source.Groups() {
 		same, err := CompareUUIDs(group, target)
 		if err != nil {
@@ -56,24 +59,24 @@ func (g *Group) SetDB(d k.Database) {
 }
 
 // sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
-func (g *Group) SetGroup(gr k.Group) {
-	g.group = gr
+func (g *Group) SetDriver(gr k.Group) {
+	g.driver = gr
 }
 
 func (g *Group) Search(term *regexp.Regexp) (paths []string) {
-	if term.FindString(g.group.Name()) != "" {
+	if term.FindString(g.driver.Name()) != "" {
 		path, err := g.Path()
 		if err == nil {
 			// append slash so it's clear that it's a group, not an entry
-			paths = append(paths, path+"/")
+			paths = append(paths, path)
 		}
 	}
 
-	for _, e := range g.group.Entries() {
+	for _, e := range g.driver.Entries() {
 		paths = append(paths, e.Search(term)...)
 	}
 
-	for _, g := range g.group.Groups() {
+	for _, g := range g.driver.Groups() {
 		paths = append(paths, g.Search(term)...)
 	}
 	return paths

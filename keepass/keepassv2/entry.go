@@ -21,7 +21,7 @@ func WrapEntry(entry *g.Entry, db k.Database) k.Entry {
 		entry: entry,
 	}
 	wrapper.SetDB(db)
-	wrapper.SetEntry(wrapper)
+	wrapper.SetDriver(wrapper)
 	return wrapper
 }
 
@@ -107,9 +107,10 @@ func (e *Entry) SetCreationTime(t time.Time) {
 func (e *Entry) Values() (values []k.Value) {
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
-			Name:      each.Key,
-			Value:     each.Value.Content,
-			Protected: each.Value.Protected.Bool,
+			Name:       each.Key,
+			Value:      each.Value.Content,
+			Searchable: true, // this may have to change if location is embedded in an entry like it is in v1
+			Protected:  each.Value.Protected.Bool,
 		}
 		values = append(values, newValue)
 	}

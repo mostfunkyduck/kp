@@ -30,7 +30,6 @@ func (d *Database) Search(term *regexp.Regexp) (path []string) {
 	return d.Root().Search(term)
 }
 
-//KeepassWrapper
 func (d *Database) Raw() interface{} {
 	return d.db
 }

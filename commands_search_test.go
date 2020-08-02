@@ -12,7 +12,8 @@ func TestSearchFullPath(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	paths := r.Group.Search(term)
-	if len(paths) != 1 {
+	// the group and entry should match
+	if len(paths) != 2 {
 		t.Fatalf("%d != %d", len(paths), 1)
 	}
 
@@ -20,7 +21,7 @@ func TestSearchFullPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	if paths[0] != path {
+	if paths[1] != path {
 		t.Fatalf("[%s] != [%s]", paths[0], path)
 	}
 }
