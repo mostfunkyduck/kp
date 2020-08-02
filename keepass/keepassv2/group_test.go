@@ -1,8 +1,8 @@
 package keepassv2_test
 
 import (
-	"testing"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	"testing"
 )
 
 func TestNestedSubGroupPath(t *testing.T) {
@@ -17,7 +17,16 @@ func TestDoubleNestedGroupPath(t *testing.T) {
 
 func TestPathOnOrphanedGroup(t *testing.T) {
 	r := createTestResources(t)
-	runner.RunTestPathOnOrphanedGroup(t, r)
+	if err := r.Db.Root().RemoveSubgroup(r.Group); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	// if the path is obtained from root, there will be a preceding slash
+	// otherwise, no slash
+	if path, err := r.Group.Path(); path != r.Group.Name()+"/" {
+		t.Fatalf("orphaned group somehow had a path: %s: %s", path, err)
+	}
+
 }
 
 func TestGroupParentFunctions(t *testing.T) {
@@ -25,7 +34,7 @@ func TestGroupParentFunctions(t *testing.T) {
 	runner.RunTestGroupParentFunctions(t, r)
 }
 
-func TestGroupUniqueness (t *testing.T) {
+func TestGroupUniqueness(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestGroupUniqueness(t, r)
 }
@@ -35,7 +44,7 @@ func TestRemoveSubgroup(t *testing.T) {
 	runner.RunTestRemoveSubgroup(t, r)
 }
 
-func TestGroupEntryFuncs (t *testing.T) {
+func TestGroupEntryFuncs(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestGroupEntryFuncs(t, r)
 }

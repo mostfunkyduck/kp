@@ -22,8 +22,8 @@ var backupExtension = ".kpbackup"
 
 func NewDatabase(db *keepass.Database, savePath string) k.Database {
 	rv := &Database{
-		db:              db,
-		savePath:        savePath,
+		db:       db,
+		savePath: savePath,
 	}
 	rv.SetCurrentLocation(WrapGroup(db.Root(), rv))
 	return rv
@@ -123,6 +123,6 @@ func (d *Database) Path() (fullPath string, err error) {
 	return group.Path()
 }
 
-func (d* Database) Search(term *regexp.Regexp) (paths []string) {
+func (d *Database) Search(term *regexp.Regexp) (paths []string) {
 	return d.Root().Search(term)
 }

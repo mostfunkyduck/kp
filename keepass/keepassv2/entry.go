@@ -118,7 +118,7 @@ func (e *Entry) Values() (values []k.Value) {
 
 func (e *Entry) SetPassword(password string) {
 	e.Set(k.Value{
-		Name: "Password",
+		Name:  "Password",
 		Value: password,
 	})
 }
@@ -129,11 +129,10 @@ func (e *Entry) Password() string {
 
 func (e *Entry) SetTitle(title string) {
 	e.Set(k.Value{
-		Name: "Title",
+		Name:  "Title",
 		Value: title,
 	})
 }
 func (e *Entry) Title() string {
 	return e.entry.GetTitle()
 }
-

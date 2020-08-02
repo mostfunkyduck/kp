@@ -20,6 +20,9 @@ func (g *Group) Raw() interface{} {
 
 // WrapGroup wraps a bare gokeepasslib.Group and a database in a Group wrapper
 func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
+	if g == nil {
+		return nil
+	}
 	return &Group{
 		group: g,
 		db:    db,
@@ -69,7 +72,7 @@ func (g *Group) Path() (rv string, err error) {
 	for _, each := range pathGroups {
 		rv = rv + each.Name() + "/"
 	}
-	return rv + g.Name(), nil
+	return rv + g.Name() + "/", nil
 }
 
 func (g *Group) Entries() (rv []k.Entry) {
@@ -129,12 +132,6 @@ func (g *Group) AddSubgroup(subgroup k.Group) error {
 	for _, each := range g.Groups() {
 		if each.Name() == subgroup.Name() {
 			return fmt.Errorf("group named '%s' already exists", each.Name())
-		}
-	}
-
-	for _, each := range g.Entries() {
-		if each.Title() == subgroup.Name() {
-			return fmt.Errorf("entry named '%s' already exists", each.Title())
 		}
 	}
 
@@ -208,7 +205,6 @@ func (g *Group) RemoveEntry(entry k.Entry) error {
 	return fmt.Errorf("could not find entry with UUID '%s'", entryUUID)
 }
 
-// NOTE this is currently a copy of v1, might be something to make more general
 func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 	if term.FindString(g.Name()) != "" {
 		path, err := g.Path()

@@ -5,8 +5,8 @@ import (
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
-	g "github.com/tobischo/gokeepasslib/v3"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 func TestNoParent(t *testing.T) {
@@ -23,22 +23,50 @@ func TestRegularPath(t *testing.T) {
 	runner.RunTestRegularPath(t, r)
 }
 
-func TestEntryGetSet (t *testing.T) {
+func TestEntryGetSet(t *testing.T) {
 	r := createTestResources(t)
-	runner.RunTestGetSet(t, r)
+	value := k.Value{
+		Name:  "TestEntrySetGet",
+		Value: "test value",
+	}
+
+	retVal := r.BlankEntry.Get(value.Name)
+	blankValue := k.Value{}
+	if retVal != blankValue {
+		t.Fatalf("[%v] != [%v]", retVal, blankValue)
+	}
+	if !r.BlankEntry.Set(value) {
+		t.Fatalf("could not set value")
+	}
+
+	entryValue := r.BlankEntry.Get(value.Name).Value.(string)
+	if entryValue != value.Value {
+		t.Fatalf("[%s] != [%s], %v", entryValue, value.Name, value)
+	}
+
+	secondValue := "asldkfj"
+	value.Value = secondValue
+	if !r.BlankEntry.Set(value) {
+		t.Fatalf("could not overwrite value: %v", value)
+	}
+
+	entryValue = r.BlankEntry.Get(value.Name).Value.(string)
+	if entryValue != secondValue {
+		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
+	}
 }
 
-func TestEntryTimeFuncs (t *testing.T) {
+func TestEntryTimeFuncs(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestEntryTimeFuncs(t, r)
 }
 
-func TestEntryPasswordTitleFuncs (t *testing.T) {
+func TestEntryPasswordTitleFuncs(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestEntryPasswordTitleFuncs(t, r)
 }
 
-func TestOutput (t *testing.T) {
+func TestOutput(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestOutput(t, r)
 }

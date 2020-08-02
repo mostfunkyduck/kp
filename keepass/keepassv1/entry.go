@@ -21,13 +21,13 @@ const (
 )
 
 type Entry struct {
-	db k.Database
+	db    k.Database
 	entry *keepass.Entry
 }
 
 func WrapEntry(entry *keepass.Entry, db k.Database) k.Entry {
 	return &Entry{
-		db: db,
+		db:    db,
 		entry: entry,
 	}
 }
@@ -37,19 +37,17 @@ func (e *Entry) UUIDString() (string, error) {
 }
 
 func (e *Entry) Get(field string) (rv k.Value) {
-	name := field
-	var value string
 	switch strings.ToLower(field) {
 	case fieldTitle:
-		value = e.entry.Title
+		rv.Value = e.entry.Title
 	case fieldUn:
-		value = e.entry.Username
+		rv.Value = e.entry.Username
 	case fieldPw:
-		value = e.entry.Password
+		rv.Value = e.entry.Password
 	case fieldUrl:
-		value = e.entry.URL
+		rv.Value = e.entry.URL
 	case fieldNotes:
-		value = e.entry.Notes
+		rv.Value = e.entry.Notes
 	case fieldAttachment:
 		if !e.entry.HasAttachment() {
 			return k.Value{}
@@ -58,13 +56,12 @@ func (e *Entry) Get(field string) (rv k.Value) {
 			Name:  e.entry.Attachment.Name,
 			Value: e.entry.Attachment.Data,
 		}
-	default:
-		return k.Value{}
 	}
-	return k.Value{
-		Name:  name,
-		Value: value,
+	if rv.Value != "" {
+		rv.Name = field
 	}
+
+	return
 }
 
 func (e *Entry) Set(value k.Value) (updated bool) {
@@ -234,12 +231,12 @@ func (e *Entry) SetTitle(title string) {
 func (e *Entry) Values() (vals []k.Value) {
 	path, _ := e.Path()
 	vals = append(vals, k.Value{Name: "location", Value: path})
-  vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string)})
-  vals = append(vals, k.Value{Name: "password", Value: e.Password()})
-  vals = append(vals, k.Value{Name: "title", Value: e.Title()})
-  vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string)})
-  vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string)})
-  vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name})
+	vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string)})
+	vals = append(vals, k.Value{Name: "password", Value: e.Password()})
+	vals = append(vals, k.Value{Name: "title", Value: e.Title()})
+	vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string)})
+	vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string)})
+	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name})
 	return
 }
 

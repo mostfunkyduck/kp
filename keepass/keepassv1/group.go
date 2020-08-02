@@ -8,18 +8,26 @@ import (
 )
 
 type Group struct {
-	db k.Database
+	db    k.Database
 	group *keepass.Group
 }
 
 func WrapGroup(group *keepass.Group, db k.Database) k.Group {
+	if group == nil {
+		return nil
+	}
 	return &Group{
-		db: db,
+		db:    db,
 		group: group,
 	}
 }
 
 func (g *Group) AddSubgroup(subgroup k.Group) error {
+	for _, group := range g.Groups() {
+		if group.Name() == subgroup.Name() {
+			return fmt.Errorf("group named '%s' already exists at this location", group.Name())
+		}
+	}
 	if err := subgroup.SetParent(g); err != nil {
 		return fmt.Errorf("could not set subgroup parent: %s", err)
 	}
@@ -27,34 +35,29 @@ func (g *Group) AddSubgroup(subgroup k.Group) error {
 }
 
 func (g *Group) AddEntry(e k.Entry) error {
+	for _, each := range g.Entries() {
+		if each.Title() == e.Title() {
+			return fmt.Errorf("entry named '%s' already exists at this location", e.Title())
+		}
+	}
 	if err := e.SetParent(g); err != nil {
 		return fmt.Errorf("could not add entry: %s", err)
 	}
 	return nil
 }
 
-// FIXME the keepass library has a bug where you can't get the parent
-// unless the entry is a pointer to the one in the db (it's comparing pointer values)
-// this can/should/will be fixed in my fork
-func (g *Group) searchEntries(term *regexp.Regexp) (paths []string) {
-	for _, e := range g.Entries() {
-		if term.FindString(e.Get("title").Value.(string)) != "" ||
-			term.FindString(e.Get("notes").Value.(string)) != "" ||
-			term.FindString(e.Get("attachment").Name) != "" ||
-			term.FindString(e.Get("username").Value.(string)) != "" {
-			path, err := e.Path()
-			if err != nil {
-				path = fmt.Sprintf("<error: %s>", err)
-			}
-			paths = append(paths, path)
+func (g *Group) Search(term *regexp.Regexp) (paths []string) {
+	if term.FindString(g.Name()) != "" {
+		path, err := g.Path()
+		if err == nil {
+			// append slash so it's clear that it's a group, not an entry
+			paths = append(paths, path+"/")
 		}
 	}
-	return
-}
 
-func (g *Group) Search(term *regexp.Regexp) (paths []string) {
-
-	paths = append(paths, g.searchEntries(term)...)
+	for _, e := range g.Entries() {
+		paths = append(paths, e.Search(term)...)
+	}
 
 	for _, g := range g.Groups() {
 		paths = append(paths, g.Search(term)...)
@@ -100,12 +103,27 @@ func (g *Group) IsRoot() bool {
 }
 
 func (g *Group) NewSubgroup(name string) (k.Group, error) {
+	for _, group := range g.Groups() {
+		if group.Name() == name {
+			return nil, fmt.Errorf("group named '%s' already exists", name)
+		}
+	}
 	newGroup := g.group.NewSubgroup()
 	newGroup.Name = name
 	return WrapGroup(newGroup, g.db), nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
+	for _, each := range subgroup.Groups() {
+		if err := subgroup.RemoveSubgroup(each); err != nil {
+			return fmt.Errorf("could not purge subgroups in group '%s': %s", each.Name(), err)
+		}
+	}
+	for _, e := range subgroup.Entries() {
+		if err := subgroup.RemoveEntry(e); err != nil {
+			return fmt.Errorf("could not purge entries in group '%s': %s", e.Title(), err)
+		}
+	}
 	return g.group.RemoveSubgroup(subgroup.Raw().(*keepass.Group))
 }
 

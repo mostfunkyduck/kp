@@ -5,8 +5,8 @@ import (
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
-	g "github.com/tobischo/gokeepasslib/v3"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 func createTestResources(t *testing.T) runner.Resources {
@@ -32,9 +32,9 @@ func createTestResources(t *testing.T) runner.Resources {
 	rawGrp := g.NewGroup()
 
 	return runner.Resources{
-		Db:    db,
-		Group: group,
-		Entry: entry,
+		Db:         db,
+		Group:      group,
+		Entry:      entry,
 		BlankEntry: main.WrapEntry(&rawEnt, db),
 		BlankGroup: main.WrapGroup(&rawGrp, db),
 	}

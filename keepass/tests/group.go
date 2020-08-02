@@ -17,7 +17,7 @@ func RunTestNestedSubGroupPath(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	expected := "/" + r.Group.Name() + "/" + sgName
+	expected := "/" + r.Group.Name() + "/" + sgName + "/"
 	if path != expected {
 		t.Fatalf("[%s] != [%s]", path, expected)
 	}
@@ -45,28 +45,15 @@ func RunTestDoubleNestedGroupPath(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	sgExpected := "/" + r.Group.Name() + "/" + sgName
+	sgExpected := "/" + r.Group.Name() + "/" + sgName + "/"
 	if sgPath != sgExpected {
 		t.Fatalf("[%s] != [%s]", sgPath, sgExpected)
 	}
 
-	sg1Expected := sgExpected + "/" + sgName + "1"
+	sg1Expected := sgExpected + sgName + "1" + "/"
 	if sg1Path != sg1Expected {
-		t.Fatalf("[%s] != [%s]", sgPath, sgExpected)
+		t.Fatalf("[%s] != [%s]", sgPath, sg1Expected)
 	}
-}
-
-func RunTestPathOnOrphanedGroup(t *testing.T, r Resources) {
-	if err := r.Db.Root().RemoveSubgroup(r.Group); err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	// if the path is obtained from root, there will be a preceding slash
-	// otherwise, no slash
-	if path, err := r.Group.Path(); path != r.Group.Name() {
-		t.Fatalf("orphaned group somehow had a path: %s: %s", path, err)
-	}
-
 }
 
 func RunTestGroupParentFunctions(t *testing.T, r Resources) {
@@ -106,14 +93,16 @@ func RunTestGroupUniqueness (t *testing.T, r Resources) {
 	newGroupWrapper := r.BlankGroup
 	newGroupWrapper.SetName(r.Entry.Title())
 
-	if err := r.Group.AddSubgroup(newGroupWrapper); err == nil {
-		t.Fatalf("added subgroup with same name as entry in group")
+	// groups should be able to have the same names as entries
+	if err := r.Group.AddSubgroup(newGroupWrapper); err != nil {
+		t.Fatalf("wasn't able to add subgroup when name conflicted with entry name")
 	}
 
-	newGroupWrapper.SetName("asdf")
-	if _, err := r.Group.NewSubgroup(newGroupWrapper.Name()); err != nil {
-		t.Fatalf(err.Error())
+	name := newGroupWrapper.Name()
+	if _, err := r.Group.NewSubgroup(name); err == nil {
+		t.Fatalf("was able to add new group named '%s' twice", name)
 	}
+
 	if err := r.Group.AddSubgroup(newGroupWrapper); err == nil {
 		t.Fatalf("added subgroup with same name as other subgroup in group")
 	}
@@ -172,7 +161,7 @@ func RunTestSubgroupSearch(t *testing.T, r Resources) {
 
 	paths := r.Group.Search(regexp.MustCompile(sg.Name()))
 	if len(paths) != 1 {
-		t.Fatalf("too many search results")
+		t.Fatalf("incorrect # of search results [%d]", len(paths))
 	}
 
 	sgPath, err := sg.Path()

@@ -24,7 +24,7 @@ func TestDbPath(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 
-	expected += r.Group.Name()
+	expected += r.Group.Name() + "/"
 	if path != expected {
 		t.Fatalf("[%s] != [%s]", path, expected)
 	}

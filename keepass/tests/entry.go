@@ -41,7 +41,7 @@ func RunTestRegularPath(t *testing.T, r Resources) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	expected += "/" + name
+	expected += name
 	if path != expected {
 		t.Fatalf("[%s] != [%s]", path, expected)
 	}
@@ -80,41 +80,14 @@ func RunTestRegularPath(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	expected = groupPath + "/" + newEntry.Title()
+	expected = groupPath + newEntry.Title()
 	if entryPath != expected {
 		t.Fatalf("[%s] != [%s]", entryPath, expected)
 	}
 }
 
-func RunTestGetSet(t *testing.T, r Resources) {
-	value := k.Value {
-		Name: "TestEntryGetSet",
-		Value: "test value",
-	}
-
-	if r.Entry.Get(value.Name) != (k.Value{}) {
-		t.Fatalf("initial get should have returned empty value")
-	}
-	if !r.Entry.Set(value) {
-		t.Fatalf("could not set value")
-	}
-
-	entryValue := r.Entry.Get(value.Name).Value.(string)
-	if entryValue != value.Value {
-		t.Fatalf("[%s] != [%s], %v", entryValue, value.Name, value)
-	}
-
-	secondValue := "asldkfj"
-	value.Value = secondValue
-	if !r.Entry.Set(value) {
-		t.Fatalf("could not overwrite value: %v", value)
-	}
-
-	entryValue = r.Entry.Get(value.Name).Value.(string)
-	if entryValue != secondValue {
-		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
-	}
-}
+// kpv1 only supports a limited set of fields, so we have to let the caller
+// specify what value to set
 
 func RunTestEntryTimeFuncs (t *testing.T, r Resources) {
 	newTime := time.Now().Add(time.Duration(1) * time.Hour)
