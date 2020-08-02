@@ -20,16 +20,11 @@ type Entry struct {
 func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, entry := range source.Entries() {
-		uuidString, err := target.UUIDString()
+		equal, err := CompareUUIDs(target, entry)
 		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not get UUID for target '%s': %s", target.Title(), err)
+			return []k.Group{}, err
 		}
-		entryUUIDString, err := entry.UUIDString()
-		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not get UUID for entry '%s': %s", entry.Title(), err)
-		}
-
-		if entryUUIDString == uuidString {
+		if equal {
 			return []k.Group{source}, nil
 		}
 	}
