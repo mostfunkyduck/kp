@@ -1,7 +1,6 @@
 package keepassv1_test
 
 import (
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
 	"regexp"
 	"testing"
 
@@ -48,24 +47,4 @@ func TestEntrySearch(t *testing.T) {
 	if paths[0] != path {
 		t.Fatalf("[%s] != [%s]", paths[0], path)
 	}
-}
-
-func TestRegularPath(t *testing.T) {
-	r := createTestResources(t)
-	runner.RunTestRegularPath(t, r)
-}
-
-func TestEntryTimeFuncs(t *testing.T) {
-	r := createTestResources(t)
-	runner.RunTestEntryTimeFuncs(t, r)
-}
-
-func TestEntryPasswordTitleFuncs(t *testing.T) {
-	r := createTestResources(t)
-	runner.RunTestEntryPasswordTitleFuncs(t, r)
-}
-
-func TestOutput(t *testing.T) {
-	r := createTestResources(t)
-	runner.RunTestOutput(t, r)
 }

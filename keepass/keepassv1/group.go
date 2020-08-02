@@ -8,7 +8,7 @@ import (
 )
 
 type Group struct {
-	db    k.Database
+	db k.Database
 	group *keepass.Group
 }
 
@@ -16,10 +16,12 @@ func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 	if group == nil {
 		return nil
 	}
-	return &Group{
-		db:    db,
+	g := &Group{
+		db: db,
 		group: group,
 	}
+
+	return g
 }
 
 func (g *Group) AddSubgroup(subgroup k.Group) error {
@@ -86,7 +88,7 @@ func (g *Group) SetParent(parent k.Group) error {
 
 func (g *Group) Entries() (rv []k.Entry) {
 	for _, each := range g.group.Entries() {
-		rv = append(rv, &Entry{entry: each})
+		rv = append(rv, WrapEntry(each, g.DB()))
 	}
 	return rv
 }
@@ -145,14 +147,13 @@ func (g *Group) Raw() interface{} {
 }
 
 func (g *Group) NewEntry(name string) (k.Entry, error) {
+	// FIXME allows dupe entries
 	entry, err := g.group.NewEntry()
 	if err != nil {
 		return nil, err
 	}
 	entry.Title = name
-	return &Entry{
-		entry: entry,
-	}, nil
+	return WrapEntry(entry, g.db), nil
 }
 
 func (g *Group) RemoveEntry(e k.Entry) error {

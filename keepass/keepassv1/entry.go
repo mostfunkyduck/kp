@@ -2,10 +2,10 @@ package keepassv1
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -21,15 +21,17 @@ const (
 )
 
 type Entry struct {
-	db    k.Database
+	c.Entry
 	entry *keepass.Entry
 }
 
 func WrapEntry(entry *keepass.Entry, db k.Database) k.Entry {
-	return &Entry{
-		db:    db,
+	e := &Entry{
 		entry: entry,
 	}
+	e.SetDB(db)
+	e.SetEntry(e)
+	return e
 }
 
 func (e *Entry) UUIDString() (string, error) {
@@ -238,26 +240,4 @@ func (e *Entry) Values() (vals []k.Value) {
 	vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string)})
 	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name})
 	return
-}
-
-func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
-	for _, val := range e.Values() {
-		content := val.Value.(string)
-		if term.FindString(content) != "" ||
-			term.FindString(val.Name) != "" {
-			// something in this entry matched, let's return it
-			path, _ := e.Path()
-			paths = append(paths, path)
-			break
-		}
-	}
-	return
-}
-
-func (e *Entry) DB() k.Database {
-	return e.db
-}
-
-func (e *Entry) SetDB(db k.Database) {
-	e.db = db
 }

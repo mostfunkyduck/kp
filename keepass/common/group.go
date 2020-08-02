@@ -4,7 +4,7 @@ import (
 	"fmt"
 	k "github.com/mostfunkyduck/kp/keepass"
 )
-// TODO this needs rigorous testing
+
 func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, group := range source.Groups() {
