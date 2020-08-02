@@ -1,8 +1,9 @@
 package main_test
 
 import (
-	main "github.com/mostfunkyduck/kp"
 	"testing"
+
+	main "github.com/mostfunkyduck/kp"
 )
 
 func TestMv(t *testing.T) {
@@ -156,7 +157,7 @@ func TestMvGroupIntoGroup(t *testing.T) {
 	}
 
 	r.Context.Args = []string{
-		gPath,	
+		gPath,
 		rGrpPath,
 	}
 

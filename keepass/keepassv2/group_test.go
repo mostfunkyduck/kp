@@ -1,8 +1,9 @@
 package keepassv2_test
 
 import (
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
 	"testing"
+
+	runner "github.com/mostfunkyduck/kp/keepass/tests"
 )
 
 func TestNestedSubGroupPath(t *testing.T) {

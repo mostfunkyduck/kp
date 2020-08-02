@@ -6,13 +6,15 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 )
 
 type Entry struct {
-	db k.Database
+	db    k.Database
 	entry k.Entry
 }
+
 // findPathToEntry returns all the groups in the path leading to an entry *but not the entry itself*
 // the path returned will also not include the source group
 func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {

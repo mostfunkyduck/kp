@@ -20,8 +20,15 @@ cscope:
 goimports:
 	goimports -w *.go
 	goimports -w ./keepass/*.go
-	goimports -w ./keepass/keepassv1/*.go
-	goimports -w ./keepass/keepassv2/*.go
+	goimports -w ./keepass/*/*.go
+
+gofmt:
+	go fmt
+	go fmt keepass
+	go fmt keepass/tests
+	go fmt keepass/common
+	go fmt keepass/keepassv1
+	go fmt keepass/keepassv2
 
 install:
 	cp ./kp /usr/local/bin/kp

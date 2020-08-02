@@ -89,7 +89,7 @@ func RunTestGroupParentFunctions(t *testing.T, r Resources) {
 	}
 }
 
-func RunTestGroupUniqueness (t *testing.T, r Resources) {
+func RunTestGroupUniqueness(t *testing.T, r Resources) {
 	newGroupWrapper := r.BlankGroup
 	newGroupWrapper.SetName(r.Entry.Title())
 
@@ -117,8 +117,8 @@ func RunTestRemoveSubgroup(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	if len(r.Group.Groups()) != originalLen + 1 {
-		t.Fatalf("[%d] != [%d]", len(r.Group.Groups()), originalLen + 1)
+	if len(r.Group.Groups()) != originalLen+1 {
+		t.Fatalf("[%d] != [%d]", len(r.Group.Groups()), originalLen+1)
 	}
 	if err := r.Group.RemoveSubgroup(sg); err != nil {
 		t.Fatalf(err.Error())
@@ -133,7 +133,7 @@ func RunTestRemoveSubgroup(t *testing.T, r Resources) {
 	}
 }
 
-func RunTestGroupEntryFuncs (t *testing.T, r Resources) {
+func RunTestGroupEntryFuncs(t *testing.T, r Resources) {
 	if err := r.Group.AddEntry(r.Entry); err == nil {
 		t.Fatalf("added duplicate entry: [%v][%v]", r.Entry, r.Group)
 	}
@@ -143,8 +143,8 @@ func RunTestGroupEntryFuncs (t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	if len(r.Group.Entries()) != originalLen - 1 {
-		t.Fatalf("[%d] != [%d]", len(r.Group.Entries()), originalLen -1)
+	if len(r.Group.Entries()) != originalLen-1 {
+		t.Fatalf("[%d] != [%d]", len(r.Group.Entries()), originalLen-1)
 	}
 
 	if err := r.Group.RemoveEntry(r.Entry); err == nil {
@@ -185,4 +185,3 @@ func RunTestIsRoot(t *testing.T, r Resources) {
 		t.Fatalf("orphaned group with no parent thinks it's root")
 	}
 }
-

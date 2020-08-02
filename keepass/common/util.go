@@ -3,6 +3,7 @@ package common
 import (
 	k "github.com/mostfunkyduck/kp/keepass"
 )
+
 func CompareUUIDs(me k.UUIDer, them k.UUIDer) (bool, error) {
 	myUUID, err := me.UUIDString()
 	if err != nil {

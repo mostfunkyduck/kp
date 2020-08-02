@@ -1,8 +1,9 @@
 package main_test
 
 import (
-	main "github.com/mostfunkyduck/kp"
 	"testing"
+
+	main "github.com/mostfunkyduck/kp"
 )
 
 // prepares stdin to fill out a new entry with default values and decline to save

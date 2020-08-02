@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	c "github.com/mostfunkyduck/kp/keepass/common"
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 

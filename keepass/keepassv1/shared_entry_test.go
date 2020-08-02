@@ -1,9 +1,11 @@
 package keepassv1_test
 
 import (
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
 	"testing"
+
+	runner "github.com/mostfunkyduck/kp/keepass/tests"
 )
+
 func TestRegularPath(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestRegularPath(t, r)

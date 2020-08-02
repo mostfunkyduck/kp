@@ -2,13 +2,14 @@ package keepassv1
 
 import (
 	"fmt"
-	k "github.com/mostfunkyduck/kp/keepass"
 	"regexp"
+
+	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 type Group struct {
-	db k.Database
+	db    k.Database
 	group *keepass.Group
 }
 
@@ -17,7 +18,7 @@ func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 		return nil
 	}
 	g := &Group{
-		db: db,
+		db:    db,
 		group: group,
 	}
 

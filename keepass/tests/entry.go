@@ -3,6 +3,7 @@ package tests
 import (
 	"testing"
 	"time"
+
 	k "github.com/mostfunkyduck/kp/keepass"
 )
 
@@ -64,7 +65,6 @@ func RunTestRegularPath(t *testing.T, r Resources) {
 		t.Fatalf("[%s] != [%s]", parentPath, groupPath)
 	}
 
-
 	newEntry := r.BlankEntry
 	if err := newEntry.SetParent(r.Group); err != nil {
 		t.Fatalf(err.Error())
@@ -89,7 +89,7 @@ func RunTestRegularPath(t *testing.T, r Resources) {
 // kpv1 only supports a limited set of fields, so we have to let the caller
 // specify what value to set
 
-func RunTestEntryTimeFuncs (t *testing.T, r Resources) {
+func RunTestEntryTimeFuncs(t *testing.T, r Resources) {
 	newTime := time.Now().Add(time.Duration(1) * time.Hour)
 	r.Entry.SetCreationTime(newTime)
 	if !r.Entry.CreationTime().Equal(newTime) {
@@ -108,7 +108,7 @@ func RunTestEntryTimeFuncs (t *testing.T, r Resources) {
 		t.Fatalf("%v, %v", newTime, r.Entry.LastAccessTime())
 	}
 }
-func RunTestEntryPasswordTitleFuncs (t *testing.T, r Resources) {
+func RunTestEntryPasswordTitleFuncs(t *testing.T, r Resources) {
 	password := "swordfish"
 	r.Entry.SetPassword(password)
 	if r.Entry.Password() != password {
@@ -122,7 +122,7 @@ func RunTestEntryPasswordTitleFuncs (t *testing.T, r Resources) {
 	}
 }
 
-func RunTestOutput (t *testing.T, r Resources) {
+func RunTestOutput(t *testing.T, r Resources) {
 	// only testing that it returns SOMETHING and doesn't bork
 	if r.Entry.Output(true) == "" {
 		t.Fatalf("output was empty")
