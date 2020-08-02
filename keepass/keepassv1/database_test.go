@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 func TestSavePath(t *testing.T) {
@@ -19,11 +18,14 @@ func TestSavePath(t *testing.T) {
 }
 
 func TestCurrentLocation(t *testing.T) {
+	r := createTestResources(t)
 	expectedName := "asdf"
-	db := &v1.Database{}
-	kdbGroup := v1.WrapGroup(&keepass.Group{Name: expectedName}, db)
-	db.SetCurrentLocation(kdbGroup)
-	l := db.CurrentLocation()
+	newGroup, err := r.Group.NewSubgroup(expectedName)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	r.Db.SetCurrentLocation(newGroup)
+	l := r.Db.CurrentLocation()
 	if l == nil {
 		t.Fatalf("could not retrieve current location")
 	}

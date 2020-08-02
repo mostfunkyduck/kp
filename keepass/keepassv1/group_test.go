@@ -8,18 +8,6 @@ import (
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
-func TestProperties(t *testing.T) {
-	name := "test name"
-	group := &keepass.Group{
-		Name: name,
-	}
-	groupWrapper := v1.WrapGroup(group, &v1.Database{})
-	wrapperName := groupWrapper.Name()
-	if wrapperName != name {
-		t.Fatalf("%s != %s", wrapperName, name)
-	}
-}
-
 func TestGroupFunctions(t *testing.T) {
 	ttlEntries := 50
 	testName := "test name"

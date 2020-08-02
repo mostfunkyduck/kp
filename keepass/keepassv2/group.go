@@ -3,15 +3,15 @@ package keepassv2
 import (
 	"encoding/base64"
 	"fmt"
-	"regexp"
 
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	gokeepasslib "github.com/tobischo/gokeepasslib/v3"
 )
 
 type Group struct {
+	c.Group
 	group *gokeepasslib.Group
-	db    k.Database
 }
 
 func (g *Group) Raw() interface{} {
@@ -203,25 +203,6 @@ func (g *Group) RemoveEntry(entry k.Entry) error {
 		}
 	}
 	return fmt.Errorf("could not find entry with UUID '%s'", entryUUID)
-}
-
-func (g *Group) Search(term *regexp.Regexp) (paths []string) {
-	if term.FindString(g.Name()) != "" {
-		path, err := g.Path()
-		if err == nil {
-			// append slash so it's clear that it's a group, not an entry
-			paths = append(paths, path+"/")
-		}
-	}
-
-	for _, e := range g.Entries() {
-		paths = append(paths, e.Search(term)...)
-	}
-
-	for _, g := range g.Groups() {
-		paths = append(paths, g.Search(term)...)
-	}
-	return paths
 }
 
 func (g *Group) UUIDString() (string, error) {

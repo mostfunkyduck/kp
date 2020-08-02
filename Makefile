@@ -24,13 +24,13 @@ goimports:
 
 gofmt:
 	go fmt
-	go fmt keepass
-	go fmt keepass/tests
-	go fmt keepass/common
-	go fmt keepass/keepassv1
-	go fmt keepass/keepassv2
+	go fmt ./keepass
+	go fmt ./keepass/tests
+	go fmt ./keepass/common
+	go fmt ./keepass/keepassv1
+	go fmt ./keepass/keepassv2
 
-install:
+install: kp
 	cp ./kp /usr/local/bin/kp
 
 test:

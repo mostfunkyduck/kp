@@ -2,14 +2,14 @@ package keepassv1
 
 import (
 	"fmt"
-	"regexp"
 
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 type Group struct {
-	db    k.Database
+	c.Group
 	group *keepass.Group
 }
 
@@ -18,10 +18,11 @@ func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 		return nil
 	}
 	g := &Group{
-		db:    db,
 		group: group,
 	}
 
+	g.SetDB(db)
+	g.SetGroup(g)
 	return g
 }
 
@@ -49,26 +50,10 @@ func (g *Group) AddEntry(e k.Entry) error {
 	return nil
 }
 
-func (g *Group) Search(term *regexp.Regexp) (paths []string) {
-	if term.FindString(g.Name()) != "" {
-		path, err := g.Path()
-		if err == nil {
-			// append slash so it's clear that it's a group, not an entry
-			paths = append(paths, path+"/")
-		}
-	}
-
-	for _, e := range g.Entries() {
-		paths = append(paths, e.Search(term)...)
-	}
-
-	for _, g := range g.Groups() {
-		paths = append(paths, g.Search(term)...)
-	}
-	return paths
-}
-
 func (g *Group) Name() string {
+	if g.IsRoot() {
+		return ""
+	}
 	return g.group.Name
 }
 
@@ -77,7 +62,7 @@ func (g *Group) SetName(name string) {
 }
 
 func (g *Group) Parent() k.Group {
-	return WrapGroup(g.group.Parent(), g.db)
+	return WrapGroup(g.group.Parent(), g.DB())
 }
 
 func (g *Group) SetParent(parent k.Group) error {
@@ -96,7 +81,7 @@ func (g *Group) Entries() (rv []k.Entry) {
 
 func (g *Group) Groups() (rv []k.Group) {
 	for _, each := range g.group.Groups() {
-		rv = append(rv, WrapGroup(each, g.db))
+		rv = append(rv, WrapGroup(each, g.DB()))
 	}
 	return rv
 }
@@ -113,7 +98,7 @@ func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	}
 	newGroup := g.group.NewSubgroup()
 	newGroup.Name = name
-	return WrapGroup(newGroup, g.db), nil
+	return WrapGroup(newGroup, g.DB()), nil
 }
 
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
@@ -130,19 +115,6 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	return g.group.RemoveSubgroup(subgroup.Raw().(*keepass.Group))
 }
 
-func (g *Group) Path() (fullPath string, err error) {
-	// FIXME this shouldn't need access to the bare group
-	group := g.group
-	for ; group != nil; group = group.Parent() {
-		if group.IsRoot() {
-			fullPath = "/" + fullPath
-			break
-		}
-		fullPath = group.Name + "/" + fullPath
-	}
-	return fullPath, nil
-}
-
 func (g *Group) Raw() interface{} {
 	return g.group
 }
@@ -154,7 +126,7 @@ func (g *Group) NewEntry(name string) (k.Entry, error) {
 		return nil, err
 	}
 	entry.Title = name
-	return WrapEntry(entry, g.db), nil
+	return WrapEntry(entry, g.DB()), nil
 }
 
 func (g *Group) RemoveEntry(e k.Entry) error {
@@ -163,8 +135,4 @@ func (g *Group) RemoveEntry(e k.Entry) error {
 
 func (g *Group) UUIDString() (string, error) {
 	return string(g.group.ID), nil
-}
-
-func (g *Group) DB() k.Database {
-	return g.db
 }

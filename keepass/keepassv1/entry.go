@@ -125,9 +125,7 @@ func (e *Entry) Parent() k.Group {
 	if group == nil {
 		return nil
 	}
-	return &Group{
-		group: group,
-	}
+	return WrapGroup(group, e.DB())
 }
 
 func (e *Entry) Path() (string, error) {
