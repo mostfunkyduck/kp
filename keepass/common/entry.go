@@ -102,7 +102,6 @@ func (e *Entry) Output(full bool) string {
 func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 	for _, val := range e.driver.Values() {
 		if !val.Searchable {
-			fmt.Printf("skipping %s\n", val.Name)
 			continue
 		}
 		content := val.Value.(string)
