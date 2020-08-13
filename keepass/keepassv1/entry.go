@@ -145,7 +145,7 @@ func (e *Entry) Raw() interface{} {
 	return e.entry
 }
 
-func formatTime(t time.Time) (formatted string) {
+func FormatTime(t time.Time) (formatted string) {
 	timeFormat := "Mon Jan 2 15:04:05 MST 2006"
 	if (t == time.Time{}) {
 		formatted = "unknown"
@@ -188,9 +188,9 @@ func (e *Entry) Output(full bool) (val string) {
 	fmt.Fprintf(&b, "\n")
 	fmt.Fprintf(&b, "UUID:\t%s\n", e.entry.UUID)
 
-	fmt.Fprintf(&b, "Creation Time:\t%s\n", formatTime(e.entry.CreationTime))
-	fmt.Fprintf(&b, "Last Modified:\t%s\n", formatTime(e.entry.LastModificationTime))
-	fmt.Fprintf(&b, "Last Accessed:\t%s\n", formatTime(e.entry.LastAccessTime))
+	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.entry.CreationTime))
+	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.entry.LastModificationTime))
+	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.entry.LastAccessTime))
 
 	path, err := e.Path()
 	if err != nil {
