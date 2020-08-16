@@ -30,11 +30,11 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 		}
 
 		if err := e.SetParent(existingEntry.Parent()); err != nil {
-			return fmt.Errorf("could not move entry '%s' to group '%s': %s\n", e.Get("title").Value.(string), existingEntry.Parent().Name(), err)
+			return fmt.Errorf("could not move entry '%s' to group '%s': %s\n", string(e.Get("title").Value), existingEntry.Parent().Name(), err)
 		}
 
 		if err := existingEntry.Parent().RemoveEntry(existingEntry); err != nil {
-			return fmt.Errorf("error removing entry '%s' from group '%s': %s\n", existingEntry.Get("title").Value.(string), existingEntry.Parent().Name(), err)
+			return fmt.Errorf("error removing entry '%s' from group '%s': %s\n", existingEntry.Title(), existingEntry.Parent().Name(), err)
 		}
 		return nil
 	}
@@ -62,7 +62,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 	}
 
 	if title != "" {
-		e.Set(k.Value{Name: "title", Value: title})
+		e.SetTitle(title)
 	}
 	return nil
 }

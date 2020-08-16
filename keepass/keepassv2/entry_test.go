@@ -1,6 +1,7 @@
 package keepassv2_test
 
 import (
+	"reflect"
 	"testing"
 
 	k "github.com/mostfunkyduck/kp/keepass"
@@ -27,30 +28,30 @@ func TestEntryGetSet(t *testing.T) {
 	r := createTestResources(t)
 	value := k.Value{
 		Name:  "TestEntrySetGet",
-		Value: "test value",
+		Value: []byte("test value"),
 	}
 
 	retVal := r.BlankEntry.Get(value.Name)
 	blankValue := k.Value{}
-	if retVal != blankValue {
+	if !reflect.DeepEqual(retVal, blankValue) {
 		t.Fatalf("[%v] != [%v]", retVal, blankValue)
 	}
 	if !r.BlankEntry.Set(value) {
 		t.Fatalf("could not set value")
 	}
 
-	entryValue := r.BlankEntry.Get(value.Name).Value.(string)
-	if entryValue != value.Value {
+	entryValue := string(r.BlankEntry.Get(value.Name).Value)
+	if entryValue != string(value.Value) {
 		t.Fatalf("[%s] != [%s], %v", entryValue, value.Name, value)
 	}
 
 	secondValue := "asldkfj"
-	value.Value = secondValue
+	value.Value = []byte(secondValue)
 	if !r.BlankEntry.Set(value) {
 		t.Fatalf("could not overwrite value: %v", value)
 	}
 
-	entryValue = r.BlankEntry.Get(value.Name).Value.(string)
+	entryValue = string(r.BlankEntry.Get(value.Name).Value)
 	if entryValue != secondValue {
 		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
 	}

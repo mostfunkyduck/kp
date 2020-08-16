@@ -21,7 +21,7 @@ func createTestResources(t *testing.T) runner.Resources {
 	}
 	newEnt := g.NewEntry()
 	entry := main.WrapEntry(&newEnt, db)
-	if !entry.Set(k.Value{Name: "Title", Value: name}) {
+	if !entry.Set(k.Value{Name: "Title", Value: []byte(name)}) {
 		t.Fatalf("could not set title")
 	}
 	if err := entry.SetParent(group); err != nil {

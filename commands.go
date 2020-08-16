@@ -6,7 +6,9 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -155,7 +157,7 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 			return nil, false
 		}
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == entry.Get("title").Value.(string) ||
+			entryName == string(entry.Get("title").Value) ||
 			entryName == uuidString {
 			return entry, true
 		}
@@ -169,52 +171,62 @@ func isPresent(shell *ishell.Shell, path string) (ok bool) {
 	return err == nil && (l != nil || e != nil)
 }
 
-// doPrompt is a convenience function that takes a prompt and a default and
-// then sets that up as an actual prompt for the user.
-func doPrompt(shell *ishell.Shell, prompt string, deflt string) (string, error) {
-	shell.Printf("%s: [%s]  ", prompt, deflt)
-	input, err := shell.ReadLineErr()
+// doPrompt takes a k.Value, prompts for a new value, returns the value entered
+func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
+	var err error
+	var input string
+	switch value.Type {
+	case k.STRING:
+		shell.Printf("%s: [%s]  ", value.Name, string(value.Value))
+		if value.Protected {
+			input, err = GetProtected(shell, string(value.Value))
+		} else {
+			input, err = shell.ReadLineErr()
+		}
+	case k.BINARY:
+		return "", fmt.Errorf("tried to edit binary directly")
+	case k.LONGSTRING:
+		shell.Printf("'%s' is a long text field, open in editor? [y/N]\n", value.Name)
+		edit, err1 := shell.ReadLineErr()
+		if err1 != nil {
+			return "", fmt.Errorf("could not read user input: %s", err)
+		}
+		if edit == "y" {
+			input, err = GetLongString(value)
+		}
+	}
 	if err != nil {
 		return "", fmt.Errorf("could not read user input: %s", err)
 	}
 
 	if input == "" {
-		return deflt, nil
+		return string(value.Value), nil
 	}
 
 	return input, nil
 }
 
-// TODO this will need to be refactored when we do v2
+// promptForEntry loops through all values in an entry, prompts to edit them, then applies any changes
 func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
-	var err error
-	var url, un, pw, notes string
-	// store all the changes in a temporary entry, don't update the target until all user input is collected
-	if title, err = doPrompt(shell, "Title", title); err != nil {
-		return fmt.Errorf("could not set title: %s", err)
+	// make a copy of the entry's values for modification
+	vals := e.Values()
+	for _, value := range vals {
+
+		if value.Type != k.BINARY {
+			newValue, err := doPrompt(shell, value)
+			if err != nil {
+				return fmt.Errorf("could not get value for %s, %s", value.Name, err)
+			}
+			value.Value = []byte(newValue)
+		}
 	}
 
-	if url, err = doPrompt(shell, "URL", e.Get("url").Value.(string)); err != nil {
-		return fmt.Errorf("could not set URL: %s", err)
+	updated := false
+	for _, value := range vals {
+		if e.Set(value) {
+			updated = true
+		}
 	}
-
-	if un, err = doPrompt(shell, "Username", e.Get("username").Value.(string)); err != nil {
-		return fmt.Errorf("could not set username: %s", err)
-	}
-
-	if pw, err = getPassword(shell, e.Get("password").Value.(string)); err != nil {
-		return fmt.Errorf("could not set password: %s", err)
-	}
-
-	if notes, err = getNotes(shell, e.Get("notes").Value.(string)); err != nil {
-		return fmt.Errorf("could not get notes: %s", err)
-	}
-
-	updated := e.Set(k.Value{Name: "title", Value: title})
-	updated = e.Set(k.Value{Name: "url", Value: url}) || updated
-	updated = e.Set(k.Value{Name: "username", Value: un}) || updated
-	updated = e.Set(k.Value{Name: "password", Value: pw}) || updated
-	updated = e.Set(k.Value{Name: "notes", Value: notes}) || updated
 
 	if updated {
 		shell.Println("edit successful, database has changed!")
@@ -226,48 +238,54 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	return nil
 }
 
-// TODO this should be converted into a generic function for handling long-form value entry
-// FIXME this code is also sucky and awkward
-func getNotes(shell *ishell.Shell, existingNotes string) (string, error) {
-	shell.Printf("Enter notes ('ctrl-c' to terminate)\nExisting notes:\n---\n%s\n---\n", existingNotes)
-	// allow a single newline at the beginning to short circuit editing
-	firstLine, err := shell.ReadLineErr()
+// OpenFileInEditor opens filename in a text editor.
+func OpenFileInEditor(filename string) error {
+	editor := os.Getenv("EDITOR")
+	if editor == "" {
+		editor = "vim" // because use vim or you're a troglodyte
+	}
+
+	// Get the full executable path for the editor.
+	executable, err := exec.LookPath(editor)
 	if err != nil {
-		return existingNotes, fmt.Errorf("error reading user input: %s\n", err)
+		return err
 	}
 
-	if firstLine == "" {
-		return existingNotes, nil
+	cmd := exec.Command(executable, filename)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+func GetLongString(value k.Value) (text string, err error) {
+	// https://samrapdev.com/capturing-sensitive-input-with-editor-in-golang-from-the-cli/
+	file, err := ioutil.TempFile(os.TempDir(), "*")
+	if err != nil {
+		return "", err
 	}
 
-	// TODO kind of a hack - it doesn't seem to be able to match newlines, at least not in the WSL
-	// TODO find a way to make this only use ctrl-c to terminate without funkiness
-	newNotes := firstLine + "\n" + shell.ReadMultiLines("\n")
+	filename := file.Name()
 
-	if newNotes != existingNotes {
-		shell.Println("Notes contents have changed, (o)verwrite, (A)ppend, or (d)iscard?\nOther edits will still be saved.")
-		input, err := shell.ReadLineErr()
-		if err != nil {
-			return "", fmt.Errorf("could not read input on notes changes: %s", err)
-		}
+	defer os.Remove(filename)
 
-		input = strings.ToLower(input)
-		switch input {
-		case "d":
-			shell.Println("discarding notes changes, other edits will be saved")
-			return existingNotes, nil
-		case "o":
-			shell.Println("overwriting existing notes")
-			return newNotes, nil
-		default:
-			shell.Println("appending to existing notes")
-			return existingNotes + "\n" + newNotes, nil
-		}
+	if err = file.Close(); err != nil {
+		return "", err
 	}
-	return newNotes, nil
+
+	if err = OpenFileInEditor(filename); err != nil {
+		return "", err
+	}
+
+	bytes, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
 }
 
-func getPassword(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
+func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
 	for {
 		shell.Printf("password: ('g' for automatic generation)  ")
 		pw, err = shell.ReadPasswordErr()
@@ -343,11 +361,11 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	switch entryData {
 	// FIXME hardcoded values
 	case "username":
-		data = entry.Get("username").Value.(string)
+		data = string(entry.Get("username").Value)
 	case "password":
-		data = entry.Get("password").Value.(string)
+		data = string(entry.Get("password").Value)
 	case "url":
-		data = entry.Get("url").Value.(string)
+		data = string(entry.Get("url").Value)
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}
@@ -428,7 +446,7 @@ loop:
 
 		for j, entry := range currentLocation.Entries() {
 			// is the entity we're looking for this index or this entry?
-			if entry.Get("title").Value.(string) == part || strconv.Itoa(j) == part {
+			if string(entry.Get("title").Value) == part || strconv.Itoa(j) == part {
 				if i != len(path)-1 {
 					// we encountered an entry before the end of the path, entries have no subgroups,
 					// so this path is invalid

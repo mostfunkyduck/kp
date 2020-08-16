@@ -13,7 +13,7 @@ import (
 func purgeGroup(group k.Group) error {
 	for _, e := range group.Entries() {
 		if err := group.RemoveEntry(e); err != nil {
-			return fmt.Errorf("could not remove entry '%s' from group '%s': %s", e.Get("title").Value.(string), group.Name(), err)
+			return fmt.Errorf("could not remove entry '%s' from group '%s': %s", e.Title(), group.Name(), err)
 		}
 	}
 	for _, g := range group.Groups() {
@@ -29,7 +29,7 @@ func purgeGroup(group k.Group) error {
 
 func removeEntry(parentLocation k.Group, entryName string) error {
 	for i, e := range parentLocation.Entries() {
-		if e.Get("title").Value.(string) == entryName || strconv.Itoa(i) == entryName {
+		if e.Title() == entryName || strconv.Itoa(i) == entryName {
 			if err := parentLocation.RemoveEntry(e); err != nil {
 				return fmt.Errorf("could not remove entry: %s", err)
 			}

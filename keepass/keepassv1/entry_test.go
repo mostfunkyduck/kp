@@ -73,7 +73,6 @@ func TestFormatTime(t *testing.T) {
 		t.Fatalf("[%s] doesn't contain [%s]", str, expected)
 	}
 
-
 	then = time.Now()
 	str = v1.FormatTime(then)
 	expected = "less than a second ago"

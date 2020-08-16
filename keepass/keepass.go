@@ -124,9 +124,18 @@ type Entry interface {
 	SetDB(Database)
 }
 
+type ValueType int
+
+const (
+	STRING ValueType = iota
+	LONGSTRING
+	BINARY
+)
+
 type Value struct {
-	Value      interface{} // can be either binary or string data
-	Name       string      // v1 compatibility - attachments have their own name within entries
-	Protected  bool        // only useable in v2, whether the value should be encrypted
-	Searchable bool        // indicates whether this value should be included in searches
+	Value      []byte
+	Name       string // v1 compatibility - attachments have their own name within entries
+	Searchable bool   // indicates whether this value should be included in searches
+	Protected  bool
+	Type       ValueType
 }

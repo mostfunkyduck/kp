@@ -7,7 +7,7 @@ import (
 
 func TestSearchFullPath(t *testing.T) {
 	r := createTestResources(t)
-	term, err := regexp.Compile(r.Entry.Get("title").Value.(string))
+	term, err := regexp.Compile(r.Entry.Title())
 	if err != nil {
 		t.Fatalf(err.Error())
 	}

@@ -73,7 +73,7 @@ func createTestResources(t *testing.T) (r testResources) {
 	for key, v := range settings {
 		val := k.Value{
 			Name:  key,
-			Value: v,
+			Value: []byte(v),
 		}
 		r.Entry.Set(val)
 	}
@@ -104,7 +104,7 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	testShowOutput(o, fmt.Sprintf("Notes: %s", r.Entry.Get("notes").Value), t)
 
 	att := r.Entry.Get("attachment")
-	if att != (k.Value{}) {
+	if len(att.Value) != 0 || att.Name != "" {
 		testShowOutput(o, fmt.Sprintf("Attachment:\t%s", att.Name), t)
 	}
 }

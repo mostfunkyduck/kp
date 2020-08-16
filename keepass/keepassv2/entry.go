@@ -50,7 +50,7 @@ func (e Entry) Get(field string) k.Value {
 
 	return k.Value{
 		Name:  field,
-		Value: val.Value.Content,
+		Value: []byte(val.Value.Content),
 	}
 }
 
@@ -58,24 +58,21 @@ func (e *Entry) Set(value k.Value) bool {
 	for i, each := range e.entry.Values {
 		if each.Key == value.Name {
 			oldContent := each.Value.Content
-			oldProtected := each.Value.Protected
 
 			// TODO filter for binaries here, bad shit will happen if you try to attach this way :D
-			each.Value.Content = value.Value.(string)
-			each.Value.Protected = w.NewBoolWrapper(value.Protected)
+			each.Value.Content = string(value.Value)
 
 			// since we don't get to use pointers, update the slice directly
 			e.entry.Values[i] = each
 
-			return (oldContent != value.Value) || (oldProtected.Bool != value.Protected)
+			return (oldContent != string(value.Value))
 		}
 	}
 	// no existing value to update, create it fresh
 	e.entry.Values = append(e.entry.Values, g.ValueData{
 		Key: value.Name,
 		Value: g.V{
-			Content:   value.Value.(string),
-			Protected: w.NewBoolWrapper(value.Protected),
+			Content: string(value.Value),
 		},
 	})
 	return true
@@ -108,7 +105,7 @@ func (e *Entry) Values() (values []k.Value) {
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
 			Name:       each.Key,
-			Value:      each.Value.Content,
+			Value:      []byte(each.Value.Content),
 			Searchable: true, // this may have to change if location is embedded in an entry like it is in v1
 			Protected:  each.Value.Protected.Bool,
 		}
@@ -120,7 +117,7 @@ func (e *Entry) Values() (values []k.Value) {
 func (e *Entry) SetPassword(password string) {
 	e.Set(k.Value{
 		Name:  "Password",
-		Value: password,
+		Value: []byte(password),
 	})
 }
 
@@ -131,7 +128,7 @@ func (e *Entry) Password() string {
 func (e *Entry) SetTitle(title string) {
 	e.Set(k.Value{
 		Name:  "Title",
-		Value: title,
+		Value: []byte(title),
 	})
 }
 func (e *Entry) Title() string {

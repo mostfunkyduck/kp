@@ -11,7 +11,7 @@ import (
 func RunTestNoParent(t *testing.T, r Resources) {
 	name := "shmoo"
 	e := r.Entry
-	if !e.Set(k.Value{Name: "Title", Value: name}) {
+	if !e.Set(k.Value{Name: "Title", Value: []byte(name)}) {
 		t.Fatalf("could not set title")
 	}
 	output, err := e.Path()

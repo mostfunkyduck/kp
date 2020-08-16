@@ -13,11 +13,11 @@ import (
 
 func listAttachment(entry k.Entry) (s string, err error) {
 	attachment := entry.Get("attachment")
-	if attachment == (k.Value{}) {
+	if len(attachment.Value) == 0 {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name, len(attachment.Value.([]byte)))
+	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name, len(attachment.Value))
 	return
 }
 
@@ -30,11 +30,11 @@ func getAttachment(entry k.Entry, outputLocation string) (s string, err error) {
 	defer f.Close()
 
 	attachment := entry.Get("attachment")
-	if attachment == (k.Value{}) {
+	if len(attachment.Value) == 0 {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	written, err := f.Write(attachment.Value.([]byte))
+	written, err := f.Write(attachment.Value)
 	if err != nil {
 		err = fmt.Errorf("could not write to [%s]", outputLocation)
 		return
@@ -70,7 +70,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 		}
 		for i, entry := range location.Entries() {
 
-			if entry.Get("title").Value.(string) == name || (intVersion >= 0 && i == intVersion) {
+			if entry.Title() == name || (intVersion >= 0 && i == intVersion) {
 				output, err := runAttachCommands(args, cmd, entry, shell)
 				if err != nil {
 					shell.Printf("could not run command [%s]: %s\n", cmd, err)
@@ -90,11 +90,7 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 		return "", fmt.Errorf("could not open %s: %s", path, err)
 	}
 
-	blob := k.Value{
-		Name:  name,
-		Value: data,
-	}
-	entry.Set(k.Value{Name: "attachment", Value: blob})
+	entry.Set(k.Value{Name: "attachment", Value: data})
 	DBChanged = true
 	return "added attachment to database", nil
 }

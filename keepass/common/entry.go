@@ -93,7 +93,7 @@ func (e *Entry) Output(full bool) string {
 	fmt.Fprintf(&b, "=== Values ===\n")
 	fmt.Fprintf(&b, "index\tkey\tvalue\tprotected\n")
 	for idx, val := range e.driver.Values() {
-		fmt.Fprintf(&b, "%d\t|\t%s\t|\t%s\t|\t%t\n", idx, val.Name, val.Value.(string), val.Protected)
+		fmt.Fprintf(&b, "%d\t|\t%s\t|\t%s\t|\t%t\n", idx, val.Name, string(val.Value), val.Protected)
 	}
 	return b.String()
 }
@@ -104,7 +104,7 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
 		if !val.Searchable {
 			continue
 		}
-		content := val.Value.(string)
+		content := string(val.Value)
 		if term.FindString(content) != "" {
 			// something in this entry matched, let's return it
 			path, _ := e.Path()

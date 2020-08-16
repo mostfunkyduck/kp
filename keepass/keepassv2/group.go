@@ -179,7 +179,7 @@ func (g *Group) AddEntry(e k.Entry) error {
 func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entry := gokeepasslib.NewEntry()
 	entryWrapper := WrapEntry(&entry, g.DB())
-	entryWrapper.Set(k.Value{Name: "Title", Value: name})
+	entryWrapper.Set(k.Value{Name: "Title", Value: []byte(name)})
 	if err := entryWrapper.SetParent(g); err != nil {
 		return nil, fmt.Errorf("could not add entry to group: %s", err)
 	}

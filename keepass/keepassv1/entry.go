@@ -41,15 +41,15 @@ func (e *Entry) UUIDString() (string, error) {
 func (e *Entry) Get(field string) (rv k.Value) {
 	switch strings.ToLower(field) {
 	case fieldTitle:
-		rv.Value = e.entry.Title
+		rv.Value = []byte(e.entry.Title)
 	case fieldUn:
-		rv.Value = e.entry.Username
+		rv.Value = []byte(e.entry.Username)
 	case fieldPw:
-		rv.Value = e.entry.Password
+		rv.Value = []byte(e.entry.Password)
 	case fieldUrl:
-		rv.Value = e.entry.URL
+		rv.Value = []byte(e.entry.URL)
 	case fieldNotes:
-		rv.Value = e.entry.Notes
+		rv.Value = []byte(e.entry.Notes)
 	case fieldAttachment:
 		if !e.entry.HasAttachment() {
 			return k.Value{}
@@ -59,7 +59,7 @@ func (e *Entry) Get(field string) (rv k.Value) {
 			Value: e.entry.Attachment.Data,
 		}
 	}
-	if rv.Value != "" {
+	if string(rv.Value) != "" {
 		rv.Name = field
 	}
 
@@ -71,18 +71,18 @@ func (e *Entry) Set(value k.Value) (updated bool) {
 	field := value.Name
 	switch strings.ToLower(field) {
 	case fieldTitle:
-		e.entry.Title = value.Value.(string)
+		e.entry.Title = string(value.Value)
 	case fieldUn:
-		e.entry.Username = value.Value.(string)
+		e.entry.Username = string(value.Value)
 	case fieldPw:
-		e.entry.Password = value.Value.(string)
+		e.entry.Password = string(value.Value)
 	case fieldUrl:
-		e.entry.URL = value.Value.(string)
+		e.entry.URL = string(value.Value)
 	case fieldNotes:
-		e.entry.Notes = value.Value.(string)
+		e.entry.Notes = string(value.Value)
 	case fieldAttachment:
 		e.entry.Attachment.Name = value.Name
-		e.entry.Attachment.Data = value.Value.([]byte)
+		e.entry.Attachment.Data = value.Value
 	default:
 		updated = false
 	}
@@ -198,14 +198,14 @@ func (e *Entry) Output(full bool) (val string) {
 	}
 	fmt.Fprintf(&b, "Location:\t%s\n", path)
 	fmt.Fprintf(&b, "Title:\t%s\n", e.Title())
-	fmt.Fprintf(&b, "URL:\t%s\n", e.Get("url").Value.(string))
-	fmt.Fprintf(&b, "Username:\t%s\n", e.Get("username").Value.(string))
+	fmt.Fprintf(&b, "URL:\t%s\n", e.Get("url").Value)
+	fmt.Fprintf(&b, "Username:\t%s\n", e.Get("username").Value)
 	password := "[redacted]"
 	if full {
 		password = e.Password()
 	}
 	fmt.Fprintf(&b, "Password:\t%s\n", password)
-	fmt.Fprintf(&b, "Notes:\n%s\n", e.Get("notes").Value.(string))
+	fmt.Fprintf(&b, "Notes:\n%s\n", e.Get("notes").Value)
 	if e.entry.HasAttachment() {
 		fmt.Fprintf(&b, "Attachment:\t%s\n", e.Get("attachment").Name)
 	}
@@ -213,29 +213,29 @@ func (e *Entry) Output(full bool) (val string) {
 }
 
 func (e *Entry) Password() string {
-	return e.Get("password").Value.(string)
+	return string(e.Get("password").Value)
 }
 
 func (e *Entry) SetPassword(password string) {
-	e.Set(k.Value{Name: "password", Value: password})
+	e.Set(k.Value{Name: "password", Value: []byte(password)})
 }
 
 func (e *Entry) Title() string {
-	return e.Get("title").Value.(string)
+	return string(e.Get("title").Value)
 }
 
 func (e *Entry) SetTitle(title string) {
-	e.Set(k.Value{Name: "title", Value: title})
+	e.Set(k.Value{Name: "title", Value: []byte(title)})
 }
 
 func (e *Entry) Values() (vals []k.Value) {
 	path, _ := e.Path()
-	vals = append(vals, k.Value{Name: "location", Value: path, Searchable: false})
-	vals = append(vals, k.Value{Name: "username", Value: e.Get("username").Value.(string), Searchable: true})
-	vals = append(vals, k.Value{Name: "password", Value: e.Password(), Searchable: true})
-	vals = append(vals, k.Value{Name: "title", Value: e.Title(), Searchable: true})
-	vals = append(vals, k.Value{Name: "notes", Value: e.Get("notes").Value.(string), Searchable: true})
-	vals = append(vals, k.Value{Name: "url", Value: e.Get("url").Value.(string), Searchable: true})
-	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Name, Searchable: true})
+	vals = append(vals, k.Value{Name: "location", Value: []byte(path), Searchable: false})
+	vals = append(vals, k.Value{Name: "username", Value: []byte(e.Get("username").Value), Searchable: true})
+	vals = append(vals, k.Value{Name: "password", Value: []byte(e.Password()), Searchable: true, Protected: true})
+	vals = append(vals, k.Value{Name: "title", Value: []byte(e.Title()), Searchable: true})
+	vals = append(vals, k.Value{Name: "notes", Value: []byte(e.Get("notes").Value), Searchable: true, Type: k.LONGSTRING})
+	vals = append(vals, k.Value{Name: "url", Value: []byte(e.Get("url").Value), Searchable: true})
+	vals = append(vals, k.Value{Name: "attachment", Value: e.Get("Attachment").Value, Searchable: true, Type: k.BINARY})
 	return
 }

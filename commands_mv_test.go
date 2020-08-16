@@ -128,7 +128,7 @@ func TestMvEntryIntoGroup(t *testing.T) {
 	if err != nil {
 		t.Fatalf(err.Error())
 	}
-	expectedPath := gPath + r.Entry.Get("title").Value.(string)
+	expectedPath := gPath + r.Entry.Title()
 
 	entryPath, err := r.Entry.Path()
 	if err != nil {
