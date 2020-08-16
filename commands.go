@@ -516,7 +516,7 @@ loop:
 
 		for j, entry := range currentLocation.Entries() {
 			// is the entity we're looking for this index or this entry?
-			if string(entry.Get("title").Value) == part || strconv.Itoa(j) == part {
+			if string(entry.Title()) == part || strconv.Itoa(j) == part {
 				if i != len(path)-1 {
 					// we encountered an entry before the end of the path, entries have no subgroups,
 					// so this path is invalid
