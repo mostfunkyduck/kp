@@ -47,6 +47,8 @@ github.com/sethvargo/go-password v0.2.0/go.mod h1:Ym4Mr9JXLBycr02MFuVQ/0JHidNetS
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/tobischo/gokeepasslib v1.0.0 h1:+cvOvPNoaop/8CL2P6Up9Ly1ih8oarkS/0QoBWQeAlM=
+github.com/tobischo/gokeepasslib v1.0.0/go.mod h1:rmRsvAEXwfdT+WMzMjvM2JJiDKRvccJ7+s3MmyK8XC4=
 github.com/tobischo/gokeepasslib/v3 v3.1.0 h1:FUpIHQlgDCtKQ9VSHwqmW1PxUcT96wAvPjmPypbR6Wg=
 github.com/tobischo/gokeepasslib/v3 v3.1.0/go.mod h1:SbRMQTuN5anbqQzWFS4NMcjVyyzgxt5owqvbNi1Vzsk=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

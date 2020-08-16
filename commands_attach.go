@@ -13,7 +13,7 @@ import (
 
 func listAttachment(entry k.Entry) (s string, err error) {
 	attachment := entry.Get("attachment")
-	if len(attachment.Value) == 0 {
+	if len(attachment.Value) == 0 && attachment.Name == "" {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}

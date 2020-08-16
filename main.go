@@ -8,14 +8,14 @@ import (
 
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	"zombiezen.com/go/sandpass/pkg/keepass"
+	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
+	keepass2 "github.com/tobischo/gokeepasslib/v3"
 )
 
 var (
 	keyFile        = flag.String("key", "", "a key file to use to unlock the db")
 	dbFile         = flag.String("db", "", "the db to open")
-	debugMode      = flag.Bool("debug", false, "verbose logging")
+	keepassVersion = flag.Int("kpversion", 1, "which version of keepass to use (1 or 2)")
 	version        = flag.Bool("version", false, "print version and exit")
 	noninteractive = flag.String("n", "", "execute a given command and exit")
 	DBChanged      = false
@@ -67,36 +67,32 @@ func main() {
 
 	shell.Set("filePath", *dbFile)
 
-	var db *keepass.Database
+	var dbWrapper k.Database
+	var ok bool
 	_, exists := os.LookupEnv("KP_DATABASE")
 	if *dbFile == "" && !exists {
-		_db, err := keepass.New(&keepass.Options{})
-		if err != nil {
-			panic(err)
-		}
-		db = _db
+		db := keepass2.NewDatabase()
+		db.Content.Meta.DatabaseName = "Blank Database"
+		dbWrapper = v2.NewDatabase(db, "", k.Options{})
 	} else {
-		// FIXME refactor this to make openDB a generic function that doesn't need the shell
-		// FIXME that will let this get put in the kp libraries instead of main, will need to
-		// FIXME handle versioning here as well
-		_db, ok := openDB(shell)
+		if *keepassVersion == 2 {
+			dbWrapper, ok = openV2DB(shell)
+		} else {
+			dbWrapper, ok = openDB(shell)
+		}
 		if !ok {
 			shell.Println("could not open database")
 			os.Exit(1)
 		}
-		db = _db
 	}
 
-	// FIXME eventually this needs to happen in the keepass wrapper library, not here
-	// FIXME main shouldn't have to care about v1 vs v2 unless absolutely necessary
-	dbWrapper := v1.NewDatabase(db, shell.Get("filePath").(string))
 	shell.Printf("opened database at %s\n", shell.Get("filePath").(string))
 
 	// FIXME now that we're using a wrapper around the DB, all this cruft in the shell context vars should go there
 	// FIXME could even make it live as a global instead of a shell var
-	shell.Set("currentLocation", db.Root())
+	shell.Set("currentLocation", dbWrapper.Root())
 	shell.Set("db", dbWrapper)
-	shell.SetPrompt(fmt.Sprintf("%s > ", db.Root().Name))
+	shell.SetPrompt(fmt.Sprintf("%s > ", dbWrapper.Root().Name()))
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "ls",

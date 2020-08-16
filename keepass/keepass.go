@@ -137,5 +137,6 @@ type Value struct {
 	Name       string // v1 compatibility - attachments have their own name within entries
 	Searchable bool   // indicates whether this value should be included in searches
 	Protected  bool
+	ReadOnly   bool
 	Type       ValueType
 }

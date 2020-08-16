@@ -230,7 +230,7 @@ func (e *Entry) SetTitle(title string) {
 
 func (e *Entry) Values() (vals []k.Value) {
 	path, _ := e.Path()
-	vals = append(vals, k.Value{Name: "location", Value: []byte(path), Searchable: false})
+	vals = append(vals, k.Value{Name: "location", Value: []byte(path), ReadOnly: true, Searchable: false})
 	vals = append(vals, k.Value{Name: "username", Value: []byte(e.Get("username").Value), Searchable: true})
 	vals = append(vals, k.Value{Name: "password", Value: []byte(e.Password()), Searchable: true, Protected: true})
 	vals = append(vals, k.Value{Name: "title", Value: []byte(e.Title()), Searchable: true})

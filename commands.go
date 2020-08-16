@@ -16,7 +16,9 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
 	k "github.com/mostfunkyduck/kp/keepass"
+	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	"github.com/sethvargo/go-password/password"
+	keepass2 "github.com/tobischo/gokeepasslib"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -28,7 +30,66 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 }
 
 // TODO break this function down, it's too long and mildly complicated
-func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
+func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
+	for {
+		dbPath := *dbFile
+		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && *dbFile == "" {
+			dbPath = envDbfile
+		}
+
+		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
+		if _, err := os.Stat(lockfilePath); err == nil {
+			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
+			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
+			line, err := shell.ReadLineErr()
+			if err != nil {
+				shell.Printf("could not read user input: %s\n", line)
+				return nil, false
+			}
+
+			if line != "yes" {
+				shell.Println("aborting")
+				return nil, false
+			}
+		}
+
+		dbReader, err := os.Open(dbPath)
+		if err != nil {
+			shell.Printf("could not open db file [%s]: %s\n", dbPath, err)
+			return nil, false
+		}
+
+		creds, err := getV2Credentials(shell)
+		if err != nil {
+			shell.Println(err.Error())
+			return nil, false
+		}
+
+		db := keepass2.NewDatabase()
+		db.Credentials = creds
+		err = keepass2.NewDecoder(dbReader).Decode(db)
+		if err != nil {
+			shell.Printf("could not open database: %s\n", err)
+			// if the password is coming from an environment variable, we need to terminate
+			// after the first attempt or it will fall into an infinite loop
+			_, passwordInEnv := os.LookupEnv("KP_PASSWORD")
+			if !passwordInEnv {
+				// we are prompting for the password
+				// in case this is a bad password, try again
+				continue
+			}
+			return nil, false
+		}
+
+		if err := setLockfile(dbPath); err != nil {
+			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
+			return nil, false
+		}
+		//return v1.NewDatabase(db, shell.Get("filePath").(string)), true
+	}
+}
+
+func openDB(shell *ishell.Shell) (db k.Database, ok bool) {
 	for {
 		dbPath := *dbFile
 		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && *dbFile == "" {
@@ -82,9 +143,8 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 			}
 		}
 
-		if *debugMode {
-			shell.Printf("got password: %s\n", password)
-		}
+		// FIXME we want this to use v2 unless v1 is specified
+		// FIXME we also want to decompose this function
 
 		opts := &keepass.Options{
 			Password: password,
@@ -108,7 +168,7 @@ func openDB(shell *ishell.Shell) (db *keepass.Database, ok bool) {
 			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
 			return nil, false
 		}
-		return db, true
+		return v1.NewDatabase(db, shell.Get("filePath").(string)), true
 	}
 }
 
@@ -193,6 +253,8 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 		}
 		if edit == "y" {
 			input, err = GetLongString(value)
+			// normally, the user will see their input echoed, but not if an editor was open
+			shell.Println(input)
 		}
 	}
 	if err != nil {
@@ -210,19 +272,22 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	// make a copy of the entry's values for modification
 	vals := e.Values()
+	valsToUpdate := []k.Value{}
 	for _, value := range vals {
 
-		if value.Type != k.BINARY {
+		if !value.ReadOnly && !(value.Type == k.BINARY) {
 			newValue, err := doPrompt(shell, value)
 			if err != nil {
 				return fmt.Errorf("could not get value for %s, %s", value.Name, err)
 			}
 			value.Value = []byte(newValue)
+			valsToUpdate = append(valsToUpdate, value)
 		}
 	}
 
+	// determine whether any of the provided values was an actual update meriting a save
 	updated := false
-	for _, value := range vals {
+	for _, value := range valsToUpdate {
 		if e.Set(value) {
 			updated = true
 		}
@@ -268,6 +333,11 @@ func GetLongString(value k.Value) (text string, err error) {
 	filename := file.Name()
 
 	defer os.Remove(filename)
+
+	// start with what's already there
+	if _, err = file.Write(value.Value); err != nil {
+		return "", err
+	}
 
 	if err = file.Close(); err != nil {
 		return "", err
@@ -464,4 +534,34 @@ loop:
 	// we went all the way through the path and it points to currentLocation,
 	// if it pointed to an entry, it would have returned above
 	return currentLocation, nil, nil
+}
+
+// getV2Credentials builds a keepass2 db credentials object based on the cli arguments
+// and environment variables
+func getV2Credentials(shell *ishell.Shell) (*keepass2.DBCredentials, error) {
+	password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
+	if !passwordInEnv {
+		shell.Print("enter database password: ")
+		var err error
+		password, err = shell.ReadPasswordErr()
+		if err != nil {
+			return &keepass2.DBCredentials{}, fmt.Errorf("could not obtain password: %s\n", err)
+		}
+	}
+
+	creds := keepass2.NewPasswordCredentials(password)
+
+	keyPath := *keyFile // this is the flag in main.go
+	if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && *keyFile == "" {
+		keyPath = envKeyfile
+	}
+
+	if keyPath != "" {
+		var err error
+		creds.Key, err = keepass2.ParseKeyFile(keyPath)
+		if err != nil {
+			return &keepass2.DBCredentials{}, fmt.Errorf("could not parse key file [%s]: %s\n", keyPath, err)
+		}
+	}
+	return creds, nil
 }
