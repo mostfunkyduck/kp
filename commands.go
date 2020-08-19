@@ -360,24 +360,26 @@ func GetLongString(value k.Value) (text string, err error) {
 
 func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
 	for {
-		shell.Printf("password: ('g' for automatic generation)  ")
+		shell.Printf("password: ('g' to generate, empty passwords will automatically be regenerated)  ")
 		pw, err = shell.ReadPasswordErr()
 		if err != nil {
 			return "", fmt.Errorf("failed to read input: %s", err)
 		}
 
-		// default to whatever password was already set for the entry
-		if pw == "" {
+		// default to whatever password was already set for the entry, if there is one
+		if pw == "" && defaultPassword != "" {
 			return defaultPassword, nil
 		}
 
+
 		// otherwise, we're either generating a new password or reading one from user input
-		if pw == "g" {
+		if pw == "g" || pw == "" {
 			// FIXME (low pri for now) needs better generation than hardcoding the number of syms
 			pw, err = password.Generate(20, 5, 5, false, false)
 			if err != nil {
 				return "", fmt.Errorf("failed to generate password: %s\n", err)
 			}
+			shell.Println("generated new password")
 			break
 		}
 
