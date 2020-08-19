@@ -40,6 +40,7 @@ func verifyDefaultEntry(e kp.Entry) error {
 			return fmt.Errorf("%s != %s", v, string(e.Get(k).Value))
 		}
 	}
+
 	return nil
 }
 func TestNewEntry(t *testing.T) {

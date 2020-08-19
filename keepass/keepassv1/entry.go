@@ -232,10 +232,10 @@ func (e *Entry) Values() (vals []k.Value) {
 	path, _ := e.Path()
 	vals = append(vals, k.Value{Name: "location", Value: []byte(path), ReadOnly: true, Searchable: false})
 	vals = append(vals, k.Value{Name: fieldTitle, Value: []byte(e.Title()), Searchable: true})
-	vals = append(vals, k.Value{Name: fieldUrl, Value: []byte(e.Get("url").Value), Searchable: true})
-	vals = append(vals, k.Value{Name: fieldUn, Value: []byte(e.Get("username").Value), Searchable: true})
+	vals = append(vals, k.Value{Name: fieldUrl, Value: []byte(e.Get(fieldUrl).Value), Searchable: true})
+	vals = append(vals, k.Value{Name: fieldUn, Value: []byte(e.Get(fieldUn).Value), Searchable: true})
 	vals = append(vals, k.Value{Name: fieldPw, Value: []byte(e.Password()), Searchable: true, Protected: true})
-	vals = append(vals, k.Value{Name: fieldNotes, Value: []byte(e.Get("notes").Value), Searchable: true, Type: k.LONGSTRING})
-	vals = append(vals, k.Value{Name: fieldAttachment, Value: e.Get("Attachment").Value, Searchable: true, Type: k.BINARY})
+	vals = append(vals, k.Value{Name: fieldNotes, Value: []byte(e.Get(fieldNotes).Value), Searchable: true, Type: k.LONGSTRING})
+	vals = append(vals, k.Value{Name: fieldAttachment, Value: e.Get(fieldAttachment).Value, Searchable: true, Type: k.BINARY})
 	return
 }
