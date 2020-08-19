@@ -34,4 +34,4 @@ install: kp
 	cp ./kp /usr/local/bin/kp
 
 test:
-	go test . ./keepass/keepassv2 ./keepass/keepassv1 -coverprofile out -coverpkg=.,./keepass,./keepass/keepassv2,./keepass/common,./keepass/keepassv1
+	go test . ./keepass/keepassv2 ./keepass/keepassv1 -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/keepassv2,./keepass/common,./keepass/keepassv1
