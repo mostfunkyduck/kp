@@ -17,8 +17,9 @@ import (
 	"github.com/atotto/clipboard"
 	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
+	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	"github.com/sethvargo/go-password/password"
-	keepass2 "github.com/tobischo/gokeepasslib"
+	keepass2 "github.com/tobischo/gokeepasslib/v3"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -65,7 +66,9 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 			return nil, false
 		}
 
-		db := keepass2.NewDatabase()
+		db := keepass2.NewDatabase(
+			keepass2.WithDatabaseKDBXVersion4(),
+		)
 		db.Credentials = creds
 		err = keepass2.NewDecoder(dbReader).Decode(db)
 		if err != nil {
@@ -85,7 +88,7 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
 			return nil, false
 		}
-		//return v1.NewDatabase(db, shell.Get("filePath").(string)), true
+		return v2.NewDatabase(db, shell.Get("filePath").(string), k.Options{}), true
 	}
 }
 
@@ -370,6 +373,7 @@ func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err e
 
 		// otherwise, we're either generating a new password or reading one from user input
 		if pw == "g" {
+			// FIXME (low pri for now) needs better generation than hardcoding the number of syms
 			pw, err = password.Generate(20, 5, 5, false, false)
 			if err != nil {
 				return "", fmt.Errorf("failed to generate password: %s\n", err)
