@@ -67,7 +67,7 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 		}
 
 		db := keepass2.NewDatabase(
-			keepass2.WithDatabaseKDBXVersion4(),
+			keepass2.WithDatabaseKDBXVersion3(),
 		)
 		db.Credentials = creds
 		err = keepass2.NewDecoder(dbReader).Decode(db)
@@ -360,7 +360,7 @@ func GetLongString(value k.Value) (text string, err error) {
 
 func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
 	for {
-		shell.Printf("password: ('g' to generate, empty passwords will automatically be regenerated)  ")
+		shell.Printf("password: ('g' to generate new)  ")
 		pw, err = shell.ReadPasswordErr()
 		if err != nil {
 			return "", fmt.Errorf("failed to read input: %s", err)
@@ -371,9 +371,8 @@ func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err e
 			return defaultPassword, nil
 		}
 
-
 		// otherwise, we're either generating a new password or reading one from user input
-		if pw == "g" || pw == "" {
+		if pw == "g" {
 			// FIXME (low pri for now) needs better generation than hardcoding the number of syms
 			pw, err = password.Generate(20, 5, 5, false, false)
 			if err != nil {

@@ -22,6 +22,13 @@ func WrapEntry(entry *g.Entry, db k.Database) k.Entry {
 	}
 	wrapper.SetDB(db)
 	wrapper.SetDriver(wrapper)
+	// the order here will be the order they appear in the output
+	wrapper.SetTitle("")
+	wrapper.Set(k.Value{
+		Name:  "Username",
+		Value: []byte(""),
+	})
+	wrapper.SetPassword("")
 	return wrapper
 }
 
@@ -116,8 +123,9 @@ func (e *Entry) Values() (values []k.Value) {
 
 func (e *Entry) SetPassword(password string) {
 	e.Set(k.Value{
-		Name:  "Password",
-		Value: []byte(password),
+		Name:      "Password",
+		Value:     []byte(password),
+		Protected: true,
 	})
 }
 

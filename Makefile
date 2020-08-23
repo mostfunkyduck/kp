@@ -4,7 +4,7 @@ DATE=`date -u +%Y-%m-%d-%H-%M`
 BRANCH=`git branch 2>/dev/null | grep '\*' | sed "s/* //"`
 RELEASE=0.1
 
-.PHONY: test cscope goimports install
+.PHONY: test cscope goimports install tidy
 
 all: test kp
 kp: *.go keepass/*.go keepass/*/*.go
@@ -29,6 +29,8 @@ gofmt:
 	go fmt ./keepass/common
 	go fmt ./keepass/keepassv1
 	go fmt ./keepass/keepassv2
+
+tidy: goimports gofmt
 
 install: kp
 	cp ./kp /usr/local/bin/kp

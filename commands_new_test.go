@@ -9,13 +9,14 @@ import (
 )
 
 // prepares stdin to fill out a new entry with default values and decline to save
-var entryValues = []string {
+var entryValues = []string{
 	"first\n",
 	"second\n",
 	"third\n",
 	"fourth\n", "fourth\n", // password confirmation
 	"\n", // notes open in editor, needs manual verification
 }
+
 func fillOutEntry(r testResources) error {
 	allValues := append(entryValues, []string{"N", "n"}...)
 	for _, each := range allValues {
@@ -27,12 +28,12 @@ func fillOutEntry(r testResources) error {
 }
 
 func verifyDefaultEntry(e kp.Entry) error {
-	values := map[string]string {
-		"title": "first",
-		"url": "second",
+	values := map[string]string{
+		"title":    "first",
+		"url":      "second",
 		"username": "third",
 		"password": "fourth",
-		"notes": "",
+		"notes":    "",
 	}
 
 	for k, v := range values {

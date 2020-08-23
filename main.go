@@ -72,7 +72,6 @@ func main() {
 	_, exists := os.LookupEnv("KP_DATABASE")
 	if *dbFile == "" && !exists {
 		db := keepass2.NewDatabase()
-		db.Content.Meta.DatabaseName = "Blank Database"
 		dbWrapper = v2.NewDatabase(db, "", k.Options{})
 	} else {
 		if *keepassVersion == 2 {
@@ -92,7 +91,7 @@ func main() {
 	// FIXME could even make it live as a global instead of a shell var
 	shell.Set("currentLocation", dbWrapper.Root())
 	shell.Set("db", dbWrapper)
-	shell.SetPrompt(fmt.Sprintf("%s > ", dbWrapper.Root().Name()))
+	shell.SetPrompt(fmt.Sprintf("/%s > ", dbWrapper.Root().Name()))
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "ls",

@@ -2,6 +2,7 @@ package keepassv2
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 
@@ -51,9 +52,13 @@ func (d *Database) BackupPath() string {
 }
 
 func (d *Database) Backup() error {
-	backupPath := d.BackupPath()
-	if err := writeDb(d.db, backupPath); err != nil {
-		return fmt.Errorf("could not back up database: %s", err)
+	data, err := ioutil.ReadFile(d.SavePath())
+	if err != nil {
+		return err
+	}
+
+	if err := ioutil.WriteFile(d.BackupPath(), data, 0644); err != nil {
+		return err
 	}
 	return nil
 }
@@ -78,6 +83,9 @@ func writeDb(db *g.Database, path string) error {
 		return fmt.Errorf("could not open file '%s': %s", path, err)
 	}
 
+	if err := db.LockProtectedEntries(); err != nil {
+		return err
+	}
 	encoder := g.NewEncoder(f)
 	if err := encoder.Encode(db); err != nil {
 		return fmt.Errorf("could not write database: %s", err)
@@ -85,14 +93,6 @@ func writeDb(db *g.Database, path string) error {
 	return nil
 }
 func (d *Database) Save() error {
-	if err := d.db.LockProtectedEntries(); err != nil {
-		return fmt.Errorf("could not lock (encrypt) protected entries: %s", err)
-	}
-	defer func() {
-		if err := d.db.UnlockProtectedEntries(); err != nil {
-			fmt.Printf("error unlocking protected entries, database may be corrupted")
-		}
-	}()
 
 	if err := d.Backup(); err != nil {
 		return fmt.Errorf("could not back up database: %s", err)
@@ -125,6 +125,22 @@ func (d *Database) SetSavePath(newPath string) {
 
 func (d *Database) SetOptions(opts k.Options) error {
 	d.options = opts
+	if opts.KeyReader == nil {
+		d.db.Credentials = g.NewPasswordCredentials(opts.Password)
+		return nil
+	}
+
+	// There's a key, if no password is specified, assume that the password is an empty string
+	keyData, err := ioutil.ReadAll(opts.KeyReader)
+	if err != nil {
+		return err
+	}
+	creds, err := g.NewPasswordAndKeyDataCredentials(opts.Password, keyData)
+	if err != nil {
+		return err
+	}
+
+	d.db.Credentials = creds
 	return nil
 }
 

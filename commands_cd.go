@@ -33,5 +33,10 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 func changeDirectory(db k.Database, newLocation k.Group, shell *ishell.Shell) {
 	db.SetCurrentLocation(newLocation)
-	shell.SetPrompt(fmt.Sprintf("%s > ", newLocation.Name()))
+	path, err := db.Path()
+	if err != nil {
+		shell.Println("could not render DB path: %s\n", err)
+		return
+	}
+	shell.SetPrompt(fmt.Sprintf("%s > ", path))
 }
