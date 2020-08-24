@@ -21,9 +21,8 @@ func (r *RootGroup) Raw() interface{} {
 }
 
 func (r *RootGroup) Groups() (rv []k.Group) {
-	for _, each := range r.root.Groups {
-		_each := each
-		rv = append(rv, WrapGroup(&_each, r.db))
+	for i := range r.root.Groups {
+		rv = append(rv, WrapGroup(&r.root.Groups[i], r.db))
 	}
 	return
 }

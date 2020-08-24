@@ -52,6 +52,11 @@ func (d *Database) BackupPath() string {
 }
 
 func (d *Database) Backup() error {
+	if _, err := os.Stat(d.SavePath()); err != nil {
+		// database path doesn't exist and doesn't need to be backed up
+		return nil
+	}
+
 	data, err := ioutil.ReadFile(d.SavePath())
 	if err != nil {
 		return err
@@ -84,8 +89,13 @@ func writeDb(db *g.Database, path string) error {
 	}
 
 	if err := db.LockProtectedEntries(); err != nil {
-		return err
+		panic(fmt.Sprintf("could not encrypt protected entries! database may be corrupted, save was not attempted: %s", err))
 	}
+	defer func() {
+		if err := db.UnlockProtectedEntries(); err != nil {
+			panic(fmt.Sprintf("could not decrypt protected entries! database may be corrupted, save was attempted: %s", err))
+		}
+	}()
 	encoder := g.NewEncoder(f)
 	if err := encoder.Encode(db); err != nil {
 		return fmt.Errorf("could not write database: %s", err)

@@ -66,9 +66,7 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 			return nil, false
 		}
 
-		db := keepass2.NewDatabase(
-			keepass2.WithDatabaseKDBXVersion3(),
-		)
+		db := keepass2.NewDatabase()
 		db.Credentials = creds
 		err = keepass2.NewDecoder(dbReader).Decode(db)
 		if err != nil {
@@ -81,6 +79,11 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 				// in case this is a bad password, try again
 				continue
 			}
+			return nil, false
+		}
+
+		if err := db.UnlockProtectedEntries(); err != nil {
+			shell.Printf("could not unlock protected entries: %s\n", err)
 			return nil, false
 		}
 

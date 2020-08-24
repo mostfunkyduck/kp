@@ -87,13 +87,24 @@ func (e *Entry) SetParent(g k.Group) error {
 	return nil
 }
 
+func truncateString(str string) string {
+	if len(str) > 12 {
+		return str[0:9] + "..."
+	}
+	return str
+}
 func (e *Entry) Output(full bool) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "\n")
 	fmt.Fprintf(&b, "=== Values ===\n")
-	fmt.Fprintf(&b, "index\tkey\tvalue\tprotected\n")
+	fmt.Fprintf(&b, "%-12s\t|\t%-12s\t|\t%-12s\t|\t%-12s\n", "Index", "Name", "Value", "Protected")
+	fmt.Fprintf(&b, "%-12s\t|\t%-12s\t|\t%-12s\t|\t%-12s\n", "", "", "", "")
 	for idx, val := range e.driver.Values() {
-		fmt.Fprintf(&b, "%d\t|\t%s\t|\t%s\t|\t%t\n", idx, val.Name, string(val.Value), val.Protected)
+		value := string(val.Value)
+		if val.Protected && !full && value != "" {
+			value = "*******"
+		}
+		fmt.Fprintf(&b, "%-12d\t|\t%-12s\t|\t%-12s\t|\t%-12t\n", idx, val.Name, truncateString(value), val.Protected)
 	}
 	return b.String()
 }
