@@ -436,12 +436,13 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	}
 
 	var data string
-	switch entryData {
+	switch strings.ToLower(entryData) {
 	// FIXME hardcoded values
 	case "username":
+		// FIXME rewire this so that the entry provides the copy function
 		data = string(entry.Get("username").Value)
 	case "password":
-		data = string(entry.Get("password").Value)
+		data = entry.Password()
 	case "url":
 		data = string(entry.Get("url").Value)
 	default:

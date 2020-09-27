@@ -49,8 +49,9 @@ func (e Entry) Get(field string) k.Value {
 	}
 
 	return k.Value{
-		Name:  field,
-		Value: []byte(val.Value.Content),
+		Name:      field,
+		Value:     []byte(val.Value.Content),
+		Protected: val.Value.Protected.Bool,
 	}
 }
 

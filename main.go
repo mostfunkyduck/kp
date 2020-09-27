@@ -120,6 +120,13 @@ func main() {
 		Func:     SaveAs(shell),
 	})
 	shell.AddCmd(&ishell.Cmd{
+		Name:                "select",
+		Help:                "select [-f] <entry>",
+		LongHelp:            "shows details on a given value in an entry, passwords will be redacted unless '-f' is specified",
+		Func:                Select(shell),
+		CompleterWithPrefix: fileCompleter(shell, true),
+	})
+	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
 		Help:                "show [-f] <entry>",
 		LongHelp:            "shows details on a given entry, passwords will be redacted unless '-f' is specified",

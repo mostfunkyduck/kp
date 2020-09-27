@@ -83,7 +83,7 @@ type Group interface {
 type Entry interface {
 	UUIDer
 	KeepassWrapper
-	// Returns the value for a given field, or nil if the field doesn't exist
+	// Returns the value for a given field, or an empty struct if the field doesn't exist
 	Get(string) Value
 
 	// Title and Password are needed to ensure that v1 and v2 both render

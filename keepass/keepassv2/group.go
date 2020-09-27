@@ -181,7 +181,7 @@ func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entryWrapper := WrapEntry(&entry, g.DB())
 	entryWrapper.SetTitle(name)
 	entryWrapper.Set(k.Value{
-		Name:  "Username",
+		Name:  "UserName",
 		Value: []byte(""),
 	})
 	entryWrapper.SetPassword("")

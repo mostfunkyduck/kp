@@ -30,7 +30,10 @@ gofmt:
 	go fmt ./keepass/keepassv1
 	go fmt ./keepass/keepassv2
 
-tidy: goimports gofmt
+modtidy:
+	go mod tidy
+
+tidy: goimports gofmt modtidy
 
 install: kp
 	cp ./kp /usr/local/bin/kp
