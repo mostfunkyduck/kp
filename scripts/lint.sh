@@ -3,7 +3,7 @@
 EC=0
 CMD="gofmt -l -d"
 if [ $# -gt 0 ] && [[ $1 == "fix" ]]; then
-  CMD="gofmt -l -w"
+  CMD="$CMD -w"
 fi
 
 for file in . ./keepass ./keepass/tests ./keepass/common ./keepass/keepassv1 ./keepass/keepassv2; do

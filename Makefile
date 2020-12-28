@@ -8,7 +8,11 @@ RELEASE=0.1
 
 # default to having lint be a prereq to build
 
-all: lint nolint
+all: init lint nolint
+
+# sets up the git hooks in the repo
+init:
+	git config core.hooksPath .githooks
 
 # allow nolint from when bad stuff creeps in and needs a separate commit
 nolint: test kp
