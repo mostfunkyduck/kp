@@ -4,9 +4,15 @@ DATE=`date -u +%Y-%m-%d-%H-%M`
 BRANCH=`git branch 2>/dev/null | grep '\*' | sed "s/* //"`
 RELEASE=0.1
 
-.PHONY: test cscope goimports install tidy
+.PHONY: test cscope install tidy fix lint
 
-all: test kp
+# default to having lint be a prereq to build
+
+all: lint nolint
+
+# allow nolint from when bad stuff creeps in and needs a separate commit
+nolint: test kp
+
 kp: *.go keepass/*.go keepass/*/*.go
 	go build -gcflags "-N -I ." -ldflags "-X main.VersionRevision=$(REVISION) -X main.VersionBuildDate=$(DATE) -X main.VersionBuildTZ=UTC -X main.VersionBranch=$(BRANCH) -X main.VersionRelease=$(RELEASE) -X main.VersionHostname=$(HOSTNAME)" 
 
@@ -17,23 +23,15 @@ cscope:
 	# running cscope, the -b and -k flags will keep things narrowly scoped
 	cscope -b -k
 
-goimports:
-	goimports -w *.go
-	goimports -w ./keepass/*.go
-	goimports -w ./keepass/*/*.go
-
-gofmt:
-	go fmt
-	go fmt ./keepass
-	go fmt ./keepass/tests
-	go fmt ./keepass/common
-	go fmt ./keepass/keepassv1
-	go fmt ./keepass/keepassv2
-
 modtidy:
 	go mod tidy
 
-tidy: goimports gofmt modtidy
+# non blocking linter run that fixes mistakes
+fix: modtidy
+	./scripts/lint.sh fix
+
+lint:
+	./scripts/lint.sh || exit 1
 
 install: kp
 	cp ./kp /usr/local/bin/kp
