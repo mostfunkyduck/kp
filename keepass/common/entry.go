@@ -87,11 +87,25 @@ func (e *Entry) SetParent(g k.Group) error {
 	return nil
 }
 
-func truncateString(str string) string {
-	if len(str) > 12 {
-		return str[0:9] + "..."
+// formatString will replace all newlines with literal "\n" characters in a string
+func formatString(str string) (output string) {
+	output = str
+
+	// make all strings use literal "\" "n" characters instead of newlines
+	output = strings.ReplaceAll(output, "\n", "\\n")
+	return output
+}
+
+// truncateString will cut off excess characters from a string
+func truncateString(str string) (output string) {
+	output = str
+
+	// trim down to 12 characters for brevity
+	if len(output) > 12 {
+		output = output[0:9] + "..."
 	}
-	return str
+
+	return output
 }
 func (e *Entry) Output(full bool) string {
 	var b strings.Builder
@@ -104,7 +118,8 @@ func (e *Entry) Output(full bool) string {
 		if val.Protected && !full && value != "" {
 			value = "*******"
 		}
-		fmt.Fprintf(&b, "%-12d\t|\t%-12s\t|\t%-12s\t|\t%-12t\n", idx, val.Name, truncateString(value), val.Protected)
+
+		fmt.Fprintf(&b, "%-12d\t|\t%-12s\t|\t%-12s\t|\t%-12t\n", idx, val.Name, truncateString(formatString(value)), val.Protected)
 	}
 	return b.String()
 }
