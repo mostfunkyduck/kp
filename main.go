@@ -8,8 +8,10 @@ import (
 
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
+	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	keepass2 "github.com/tobischo/gokeepasslib/v3"
+	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 var (
@@ -71,8 +73,16 @@ func main() {
 	var ok bool
 	_, exists := os.LookupEnv("KP_DATABASE")
 	if *dbFile == "" && !exists {
-		db := keepass2.NewDatabase()
-		dbWrapper = v2.NewDatabase(db, "", k.Options{})
+		if *keepassVersion == 2 {
+			db := keepass2.NewDatabase()
+			dbWrapper = v2.NewDatabase(db, "", k.Options{})
+		} else {
+			db, err := keepass.New(&keepass.Options{})
+			if err != nil {
+				shell.Printf("could not create new database: %s", err)
+			}
+			dbWrapper = v1.NewDatabase(db, "")
+		}
 	} else {
 		if *keepassVersion == 2 {
 			dbWrapper, ok = openV2DB(shell)
