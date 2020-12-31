@@ -31,7 +31,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		// get the parent path of the new group so that we can add the subgroup to it
 		parentPathSplit := strings.Split(newPath, "/")
 		// rejoin the string components, trimming off the final entry
-		parentEntryIndex := len(parentPathSplit)-1
+		parentEntryIndex := len(parentPathSplit) - 1
 		if parentEntryIndex <= 0 {
 			// this means that there were no parent entries, so the new group will
 			// be in the current directory
