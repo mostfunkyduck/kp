@@ -71,7 +71,7 @@ func (e *Entry) Parent() k.Group {
 }
 
 func (e *Entry) SetParent(g k.Group) error {
-	pathGroups, err := findPathToGroup(e.DB().Root(), g)
+	pathGroups, err := FindPathToGroup(e.DB().Root(), g)
 	if len(pathGroups) == 0 || err != nil {
 		errorString := fmt.Sprintf("could not find a path from the db root to '%s', is this a valid group?", g.Name())
 

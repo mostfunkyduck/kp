@@ -16,7 +16,7 @@ func (g *Group) Path() (rv string, err error) {
 	if g.driver.IsRoot() {
 		return "/", nil
 	}
-	pathGroups, err := findPathToGroup(g.db.Root(), g.driver)
+	pathGroups, err := FindPathToGroup(g.db.Root(), g.driver)
 	if err != nil {
 		return rv, fmt.Errorf("could not find path to group '%s'", g.driver.Name())
 	}
@@ -26,7 +26,7 @@ func (g *Group) Path() (rv string, err error) {
 	return rv + g.driver.Name() + "/", nil
 }
 
-func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
+func FindPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 	// the v2 library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, group := range source.Groups() {
 		same, err := CompareUUIDs(group, target)
@@ -34,17 +34,22 @@ func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 			return []k.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
 		}
 
+		// Exact match, return the path to the source
 		if same {
-			return []k.Group{source}, nil
+			ret := []k.Group{source}
+			return ret, nil
 		}
 
-		pathGroups, err := findPathToGroup(group, target)
+		// Check children of this group for the target
+		pathGroups, err := FindPathToGroup(group, target)
 		if err != nil {
 			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
 		}
 
+		// if the target group is a child of this group, return the full path
 		if len(pathGroups) != 0 {
-			return append([]k.Group{source}, pathGroups...), nil
+			ret := append([]k.Group{source}, pathGroups...)
+			return ret, nil
 		}
 	}
 	return []k.Group{}, nil

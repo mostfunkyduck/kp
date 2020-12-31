@@ -479,7 +479,7 @@ func confirmOverwrite(shell *ishell.Shell, path string) bool {
 	return false
 }
 
-// TraversePath will, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
+// TraversePath, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
 // if the path points to an entry, the parent group is returned as well as the entry.
 // If the path points to a group, the entry will be nil
 func TraversePath(d k.Database, startingLocation k.Group, fullPath string) (finalLocation k.Group, finalEntry k.Entry, err error) {

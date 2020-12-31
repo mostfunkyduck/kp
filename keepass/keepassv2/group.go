@@ -39,44 +39,6 @@ func (g *Group) Groups() (rv []k.Group) {
 	return
 }
 
-// findPathToGroup will attempt to find the path between 'source' and 'target', returning an
-// ordered slice of groups leading up to *but not including* the target
-// TODO this needs rigorous testing
-func findPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
-	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
-	for _, group := range source.Groups() {
-		same, err := CompareUUIDs(group, target)
-		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
-		}
-
-		if same {
-			return []k.Group{source}, nil
-		}
-
-		pathGroups, err := findPathToGroup(group, target)
-		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
-		}
-
-		if len(pathGroups) != 0 {
-			return append([]k.Group{source}, pathGroups...), nil
-		}
-	}
-	return []k.Group{}, nil
-}
-
-func (g *Group) Path() (rv string, err error) {
-	pathGroups, err := findPathToGroup(g.DB().Root(), g)
-	if err != nil {
-		return rv, fmt.Errorf("could not find path to group '%s'", g.Name())
-	}
-	for _, each := range pathGroups {
-		rv = rv + each.Name() + "/"
-	}
-	return rv + g.Name() + "/", nil
-}
-
 func (g *Group) Entries() (rv []k.Entry) {
 	for _, entry := range g.group.Entries {
 		_entry := entry
@@ -86,7 +48,7 @@ func (g *Group) Entries() (rv []k.Entry) {
 }
 
 func (g *Group) Parent() k.Group {
-	pathGroups, err := findPathToGroup(g.DB().Root(), g)
+	pathGroups, err := c.FindPathToGroup(g.DB().Root(), g)
 	if err != nil {
 		return nil
 	}
