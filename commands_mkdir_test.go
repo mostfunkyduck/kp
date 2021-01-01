@@ -1,111 +1,115 @@
 package main_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	main "github.com/mostfunkyduck/kp"
 )
 
-func TestMkdir(t *testing.T) {
-	// Happy path, testing the first group and the second will, in effect, test nested groups
-	r := createTestResources(t)
-	groupName := "test2"
-	r.Db.SetCurrentLocation(r.Group)
+func createGroup(group string, r testResources) error {
 	r.Context.Args = []string{
-		groupName,
+		group,
 	}
 	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
-		t.Fatalf(err.Error())
+		return fmt.Errorf("could not write to readline: %s", err)
 	}
 	main.NewGroup(r.Shell)(r.Context)
-	path, err := r.Db.CurrentLocation().Path()
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
+	return nil
+}
 
-	l, e, err := main.TraversePath(r.Db, r.Db.CurrentLocation(), path+groupName)
+func verifyGroup(group string, r testResources) error {
+	currentLocation := r.Db.CurrentLocation()
+	l, e, err := main.TraversePath(r.Db, currentLocation, group)
 	if err != nil {
-		t.Fatalf("could not traverse path: %s", err)
+		return fmt.Errorf("could not traverse path from [%s] to [%s]: %s", currentLocation.Name(), group, err)
 	}
 
 	if e != nil {
-		t.Fatalf("entry found instead of target for new group\n")
+		return fmt.Errorf("entry found instead of target for new group")
 	}
 
-	path, err = r.Db.CurrentLocation().Path()
+	path, err := r.Db.CurrentLocation().Path()
 	if err != nil {
-		t.Fatalf(err.Error())
+		return fmt.Errorf("could not locate path of current DB location: %s", err)
 	}
-	expected := path + groupName + "/"
+	expected := path + group + "/"
 	lPath, err := l.Path()
 	if err != nil {
-		t.Fatalf(err.Error())
+		return fmt.Errorf("could not locate location: %s", err)
 	}
 	if lPath != expected {
-		t.Fatalf("[%s] != [%s]", lPath, expected)
+		return fmt.Errorf("[%s] != [%s]", lPath, expected)
+	}
+	return nil
+}
+
+func TestMkdir(t *testing.T) {
+	// Happy path, testing the first group and the second will, in effect, test nested groups
+	r := createTestResources(t)
+	r.Db.SetCurrentLocation(r.Group)
+	if err := createGroup("test2", r); err != nil {
+		t.Fatal(err)
 	}
 
-	r.F.outputHolder.output = ""
-	// Testing a duplicate while we're at it
-	main.NewGroup(r.Shell)(r.Context)
-	o := r.F.outputHolder.output
-	expected = "cannot create duplicate"
-	if !strings.Contains(o, expected) {
-		t.Fatalf("[%s] does not contain [%s]", o, expected)
+	if err := verifyGroup("test2", r); err != nil {
+		t.Fatal(err)
+	}
+
+}
+
+func TestMkdirTerminalSlash(t *testing.T) {
+	// Happy path, testing the first group and the second will, in effect, test nested groups
+	r := createTestResources(t)
+	r.Db.SetCurrentLocation(r.Group)
+	if err := createGroup("test2/", r); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := verifyGroup("test2", r); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestMkdirNestedSubgroup(t *testing.T) {
 	// Happy path, testing the first group and the second will, in effect, test nested groups
 	r := createTestResources(t)
-	groupName := "test2/"
 	r.Db.SetCurrentLocation(r.Group)
-	r.Context.Args = []string{
-		groupName,
+	if err := createGroup("test2", r); err != nil {
+		t.Fatalf("could not create group: %s\n", err)
 	}
-	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
-		t.Fatalf(err.Error())
+	if err := verifyGroup("test2", r); err != nil {
+		t.Fatalf("could not verify group: %s\n", err)
 	}
-	main.NewGroup(r.Shell)(r.Context)
 
 	r.Db.SetCurrentLocation(r.Group.Groups()[0])
-	groupName2 := "test3"
-	r.Context.Args = []string{
-		groupName2,
+	if err := createGroup("test3", r); err != nil {
+		t.Fatalf("could not create nested group: %s\n", err)
 	}
-	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
-		t.Fatalf(err.Error())
+	if err := verifyGroup("test3", r); err != nil {
+		t.Fatalf("could not verify nested group: %s\n", err)
 	}
-	main.NewGroup(r.Shell)(r.Context)
+}
 
-	l, e, err := main.TraversePath(r.Db, r.Db.CurrentLocation(), groupName2)
-	if err != nil {
-		t.Fatalf("could not traverse path: %s", err)
-	}
+func TestMkdirGroupNameIdenticalToEntry(t *testing.T) {
+	r := createTestResources(t)
+	r.Db.SetCurrentLocation(r.Group)
 
-	if e != nil {
-		t.Fatalf("entry found instead of target for new group\n")
+	if err := createGroup(r.Entry.Title(), r); err != nil {
+		t.Fatalf("could not create nested group: %s\n", err)
 	}
+}
 
-	path, err := r.Db.CurrentLocation().Path()
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	expected := path + groupName2 + "/"
-	lPath, err := l.Path()
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-	if lPath != expected {
-		t.Fatalf("[%s] != [%s]", lPath, expected)
-	}
-
+func TestMkdirGroupNameDuplicate(t *testing.T) {
+	r := createTestResources(t)
 	r.F.outputHolder.output = ""
-	// Testing a duplicate while we're at it
-	main.NewGroup(r.Shell)(r.Context)
+	if err := createGroup(r.Group.Name(), r); err != nil {
+		t.Fatal(err)
+	}
+
 	o := r.F.outputHolder.output
-	expected = "cannot create duplicate"
+	expected := "cannot create duplicate"
 	if !strings.Contains(o, expected) {
 		t.Fatalf("[%s] does not contain [%s]", o, expected)
 	}
