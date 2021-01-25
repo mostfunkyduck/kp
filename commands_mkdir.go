@@ -35,7 +35,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		// if the path doesn't have a slash in it, then it represents the group name
 		groupName := newPath
 		if strings.Contains(newPath, "/") {
-			// to reach the correct location, trim off everything after 
+			// to reach the correct location, trim off everything after
 			// the last slash and crawl to the path represented by what's left over
 			r := regexp.MustCompile(`(?P<Path>.*)/(?P<Group>[^/]*)$`)
 			matches := r.FindStringSubmatch(newPath)

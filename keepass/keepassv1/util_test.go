@@ -3,9 +3,9 @@ package keepassv1_test
 import (
 	"testing"
 
+	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
-	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
