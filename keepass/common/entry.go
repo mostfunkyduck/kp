@@ -87,39 +87,61 @@ func (e *Entry) SetParent(g k.Group) error {
 	return nil
 }
 
-// formatString will replace all newlines with literal "\n" characters in a string
-func formatString(str string) (output string) {
-	output = str
-
-	// make all strings use literal "\" "n" characters instead of newlines
-	output = strings.ReplaceAll(output, "\n", "\\n")
-	return output
-}
-
-// truncateString will cut off excess characters from a string
-func truncateString(str string) (output string) {
-	output = str
-
-	// trim down to 12 characters for brevity
-	if len(output) > 12 {
-		output = output[0:9] + "..."
+func (e *Entry) Output(full bool) (val string) {
+	var b strings.Builder
+	val = "\n"
+	fmt.Fprintf(&b, "\n")
+	// Output all the metadata first
+	uuidString, err := e.driver.UUIDString()
+	if err != nil {
+		uuidString = fmt.Sprintf("<could not render UUID string: %s>", err)
 	}
 
-	return output
-}
-func (e *Entry) Output(full bool) string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "\n")
-	fmt.Fprintf(&b, "=== Values ===\n")
-	fmt.Fprintf(&b, "%-12s\t|\t%-12s\t|\t%-12s\t|\t%-12s\n", "Index", "Name", "Value", "Protected")
-	fmt.Fprintf(&b, "%-12s\t|\t%-12s\t|\t%-12s\t|\t%-12s\n", "", "", "", "")
-	for idx, val := range e.driver.Values() {
-		value := string(val.Value)
-		if val.Protected && !full && value != "" {
-			value = "*******"
+	fmt.Fprintf(&b, "UUID:\t%s\n", uuidString)
+	/**
+	TODO will put this back in later
+	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.CreationTime()))
+	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.LastModificationTime()))
+	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.LastAccessTime()))
+	**/
+
+	// Now output the key fields
+	path, err := e.driver.Path()
+	if err != nil {
+		path = fmt.Sprintf("<error rendering path: %s>", err)
+	}
+	fmt.Fprintf(&b, "Location:\t%s\n", path)
+	fmt.Fprintf(&b, "Title:\t%s\n", e.driver.Title())
+
+	// TODO: make "username" a function, not a directly accessed field
+	fmt.Fprintf(&b, "Username:\t%s\n", e.driver.Get("username").Value)
+	password := "[redacted]"
+	if full {
+		password = e.driver.Password()
+	}
+	fmt.Fprintf(&b, "Password:\t%s\n", password)
+
+	fmt.Fprintf(&b, "=== Full Values ===\n")
+	for _, val := range e.driver.Values() {
+		// If the value type is string, print as is
+		// If the value type is a long string, print truncated version (ideally done the same way as the regular string)
+		// If it's a binary - print the size of the binary
+		var value string
+		if val.Type == k.BINARY {
+			value = fmt.Sprintf("binary: %d bytes", len(val.Value))
+		} else {
+			value = string(val.Value)
+			if val.Protected && !full {
+				value = "[redacted]"
+			}
+
+			if val.Type == k.LONGSTRING {
+				// Long fields are going to need a line break so the first line isn't corrupted
+				value = "\n" + value
+			}
 		}
 
-		fmt.Fprintf(&b, "%-12d\t|\t%-12s\t|\t%-12s\t|\t%-12t\n", idx, val.Name, truncateString(formatString(value)), val.Protected)
+		fmt.Fprintf(&b, "%s:\t%s\n", val.Name, value)
 	}
 	return b.String()
 }

@@ -40,5 +40,8 @@ lint:
 install: kp
 	cp ./kp /usr/local/bin/kp
 
+testcmd := go test . ./keepass/keepassv2 ./keepass/keepassv1 -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/keepassv2,./keepass/common,./keepass/keepassv1
+
 test:
-	go test . ./keepass/keepassv2 ./keepass/keepassv1 -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/keepassv2,./keepass/common,./keepass/keepassv1
+	KPVERSION=1 $(testcmd)
+	KPVERSION=2 $(testcmd)

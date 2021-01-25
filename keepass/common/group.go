@@ -28,19 +28,25 @@ func (g *Group) Path() (rv string, err error) {
 
 func FindPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 	// the v2 library doesn't appear to support child->parent links, so we have to find the needful ourselves
+
+	// loop through every group in the top level of the path
 	for _, group := range source.Groups() {
 		same, err := CompareUUIDs(group, target)
 		if err != nil {
 			return []k.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
 		}
 
-		// Exact match, return the path to the source
+		// If the group that we're looking at in the path is the target,
+		// then the 'source' group at the top level is part of the final path
 		if same {
+			// this will essentially say that if the target group exists in the source group, build a path
+			// to the source group
 			ret := []k.Group{source}
 			return ret, nil
 		}
 
-		// Check children of this group for the target
+		// If the group is not the exact match, recurse into it looking for the target
+		// If the target is in a subgroup tree here, the full path will end up being returned
 		pathGroups, err := FindPathToGroup(group, target)
 		if err != nil {
 			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)

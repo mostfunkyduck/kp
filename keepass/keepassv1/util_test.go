@@ -5,17 +5,26 @@ import (
 
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
-func createTestResources(t *testing.T) runner.Resources {
+func initDatabase() (k.Database, error) {
 	// each 'key round' takes quite a while, make sure to use the minimum
 	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
 	if err != nil {
-		t.Fatalf(err.Error())
+		return nil, err
 	}
 
 	dbWrapper := v1.NewDatabase(db, "/dev/null")
+	return dbWrapper, nil
+}
+
+func createTestResources(t *testing.T) runner.Resources {
+	dbWrapper, err := initDatabase()
+	if err != nil {
+		t.Fatal(err)
+	}
 	sg, err := dbWrapper.Root().NewSubgroup("asdf asdf asdf test")
 	if err != nil {
 		t.Fatalf(err.Error())

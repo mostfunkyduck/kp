@@ -15,6 +15,11 @@ func createGroup(group string, r testResources) error {
 	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
 		return fmt.Errorf("could not write to readline: %s", err)
 	}
+
+	// FIXME the v2 tests  won't pass without this repetiton
+	if _, err := r.Readline.WriteStdin([]byte("n")); err != nil {
+		return fmt.Errorf("could not write to readline: %s", err)
+	}
 	main.NewGroup(r.Shell)(r.Context)
 	return nil
 }
@@ -73,7 +78,7 @@ func TestMkdirTerminalSlash(t *testing.T) {
 }
 
 func TestMkdirNestedSubgroup(t *testing.T) {
-	// Happy path, testing the first group and the second will, in effect, test nested groups
+	// Happy path
 	r := createTestResources(t)
 	r.Db.SetCurrentLocation(r.Group)
 	if err := createGroup("test2", r); err != nil {

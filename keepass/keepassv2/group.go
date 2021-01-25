@@ -32,17 +32,15 @@ func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
 }
 
 func (g *Group) Groups() (rv []k.Group) {
-	for _, each := range g.group.Groups {
-		_each := each
-		rv = append(rv, WrapGroup(&_each, g.DB()))
+	for i := range g.group.Groups {
+		rv = append(rv, WrapGroup(&g.group.Groups[i], g.DB()))
 	}
 	return
 }
 
 func (g *Group) Entries() (rv []k.Entry) {
-	for _, entry := range g.group.Entries {
-		_entry := entry
-		rv = append(rv, WrapEntry(&_entry, g.DB()))
+	for i := range g.group.Entries {
+		rv = append(rv, WrapEntry(&g.group.Entries[i], g.DB()))
 	}
 	return
 }

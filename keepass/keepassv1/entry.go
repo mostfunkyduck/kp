@@ -182,36 +182,6 @@ func FormatTime(t time.Time) (formatted string) {
 	return
 }
 
-func (e *Entry) Output(full bool) (val string) {
-	var b strings.Builder
-	val = "\n"
-	fmt.Fprintf(&b, "\n")
-	fmt.Fprintf(&b, "UUID:\t%s\n", e.entry.UUID)
-
-	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.entry.CreationTime))
-	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.entry.LastModificationTime))
-	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.entry.LastAccessTime))
-
-	path, err := e.Path()
-	if err != nil {
-		path = fmt.Sprintf("<error: %s", err)
-	}
-	fmt.Fprintf(&b, "Location:\t%s\n", path)
-	fmt.Fprintf(&b, "Title:\t%s\n", e.Title())
-	fmt.Fprintf(&b, "URL:\t%s\n", e.Get("url").Value)
-	fmt.Fprintf(&b, "Username:\t%s\n", e.Get("username").Value)
-	password := "[redacted]"
-	if full {
-		password = e.Password()
-	}
-	fmt.Fprintf(&b, "Password:\t%s\n", password)
-	fmt.Fprintf(&b, "Notes:\n%s\n", e.Get("notes").Value)
-	if e.entry.HasAttachment() {
-		fmt.Fprintf(&b, "Attachment:\t%s\n", e.Get("attachment").Name)
-	}
-	return b.String()
-}
-
 func (e *Entry) Password() string {
 	return string(e.Get("password").Value)
 }

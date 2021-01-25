@@ -4,6 +4,7 @@ package main_test
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/abiosoft/readline"
 	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
+	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
+	keepass2 "github.com/tobischo/gokeepasslib/v3"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -41,21 +44,41 @@ type testResources struct {
 	Readline *readline.Instance
 }
 
+func initDBv1() (k.Database, error) {
+	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
+	if err != nil {
+		return nil, fmt.Errorf("could not open test db: %s", err)
+	}
+
+	return v1.NewDatabase(db, ""), nil
+}
+
+func initDBv2() (k.Database, error) {
+	db := keepass2.NewDatabase()
+	dbWrapper := v2.NewDatabase(db, "", k.Options{})
+	return dbWrapper, nil
+}
+
 func createTestResources(t *testing.T) (r testResources) {
 	var err error
 	r.Readline, err = readline.New("")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	r.Shell = ishell.NewWithReadline(r.Readline)
 	r.Path = "test/test"
 	r.Context = &ishell.Context{}
-	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
-	if err != nil {
-		t.Fatalf("could not open test db: %s", err)
+	version := os.Getenv("KPVERSION")
+	if version == "1" {
+		r.Db, err = initDBv1()
+	} else if version == "2" {
+		r.Db, err = initDBv2()
+	} else {
+		t.Fatalf("KPVERSION environment variable invalid (value: '%s'), rerun with it as either '1' or '2'", version)
 	}
-
-	r.Db = v1.NewDatabase(db, "")
+	if err != nil {
+		t.Fatal(err)
+	}
 	r.Shell.Set("db", r.Db)
 	r.Group, _ = r.Db.Root().NewSubgroup("test")
 
@@ -93,7 +116,7 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	}
 	testShowOutput(o, fmt.Sprintf("Location:\t%s", path), t)
 	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Get("title").Value), t)
-	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("url").Value), t)
+	testShowOutput(o, fmt.Sprintf("url:\t%s", r.Entry.Get("url").Value), t)
 	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("username").Value), t)
 	if redactedPassword {
 		testShowOutput(o, "Password:\t[redacted]", t)
@@ -101,7 +124,7 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Get("password").Value), t)
 	}
 
-	testShowOutput(o, fmt.Sprintf("Notes: %s", r.Entry.Get("notes").Value), t)
+	testShowOutput(o, fmt.Sprintf("notes:\t %s", r.Entry.Get("notes").Value), t)
 
 	att := r.Entry.Get("attachment")
 	if len(att.Value) != 0 || att.Name != "" {
