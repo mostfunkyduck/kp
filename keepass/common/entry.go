@@ -98,12 +98,9 @@ func (e *Entry) Output(full bool) (val string) {
 	}
 
 	fmt.Fprintf(&b, "UUID:\t%s\n", uuidString)
-	/**
-	TODO will put this back in later
-	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.CreationTime()))
-	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.LastModificationTime()))
-	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.LastAccessTime()))
-	**/
+	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.driver.CreationTime()))
+	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.driver.LastModificationTime()))
+	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.driver.LastAccessTime()))
 
 	// Now output the key fields
 	path, err := e.driver.Path()

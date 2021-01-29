@@ -69,5 +69,5 @@ func TestEntryPasswordTitleFuncs(t *testing.T) {
 
 func TestOutput(t *testing.T) {
 	r := createTestResources(t)
-	runner.RunTestOutput(t, r)
+	runner.RunTestOutput(t, r.Entry)
 }
