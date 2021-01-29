@@ -81,18 +81,18 @@ func moveGroup(g k.Group, db k.Database, location string) error {
 		return err
 	}
 
-	for _, e := range parent.Entries() {
-		if e.Title() == newName {
-			return fmt.Errorf("entry named '%s' already exists at '%s'", newName, e.Title())
-		}
-	}
-
 	for _, g := range parent.Groups() {
 		if g.Name() == newName {
 			// attempted to move a group into a group, i.e. '/foo' into '/bar/foo' when '/bar/foo' already exists
 			// in this case, we want to move '/foo' to become '/bar/foo/foo', so set the parent to be the target group
 			parent = g
 			break
+		}
+	}
+
+	for _, e := range parent.Entries() {
+		if e.Title() == newName {
+			return fmt.Errorf("entry named '%s' already exists at '%s'", newName, e.Title())
 		}
 	}
 
