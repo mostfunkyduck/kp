@@ -3,6 +3,7 @@ package common
 // Entry is a wrapper around an entry driver, holding functions
 // common to both kp1 and kp2
 import (
+	"encoding/base64"
 	"fmt"
 	"regexp"
 	"strings"
@@ -97,28 +98,12 @@ func (e *Entry) Output(full bool) (val string) {
 		uuidString = fmt.Sprintf("<could not render UUID string: %s>", err)
 	}
 
-	fmt.Fprintf(&b, "UUID:\t%s\n", uuidString)
+	// b64 the UUID string since it sometimes contains garbage characters, esp in v2
+	fmt.Fprintf(&b, "UUID:\t%s\n", base64.StdEncoding.EncodeToString([]byte(uuidString)))
 	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.driver.CreationTime()))
 	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.driver.LastModificationTime()))
 	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.driver.LastAccessTime()))
 
-	// Now output the key fields
-	path, err := e.driver.Path()
-	if err != nil {
-		path = fmt.Sprintf("<error rendering path: %s>", err)
-	}
-	fmt.Fprintf(&b, "Location:\t%s\n", path)
-	fmt.Fprintf(&b, "Title:\t%s\n", e.driver.Title())
-
-	// TODO: make "username" a function, not a directly accessed field
-	fmt.Fprintf(&b, "Username:\t%s\n", e.driver.Get("username").Value)
-	password := "[redacted]"
-	if full {
-		password = e.driver.Password()
-	}
-	fmt.Fprintf(&b, "Password:\t%s\n", password)
-
-	fmt.Fprintf(&b, "=== Full Values ===\n")
 	for _, val := range e.driver.Values() {
 		// If the value type is string, print as is
 		// If the value type is a long string, print truncated version (ideally done the same way as the regular string)
@@ -135,10 +120,13 @@ func (e *Entry) Output(full bool) (val string) {
 			if val.Type == k.LONGSTRING {
 				// Long fields are going to need a line break so the first line isn't corrupted
 				value = "\n" + value
+
+				// Add indentations for all line breaks to differentiate note lines from field lines
+				value = strings.ReplaceAll(value, "\n", "\n>\t")
 			}
 		}
 
-		fmt.Fprintf(&b, "%s:\t%s\n", val.Name, value)
+		fmt.Fprintf(&b, "%s:\t%s\n", strings.Title(val.Name), value)
 	}
 	return b.String()
 }

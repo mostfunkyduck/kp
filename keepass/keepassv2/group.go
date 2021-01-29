@@ -139,13 +139,24 @@ func (g *Group) AddEntry(e k.Entry) error {
 func (g *Group) NewEntry(name string) (k.Entry, error) {
 	entry := gokeepasslib.NewEntry()
 	entryWrapper := WrapEntry(&entry, g.DB())
+	// the order in which these values are added determines how they are output in the terminal
+	// both for prompts and output
 	entryWrapper.SetTitle(name)
 	entryWrapper.Set(k.Value{
+		Name:  "URL",
+		Value: []byte(""),
+	})
+	entryWrapper.Set(k.Value{
+		// This needs to be formatted this way to tie in to how keepass2 looks for usernames
 		Name:  "UserName",
 		Value: []byte(""),
 	})
 	entryWrapper.SetPassword("")
-
+	entryWrapper.Set(k.Value{
+		Name:  "Notes",
+		Value: []byte(""),
+		Type:  k.LONGSTRING,
+	})
 	if err := entryWrapper.SetParent(g); err != nil {
 		return nil, fmt.Errorf("could not add entry to group: %s", err)
 	}

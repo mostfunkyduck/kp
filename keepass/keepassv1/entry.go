@@ -169,6 +169,8 @@ func (e *Entry) Values() (vals []k.Value) {
 	vals = append(vals, k.Value{Name: fieldUn, Value: []byte(e.Get(fieldUn).Value), Searchable: true})
 	vals = append(vals, k.Value{Name: fieldPw, Value: []byte(e.Password()), Searchable: true, Protected: true})
 	vals = append(vals, k.Value{Name: fieldNotes, Value: []byte(e.Get(fieldNotes).Value), Searchable: true, Type: k.LONGSTRING})
-	vals = append(vals, k.Value{Name: fieldAttachment, Value: e.Get(fieldAttachment).Value, Searchable: true, Type: k.BINARY})
+	if e.entry.HasAttachment() {
+		vals = append(vals, k.Value{Name: fieldAttachment, Value: e.Get(fieldAttachment).Value, Searchable: true, Type: k.BINARY})
+	}
 	return
 }
