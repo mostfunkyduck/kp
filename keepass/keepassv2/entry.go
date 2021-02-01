@@ -105,6 +105,17 @@ func (e *Entry) SetCreationTime(t time.Time) {
 }
 
 func (e *Entry) Values() (values []k.Value, err error) {
+	path, err := e.Path()
+	if err != nil {
+		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
+	}
+	values = append(values, k.Value{
+		Name:       "location",
+		Value:      []byte(path),
+		ReadOnly:   true,
+		Searchable: false,
+	})
+
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
 			Name:       each.Key,
@@ -133,16 +144,6 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		values = append(values, binary.Value)
 	}
 
-	path, err := e.Path()
-	if err != nil {
-		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
-	}
-	values = append(values, k.Value{
-		Name:       "location",
-		Value:      []byte(path),
-		ReadOnly:   true,
-		Searchable: false,
-	})
 	return
 }
 
