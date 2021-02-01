@@ -45,7 +45,12 @@ func Select(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		// what the actual defaults will be
 		defaultSelections := []string{}
-		for _, val := range entry.Values() {
+		values, err := entry.Values()
+		if err != nil {
+			shell.Printf("error retrieving values for entry '%s': %s", entry.Title, err)
+			return
+		}
+		for _, val := range values {
 			options = append(options, val.Name)
 			for _, def := range defaultsRaw {
 				if strings.EqualFold(def, val.Name) {

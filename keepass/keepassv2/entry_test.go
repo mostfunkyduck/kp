@@ -33,7 +33,11 @@ func TestNewEntry(t *testing.T) {
 		"title":    false,
 		"url":      false,
 	}
-	for _, val := range newEnt.Values() {
+	values, err := newEnt.Values()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, val := range values {
 		lcName := strings.ToLower(val.Name)
 		if _, present := expectedFields[lcName]; present {
 			expectedFields[lcName] = true

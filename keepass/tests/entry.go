@@ -136,7 +136,10 @@ func RunTestSearchInNestedSubgroup(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	paths := r.Db.Root().Search(regexp.MustCompile(e.Title()))
+	paths, err := r.Db.Root().Search(regexp.MustCompile(e.Title()))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	expected := "/" + r.Group.Name() + "/" + sg.Name() + "/" + e.Title()
 	if paths[0] != expected {
@@ -149,7 +152,12 @@ var redactedString = "[redacted]"
 
 func testOutput(e k.Entry, full bool) (output string, failures string) {
 	output = e.Output(full)
-	for _, value := range e.Values() {
+	values, err := e.Values()
+	if err != nil {
+		failures = "an error occurred: " + err.Error()
+		return
+	}
+	for _, value := range values {
 		expected := strings.Title(string(value.Name)) + ":\t" + string(value.Value)
 		if value.Type == k.LONGSTRING {
 			val := strings.ReplaceAll(string(value.Value), "\n", "\n>\t")

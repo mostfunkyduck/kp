@@ -74,7 +74,7 @@ func (g *Group) SetDriver(gr k.Group) {
 	g.driver = gr
 }
 
-func (g *Group) Search(term *regexp.Regexp) (paths []string) {
+func (g *Group) Search(term *regexp.Regexp) (paths []string, err error) {
 	if term.FindString(g.driver.Name()) != "" {
 		path, err := g.Path()
 		if err == nil {
@@ -84,11 +84,19 @@ func (g *Group) Search(term *regexp.Regexp) (paths []string) {
 	}
 
 	for _, e := range g.driver.Entries() {
-		paths = append(paths, e.Search(term)...)
+		nestedSearch, err := e.Search(term)
+		if err != nil {
+			return []string{}, fmt.Errorf("search failed on entries: %s", err)
+		}
+		paths = append(paths, nestedSearch...)
 	}
 
 	for _, g := range g.driver.Groups() {
-		paths = append(paths, g.Search(term)...)
+		nestedSearch, err := g.Search(term)
+		if err != nil {
+			return []string{}, fmt.Errorf("search failed while recursing into groups: %s", err)
+		}
+		paths = append(paths, nestedSearch...)
 	}
-	return paths
+	return paths, nil
 }

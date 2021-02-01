@@ -32,12 +32,18 @@ func TestDbPath(t *testing.T) {
 
 func TestDBSearch(t *testing.T) {
 	r := createTestResources(t)
-	paths := r.Db.Search(regexp.MustCompile(r.Group.Name()))
+	paths, err := r.Db.Search(regexp.MustCompile(r.Group.Name()))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("%v", paths)
 	}
 
-	paths = r.Db.Search(regexp.MustCompile(r.Entry.Title()))
+	paths, err = r.Db.Search(regexp.MustCompile(r.Entry.Title()))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("%v", paths)
 	}

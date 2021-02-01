@@ -104,7 +104,12 @@ func (e *Entry) Output(full bool) (val string) {
 	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.driver.LastModificationTime()))
 	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.driver.LastAccessTime()))
 
-	for _, val := range e.driver.Values() {
+	values, err := e.driver.Values()
+	if err != nil {
+		val = "error while reading values: " + err.Error()
+		return
+	}
+	for _, val := range values {
 		// If the value type is string, print as is
 		// If the value type is a long string, print truncated version (ideally done the same way as the regular string)
 		// If it's a binary - print the size of the binary
@@ -132,8 +137,12 @@ func (e *Entry) Output(full bool) (val string) {
 }
 
 // TODO test various fields to make sure they are searchable, consider adding searchability toggle
-func (e *Entry) Search(term *regexp.Regexp) (paths []string) {
-	for _, val := range e.driver.Values() {
+func (e *Entry) Search(term *regexp.Regexp) (paths []string, err error) {
+	values, err := e.driver.Values()
+	if err != nil {
+		return []string{}, fmt.Errorf("error reading values from entry: %s", err)
+	}
+	for _, val := range values {
 		if !val.Searchable {
 			continue
 		}

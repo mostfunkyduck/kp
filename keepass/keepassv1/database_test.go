@@ -35,3 +35,11 @@ func TestCurrentLocation(t *testing.T) {
 	}
 
 }
+
+func TestBinaries(t *testing.T) {
+	r := createTestResources(t)
+	b, _ := r.Db.Binary(10000, "blork blork")
+	if b.Present {
+		t.Fatal("got a binary from the v1 DB, this is not supported by v1, so it's a mystery to me")
+	}
+}

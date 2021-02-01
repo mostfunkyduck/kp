@@ -104,8 +104,7 @@ func (e *Entry) SetCreationTime(t time.Time) {
 	e.entry.Times.CreationTime = &w.TimeWrapper{Time: t}
 }
 
-func (e *Entry) Values() (values []k.Value) {
-	// TODO add another loop to collect binaries
+func (e *Entry) Values() (values []k.Value, err error) {
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
 			Name:       each.Key,
@@ -122,7 +121,16 @@ func (e *Entry) Values() (values []k.Value) {
 		values = append(values, newValue)
 	}
 
-	// TODO Binaries are tracked separately, which is awesome, just need to make sure to collect them
+	for _, each := range e.entry.Binaries {
+		binary, err := e.DB().Binary(each.Value.ID, each.Name)
+		if err != nil {
+			return []k.Value{}, fmt.Errorf("could not retrieve binary named '%s' with ID '%d': %s", each.Name, each.Value.ID, err)
+		}
+		if !binary.Present {
+			return []k.Value{}, fmt.Errorf("binary retrieval not implemented, this shouldn't happen on v2, but here we are")
+		}
+		values = append(values, binary.Value)
+	}
 	return
 }
 

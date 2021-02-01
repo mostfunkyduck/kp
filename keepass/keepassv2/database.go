@@ -27,7 +27,7 @@ func NewDatabase(db *g.Database, savePath string, options k.Options) k.Database 
 	return dbWrapper
 }
 
-func (d *Database) Search(term *regexp.Regexp) (path []string) {
+func (d *Database) Search(term *regexp.Regexp) (path []string, err error) {
 	return d.Root().Search(term)
 }
 
@@ -161,4 +161,33 @@ func (d *Database) Path() (string, error) {
 		return path, fmt.Errorf("could not find path to current location in database: %s", err)
 	}
 	return path, err
+}
+
+// Binary returns a Value in an OptionalWrapper representing a binary
+// because v2 stores half the metadata in the entry and half in the database,
+// this function takes a 'Name' parameter so it can properly create the values
+// Returns an empty Value (not even with a Name) if the binary doesn't exit,
+// Returns a full Value if it does
+func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
+	binaryMeta := d.db.Content.Meta.Binaries
+	meta := binaryMeta.Find(id)
+	if meta == nil {
+		return k.OptionalWrapper{
+			Present: true,
+			Value:   k.Value{},
+		}, nil
+	}
+
+	content, err := meta.GetContent()
+	if err != nil {
+		return k.OptionalWrapper{Present: true}, err
+	}
+	return k.OptionalWrapper{
+		Present: true,
+		Value: k.Value{
+			Type:  k.BINARY,
+			Value: []byte(content),
+			Name:  name,
+		},
+	}, nil
 }

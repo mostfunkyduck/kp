@@ -28,14 +28,17 @@ func TestEntrySearch(t *testing.T) {
 	dbWrapper := v1.NewDatabase(db, "/dev/null")
 	sg, err := dbWrapper.Root().NewSubgroup("DOESN'T MATCH")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 
 	wrapper, err := sg.NewEntry(title)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
-	paths := wrapper.Search(regexp.MustCompile("TestEntry.*"))
+	paths, err := wrapper.Search(regexp.MustCompile("TestEntry.*"))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("%v", paths)
 	}

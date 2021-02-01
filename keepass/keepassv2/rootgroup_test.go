@@ -98,10 +98,13 @@ func TestSearch(t *testing.T) {
 	r := createTestResources(t)
 	sg, err := r.Db.Root().NewSubgroup(name)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	// search for group using partial search
-	paths := r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
+	paths, err := r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("too many paths returned from group search: %v", paths)
 	}
@@ -116,7 +119,10 @@ func TestSearch(t *testing.T) {
 	}
 
 	name = r.Entry.Title()
-	paths = r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
+	paths, err = r.Db.Root().Search(regexp.MustCompile(name[0 : len(name)/2]))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("wrong count of paths returned from entry search: %v", paths)
 	}

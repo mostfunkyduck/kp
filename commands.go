@@ -277,7 +277,10 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 // promptForEntry loops through all values in an entry, prompts to edit them, then applies any changes
 func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	// make a copy of the entry's values for modification
-	vals := e.Values()
+	vals, err := e.Values()
+	if err != nil {
+		return fmt.Errorf("error retrieving values for entry '%s': %s", e.Title(), err)
+	}
 	valsToUpdate := []k.Value{}
 	for _, value := range vals {
 		if !value.ReadOnly && !(value.Type == k.BINARY) {

@@ -123,6 +123,14 @@ func (d *Database) Path() (fullPath string, err error) {
 	return group.Path()
 }
 
-func (d *Database) Search(term *regexp.Regexp) (paths []string) {
+func (d *Database) Search(term *regexp.Regexp) (paths []string, err error) {
 	return d.Root().Search(term)
+}
+
+// Binary returns an OptionalWrapper with Present sent to false as v1 doesn't handle binaries
+// through the database
+func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
+	return k.OptionalWrapper{
+		Present: false,
+	}, nil
 }

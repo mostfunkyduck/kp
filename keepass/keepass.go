@@ -22,11 +22,14 @@ type KeepassWrapper interface {
 	Path() (string, error)
 
 	// Search searches this object and all nested objects for a given regular expression
-	Search(*regexp.Regexp) []string
+	Search(*regexp.Regexp) ([]string, error)
 }
 
 type Database interface {
 	KeepassWrapper
+	// Binary returns a binary with a given ID, naming it with a given name
+	// the OptionalWrapper is used because v2 is the only version that implements this
+	Binary(id int, name string) (OptionalWrapper, error)
 	// CurrentLocation returns the current location for the shell
 	CurrentLocation() Group
 	SetCurrentLocation(Group)
@@ -113,11 +116,8 @@ type Entry interface {
 
 	// Values returns all referencable value fields from the database
 	//
-	// NOTE: in keepass 1, this means that the hardcoded fields
-	// will be returned in the Value wrapper.
-	//
-	// NOTE: values are read only
-	Values() (values []Value)
+	// NOTE: values are not references, updating them must be done through the Set* functions
+	Values() (values []Value, err error)
 
 	// DB returns the Database this entry is associated with
 	DB() Database
@@ -131,6 +131,19 @@ const (
 	LONGSTRING
 	BINARY
 )
+
+// OptionalWrapper wraps Values with functions that force the caller of a function to detect whether the value being
+// returned is implemented by the function, this is to help bridge the gap between v2 and v1
+// Proper usage:
+// if wrapper.Present {
+//   <use value>
+// } else {
+// 	 <adapt>
+// }
+type OptionalWrapper struct {
+	Present bool
+	Value   Value
+}
 
 type Value struct {
 	Value      []byte

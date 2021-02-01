@@ -159,7 +159,10 @@ func RunTestSubgroupSearch(t *testing.T, r Resources) {
 		t.Fatalf(err.Error())
 	}
 
-	paths := r.Group.Search(regexp.MustCompile(sg.Name()))
+	paths, err := r.Group.Search(regexp.MustCompile(sg.Name()))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(paths) != 1 {
 		t.Fatalf("incorrect # of search results [%d]", len(paths))
 	}

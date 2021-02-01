@@ -9,9 +9,12 @@ func TestSearchFullPath(t *testing.T) {
 	r := createTestResources(t)
 	term, err := regexp.Compile(r.Entry.Title())
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
-	paths := r.Group.Search(term)
+	paths, err := r.Group.Search(term)
+	if err != nil {
+		t.Fatal(err)
+	}
 	// the group and entry should match
 	if len(paths) != 2 {
 		t.Fatalf("%d != %d", len(paths), 1)

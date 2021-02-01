@@ -161,7 +161,7 @@ func (e *Entry) SetTitle(title string) {
 	e.Set(k.Value{Name: "title", Value: []byte(title)})
 }
 
-func (e *Entry) Values() (vals []k.Value) {
+func (e *Entry) Values() (vals []k.Value, err error) {
 	path, _ := e.Path()
 	vals = append(vals, k.Value{Name: "location", Value: []byte(path), ReadOnly: true, Searchable: false})
 	vals = append(vals, k.Value{Name: fieldTitle, Value: []byte(e.Title()), Searchable: true})

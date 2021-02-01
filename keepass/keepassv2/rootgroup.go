@@ -102,11 +102,15 @@ func (r *RootGroup) RemoveEntry(entry k.Entry) error {
 	return fmt.Errorf("root group does not hold entries")
 }
 
-func (r *RootGroup) Search(term *regexp.Regexp) (paths []string) {
+func (r *RootGroup) Search(term *regexp.Regexp) (paths []string, err error) {
 	for _, g := range r.Groups() {
-		paths = append(paths, g.Search(term)...)
+		nestedSearch, err := g.Search(term)
+		if err != nil {
+			return []string{}, fmt.Errorf("search failed: %s", err)
+		}
+		paths = append(paths, nestedSearch...)
 	}
-	return paths
+	return paths, nil
 }
 
 func (r *RootGroup) UUIDString() (string, error) {
