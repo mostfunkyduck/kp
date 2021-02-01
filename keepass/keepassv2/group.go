@@ -57,9 +57,35 @@ func (g *Group) Parent() k.Group {
 }
 
 func (g *Group) SetParent(parent k.Group) error {
+	oldParent := g.Parent()
+
+	// If the group is being renamed, the parents will be the same
+	if oldParent != nil {
+		sameParent, err := c.CompareUUIDs(oldParent, parent)
+		if err != nil {
+			return fmt.Errorf("error comparing new parent UUID to old parent UUID: %s", err)
+		}
+		if sameParent {
+			return nil
+		}
+	}
+
 	// Since there's no child->parent relationship in this library, we need
 	// to rely on the parent->child connection to get this to work
-	return parent.AddSubgroup(g)
+	if err := parent.AddSubgroup(g); err != nil {
+		return err
+	}
+
+	// Since "parent" is defined as "being in a group's subgroup", the group may now have two of them,
+	// we need to make sure it's only in one
+	if oldParent != nil {
+		if err := oldParent.RemoveSubgroup(g); err != nil {
+			// the group doesn't exist in the parent anymore or the UUIDs got corrupted
+			// stop at this point since something got corrupted
+			return fmt.Errorf("error removing group from existing parent, possible data corruption has occurred: %s", err)
+		}
+	}
+	return nil
 }
 
 func (g *Group) Name() string {
@@ -102,6 +128,9 @@ func (g *Group) AddSubgroup(subgroup k.Group) error {
 	return nil
 }
 
+// RemoveSubgroup will remove a group from a parent group
+// If this function returns an error, that means that either the UUIDs on the parent or child
+// were corrupted or the group didn't actually exist in the parent
 func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	subUUID, err := subgroup.UUIDString()
 	if err != nil {

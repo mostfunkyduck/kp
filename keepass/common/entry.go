@@ -82,6 +82,14 @@ func (e *Entry) SetParent(g k.Group) error {
 		return fmt.Errorf(errorString)
 	}
 
+	// this constitutes a move, so remove the entry from its old parent and put it in the new one
+	if parent := e.Parent(); parent != nil {
+		if err := parent.RemoveEntry(e.driver); err != nil {
+			return fmt.Errorf("could not remove entry from old parent: %s", err)
+		}
+	}
+
+	// add the now-orphaned entry to the new parent
 	if err := g.AddEntry(e.driver); err != nil {
 		return fmt.Errorf("cannot add entry to group: %s", err)
 	}
