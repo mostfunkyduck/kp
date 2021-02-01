@@ -4,7 +4,7 @@ DATE=`date -u +%Y-%m-%d-%H-%M`
 BRANCH=`git branch 2>/dev/null | grep '\*' | sed "s/* //"`
 RELEASE=0.1
 
-.PHONY: test cscope install tidy fix lint
+.PHONY: test cscope install tidy fix lint testv1 testv2 vet
 
 # default to having lint be a prereq to build
 
@@ -40,8 +40,17 @@ lint:
 install: kp
 	cp ./kp /usr/local/bin/kp
 
-testcmd := go test . ./keepass/keepassv2 ./keepass/keepassv1 -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/keepassv2,./keepass/common,./keepass/keepassv1
+# allow testing v1 and v2 separately or together
+coveragecmd := -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/common
 
-test:
-	KPVERSION=1 $(testcmd)
-	KPVERSION=2 $(testcmd)
+testv1:
+	KPVERSION=1 go test . ./keepass/keepassv1 $(coveragecmd),./keepass/keepassv1
+
+testv2:
+	KPVERSION=2 go test . ./keepass/keepassv2 $(coveragecmd),./keepass/keepassv2
+
+test: testv1 testv2
+
+# quick command to vet the entire source tree
+vet:
+	go vet . ./keepass/keepassv1 ./keepass/keepassv2
