@@ -115,9 +115,10 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		}
 
 		// notes are always "long", as are strings where the user already entered a lot of spew
-		if len(newValue.Value) > 10 || strings.ToLower(each.Key) == "notes" {
+		if len(newValue.Value) > 30 || strings.ToLower(each.Key) == "notes" {
 			newValue.Type = k.LONGSTRING
 		}
+
 		values = append(values, newValue)
 	}
 
@@ -131,6 +132,17 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		}
 		values = append(values, binary.Value)
 	}
+
+	path, err := e.Path()
+	if err != nil {
+		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
+	}
+	values = append(values, k.Value{
+		Name:       "location",
+		Value:      []byte(path),
+		ReadOnly:   true,
+		Searchable: false,
+	})
 	return
 }
 

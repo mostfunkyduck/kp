@@ -165,7 +165,7 @@ func (e *Entry) Values() (vals []k.Value, err error) {
 	path, _ := e.Path()
 	vals = append(vals, k.Value{Name: "location", Value: []byte(path), ReadOnly: true, Searchable: false})
 	vals = append(vals, k.Value{Name: fieldTitle, Value: []byte(e.Title()), Searchable: true})
-	vals = append(vals, k.Value{Name: fieldUrl, Value: []byte(e.Get(fieldUrl).Value), Searchable: true})
+	vals = append(vals, k.Value{Name: "URL", Value: []byte(e.Get(fieldUrl).Value), Searchable: true})
 	vals = append(vals, k.Value{Name: fieldUn, Value: []byte(e.Get(fieldUn).Value), Searchable: true})
 	vals = append(vals, k.Value{Name: fieldPw, Value: []byte(e.Password()), Searchable: true, Protected: true})
 	vals = append(vals, k.Value{Name: fieldNotes, Value: []byte(e.Get(fieldNotes).Value), Searchable: true, Type: k.LONGSTRING})

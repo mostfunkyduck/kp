@@ -139,7 +139,13 @@ func (e *Entry) Output(full bool) (val string) {
 			}
 		}
 
-		fmt.Fprintf(&b, "%s:\t%s\n", strings.Title(val.Name), value)
+		title := strings.Title(val.Name)
+
+		// v2 is inconsistent with v1 in how it uses 'username', this makes them look the same
+		if title == "UserName" {
+			title = "Username"
+		}
+		fmt.Fprintf(&b, "%s:\t%s\n", title, value)
 	}
 	return b.String()
 }

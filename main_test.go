@@ -87,11 +87,11 @@ func createTestResources(t *testing.T) (r testResources) {
 		t.Fatalf("could not create entry: %s", err)
 	}
 	settings := map[string]string{
-		"title":    "test",
-		"url":      "example.com",
-		"username": "username",
-		"password": "password",
-		"notes":    "notes",
+		"Title":    "test",
+		"URL":      "example.com",
+		"UserName": "username",
+		"Password": "password",
+		"Notes":    "notes",
 	}
 	for key, v := range settings {
 		val := k.Value{
@@ -115,13 +115,13 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 		t.Fatalf(err.Error())
 	}
 	testShowOutput(o, fmt.Sprintf("Location:\t%s", path), t)
-	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Get("title").Value), t)
-	testShowOutput(o, fmt.Sprintf("Url:\t%s", r.Entry.Get("url").Value), t)
-	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("username").Value), t)
+	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Title()), t)
+	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("URL").Value), t)
+	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("UserName").Value), t)
 	if redactedPassword {
 		testShowOutput(o, "Password:\t[redacted]", t)
 	} else {
-		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Get("password").Value), t)
+		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Password()), t)
 	}
 
 	// format the notes to match how the entry will format long strings for output, which is not how they're stored internally
