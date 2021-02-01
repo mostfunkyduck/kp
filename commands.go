@@ -219,11 +219,11 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 		uuidString, err := entry.UUIDString()
 		if err != nil {
 			// TODO we're swallowing this error :(
-			// this is an edge case though
+			// this is an edge case though, only happens if the UUID string is corrupted
 			return nil, false
 		}
 		if intVersion, err := strconv.Atoi(entryName); err == nil && intVersion == i ||
-			entryName == string(entry.Get("title").Value) ||
+			entryName == string(entry.Title()) ||
 			entryName == uuidString {
 			return entry, true
 		}
