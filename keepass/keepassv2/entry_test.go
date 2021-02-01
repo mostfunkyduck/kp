@@ -2,6 +2,7 @@ package keepassv2_test
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	k "github.com/mostfunkyduck/kp/keepass"
@@ -19,6 +20,32 @@ func TestNoParent(t *testing.T) {
 	runner.RunTestNoParent(t, r)
 }
 
+func TestNewEntry(t *testing.T) {
+	r := createTestResources(t)
+	newEnt, _ := r.Group.NewEntry("newentry")
+	// loop through the default values and make sure that each of the expected ones are in there
+	// this is indicated by flipping the bool in the expectedFields map to 'true', we will
+	// then test that each field was set to 'true' during the loop
+	expectedFields := map[string]bool{
+		"notes":    false,
+		"username": false,
+		"password": false,
+		"title":    false,
+		"url":      false,
+	}
+	for _, val := range newEnt.Values() {
+		lcName := strings.ToLower(val.Name)
+		if _, present := expectedFields[lcName]; present {
+			expectedFields[lcName] = true
+		}
+	}
+
+	for k, v := range expectedFields {
+		if !v {
+			t.Fatalf("field [%s] was not present in new entry\n", k)
+		}
+	}
+}
 func TestRegularPath(t *testing.T) {
 	r := createTestResources(t)
 	runner.RunTestRegularPath(t, r)

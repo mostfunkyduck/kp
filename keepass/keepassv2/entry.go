@@ -3,6 +3,7 @@ package keepassv2
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	k "github.com/mostfunkyduck/kp/keepass"
@@ -104,15 +105,24 @@ func (e *Entry) SetCreationTime(t time.Time) {
 }
 
 func (e *Entry) Values() (values []k.Value) {
+	// TODO add another loop to collect binaries
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
 			Name:       each.Key,
+			Type:       k.STRING,
 			Value:      []byte(each.Value.Content),
 			Searchable: true, // this may have to change if location is embedded in an entry like it is in v1
 			Protected:  each.Value.Protected.Bool,
 		}
+
+		// notes are always "long", as are strings where the user already entered a lot of spew
+		if len(newValue.Value) > 10 || strings.ToLower(each.Key) == "notes" {
+			newValue.Type = k.LONGSTRING
+		}
 		values = append(values, newValue)
 	}
+
+	// TODO Binaries are tracked separately, which is awesome, just need to make sure to collect them
 	return
 }
 
@@ -120,6 +130,7 @@ func (e *Entry) SetPassword(password string) {
 	e.Set(k.Value{
 		Name:      "Password",
 		Value:     []byte(password),
+		Type:      k.STRING,
 		Protected: true,
 	})
 }
@@ -131,6 +142,7 @@ func (e *Entry) Password() string {
 func (e *Entry) SetTitle(title string) {
 	e.Set(k.Value{
 		Name:  "Title",
+		Type:  k.STRING,
 		Value: []byte(title),
 	})
 }

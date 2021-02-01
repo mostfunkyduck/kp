@@ -280,7 +280,6 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	vals := e.Values()
 	valsToUpdate := []k.Value{}
 	for _, value := range vals {
-
 		if !value.ReadOnly && !(value.Type == k.BINARY) {
 			newValue, err := doPrompt(shell, value)
 			if err != nil {

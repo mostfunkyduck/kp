@@ -151,14 +151,16 @@ func testOutput(e k.Entry, full bool) (output string, failures string) {
 	output = e.Output(full)
 	for _, value := range e.Values() {
 		expected := strings.Title(string(value.Name)) + ":\t" + string(value.Value)
+		if value.Type == k.LONGSTRING {
+			val := strings.ReplaceAll(string(value.Value), "\n", "\n>\t")
+			expected = strings.Title(string(value.Name)) + ":\t\n>\t" + val
+		}
+		// override all string values with the redacted string, leave bins alone
 		if value.Protected && !full {
 			expected = redactedString
 		}
 		if value.Type == k.BINARY {
 			expected = fmt.Sprintf("binary: %d bytes", len(value.Value))
-		}
-		if value.Type == k.LONGSTRING {
-			expected = strings.ReplaceAll(expected, "\n", "\n>\t")
 		}
 		if !strings.Contains(output, expected) {
 			failures = fmt.Sprintf("%svalue [%s] should have been in output\n", failures, expected)
