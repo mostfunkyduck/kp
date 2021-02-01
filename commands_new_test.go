@@ -28,12 +28,15 @@ func fillOutEntry(r testResources) error {
 }
 
 func verifyDefaultEntry(e kp.Entry) error {
+	// mild hack, but these are formatted in line with what v2 uses
+	// v1 is good enough to do a case insensitive match
+	// this could be improved in the future with calls to the utility functions, but works for now
 	values := map[string]string{
-		"title":    "first",
-		"url":      "second",
-		"username": "third",
-		"password": "fourth",
-		"notes":    "",
+		"Title":    "first",
+		"URL":      "second",
+		"UserName": "third",
+		"Password": "fourth",
+		"Notes":    "",
 	}
 
 	for k, v := range values {
