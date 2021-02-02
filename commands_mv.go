@@ -30,7 +30,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 		}
 
 		if err := e.SetParent(existingEntry.Parent()); err != nil {
-			return fmt.Errorf("could not move entry '%s' to group '%s': %s\n", string(e.Get("title").Value), existingEntry.Parent().Name(), err)
+			return fmt.Errorf("could not move entry '%s' to group '%s': %s\n", string(e.Title()), existingEntry.Parent().Name(), err)
 		}
 
 		if err := existingEntry.Parent().RemoveEntry(existingEntry); err != nil {
