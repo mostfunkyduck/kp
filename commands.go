@@ -252,7 +252,7 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 	case k.BINARY:
 		return "", fmt.Errorf("tried to edit binary directly")
 	case k.LONGSTRING:
-		shell.Printf("'%s' is a long text field, open in editor? [y/N]\n", value.Name)
+		shell.Printf("'%s' is a long text field, open in editor? [y/N] ", value.Name)
 		edit, err1 := shell.ReadLineErr()
 		if err1 != nil {
 			return "", fmt.Errorf("could not read user input: %s", err)
