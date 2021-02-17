@@ -70,7 +70,8 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 		db.Credentials = creds
 		err = keepass2.NewDecoder(dbReader).Decode(db)
 		if err != nil {
-			shell.Printf("could not open database: %s\n", err)
+			// we need to swallow this error because it spews insane amounts of garbage for no good reason
+			shell.Println("could not open database: is password correct?")
 			// if the password is coming from an environment variable, we need to terminate
 			// after the first attempt or it will fall into an infinite loop
 			_, passwordInEnv := os.LookupEnv("KP_PASSWORD")
