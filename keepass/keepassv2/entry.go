@@ -116,6 +116,30 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		Searchable: false,
 	})
 
+	// we need to arrange this with the regular, "default" values that appear in v1 coming first
+	// to preserve UX and predictability of where the fields appear
+	defaultValues := make(map[string]k.Value)
+	defaultValueNames := []string{
+		"location",
+		"title",
+		"notes",
+		"password",
+		"username",
+		"url",
+	}
+
+	// set blank defaults just in case an entry is somehow missing these values
+	for _, name := range defaultValueNames {
+		newVal := k.Value{
+			Name: strings.Title(name),
+		}
+		if name == "location" {
+			// this should never be modifiable, need this defensive code to prevent it from showing up in new entry prompts
+			newVal.ReadOnly = true
+		}
+		defaultValues[name] = newVal
+	}
+
 	for _, each := range e.entry.Values {
 		newValue := k.Value{
 			Name:       each.Key,
@@ -129,9 +153,26 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		if len(newValue.Value) > 30 || strings.ToLower(each.Key) == "notes" {
 			newValue.Type = k.LONGSTRING
 		}
-
-		values = append(values, newValue)
+		defaultValue := false
+		for _, val := range defaultValueNames {
+			lcName := strings.ToLower(newValue.Name)
+			if val == lcName {
+				defaultValues[lcName] = newValue
+				defaultValue = true
+			}
+		}
+		if !defaultValue {
+			values = append(values, newValue)
+		}
 	}
+	values = append([]k.Value{
+		defaultValues["location"],
+		defaultValues["title"],
+		defaultValues["url"],
+		defaultValues["username"],
+		defaultValues["password"],
+		defaultValues["notes"],
+	}, values...)
 
 	for _, each := range e.entry.Binaries {
 		binary, err := e.DB().Binary(each.Value.ID, each.Name)
