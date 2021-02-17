@@ -105,22 +105,10 @@ func (e *Entry) SetCreationTime(t time.Time) {
 }
 
 func (e *Entry) Values() (values []k.Value, err error) {
-	path, err := e.Path()
-	if err != nil {
-		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
-	}
-	values = append(values, k.Value{
-		Name:       "location",
-		Value:      []byte(path),
-		ReadOnly:   true,
-		Searchable: false,
-	})
-
 	// we need to arrange this with the regular, "default" values that appear in v1 coming first
 	// to preserve UX and predictability of where the fields appear
 	defaultValues := make(map[string]k.Value)
 	defaultValueNames := []string{
-		"location",
 		"title",
 		"notes",
 		"password",
@@ -132,10 +120,6 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	for _, name := range defaultValueNames {
 		newVal := k.Value{
 			Name: strings.Title(name),
-		}
-		if name == "location" {
-			// this should never be modifiable, need this defensive code to prevent it from showing up in new entry prompts
-			newVal.ReadOnly = true
 		}
 		defaultValues[name] = newVal
 	}
@@ -166,12 +150,25 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		}
 	}
 	values = append([]k.Value{
-		defaultValues["location"],
 		defaultValues["title"],
 		defaultValues["url"],
 		defaultValues["username"],
 		defaultValues["password"],
 		defaultValues["notes"],
+	}, values...)
+
+	path, err := e.Path()
+	if err != nil {
+		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
+	}
+
+	values = append([]k.Value{
+		k.Value{
+			Name:       "location",
+			Value:      []byte(path),
+			ReadOnly:   true,
+			Searchable: false,
+		},
 	}, values...)
 
 	for _, each := range e.entry.Binaries {
