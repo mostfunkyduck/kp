@@ -44,38 +44,40 @@ func (e *Entry) UUIDString() (string, error) {
 }
 
 func (e Entry) Get(field string) k.Value {
-	val := e.entry.Get(field)
-	if val == nil {
-		return k.Value{}
+	values, err := e.Values()
+	if err != nil {
+		// swallowing
+		return nil
 	}
 
-	return k.Value{
-		Name:      field,
-		Value:     []byte(val.Value.Content),
-		Protected: val.Value.Protected.Bool,
+	for _, value := range values {
+		if value.Name() == field {
+			return value
+		}
 	}
+	return nil
 }
 
 func (e *Entry) Set(value k.Value) bool {
 	for i, each := range e.entry.Values {
-		if each.Key == value.Name {
+		if each.Key == value.Name() {
 			oldContent := each.Value.Content
 
 			// TODO filter for binaries here, bad shit will happen if you try to attach this way :D
-			each.Value.Content = string(value.Value)
+			each.Value.Content = string(value.Value())
 
 			// since we don't get to use pointers, update the slice directly
 			e.entry.Values[i] = each
 
-			return (oldContent != string(value.Value))
+			return (oldContent != string(value.Value()))
 		}
 	}
 	// no existing value to update, create it fresh
 	e.entry.Values = append(e.entry.Values, g.ValueData{
-		Key: value.Name,
+		Key: value.Name(),
 		Value: g.V{
-			Content:   string(value.Value),
-			Protected: w.NewBoolWrapper(value.Protected),
+			Content:   string(value.Value()),
+			Protected: w.NewBoolWrapper(value.Protected()),
 		},
 	})
 	return true
@@ -118,28 +120,32 @@ func (e *Entry) Values() (values []k.Value, err error) {
 
 	// set blank defaults just in case an entry is somehow missing these values
 	for _, name := range defaultValueNames {
-		newVal := k.Value{
-			Name: strings.Title(name),
-		}
+		newVal := c.NewValue(
+			[]byte(strings.Title(name)),
+			"",
+			false, false, false,
+			k.STRING,
+		)
 		defaultValues[name] = newVal
 	}
 
 	for _, each := range e.entry.Values {
-		newValue := k.Value{
-			Name:       each.Key,
-			Type:       k.STRING,
-			Value:      []byte(each.Value.Content),
-			Searchable: true, // this may have to change if location is embedded in an entry like it is in v1
-			Protected:  each.Value.Protected.Bool,
+		valueType := k.STRING
+		// notes are always "long", as are strings where the user already entered a lot of spew
+		if len(each.Value.Content) > 30 || strings.ToLower(each.Key) == "notes" {
+			valueType = k.LONGSTRING
 		}
 
-		// notes are always "long", as are strings where the user already entered a lot of spew
-		if len(newValue.Value) > 30 || strings.ToLower(each.Key) == "notes" {
-			newValue.Type = k.LONGSTRING
-		}
+		newValue := c.NewValue(
+			[]byte(each.Value.Content),
+			each.Key,
+			true, // this may have to change if location is embedded in an entry like it is in v1
+			each.Value.Protected.Bool, false,
+			valueType,
+		)
 		defaultValue := false
 		for _, val := range defaultValueNames {
-			lcName := strings.ToLower(newValue.Name)
+			lcName := strings.ToLower(newValue.Name())
 			if val == lcName {
 				defaultValues[lcName] = newValue
 				defaultValue = true
@@ -149,6 +155,7 @@ func (e *Entry) Values() (values []k.Value, err error) {
 			values = append(values, newValue)
 		}
 	}
+
 	values = append([]k.Value{
 		defaultValues["title"],
 		defaultValues["url"],
@@ -163,12 +170,12 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	}
 
 	values = append([]k.Value{
-		k.Value{
-			Name:       "location",
-			Value:      []byte(path),
-			ReadOnly:   true,
-			Searchable: false,
-		},
+		c.NewValue(
+			[]byte(path),
+			"location",
+			false, false, true,
+			k.STRING,
+		),
 	}, values...)
 
 	for _, each := range e.entry.Binaries {
@@ -186,12 +193,12 @@ func (e *Entry) Values() (values []k.Value, err error) {
 }
 
 func (e *Entry) SetPassword(password string) {
-	e.Set(k.Value{
-		Name:      "Password",
-		Value:     []byte(password),
-		Type:      k.STRING,
-		Protected: true,
-	})
+	e.Set(c.NewValue(
+		[]byte(password),
+		"Password",
+		false, true, false,
+		k.STRING,
+	))
 }
 
 func (e *Entry) Password() string {
@@ -199,11 +206,12 @@ func (e *Entry) Password() string {
 }
 
 func (e *Entry) SetTitle(title string) {
-	e.Set(k.Value{
-		Name:  "Title",
-		Type:  k.STRING,
-		Value: []byte(title),
-	})
+	e.Set(c.NewValue(
+		[]byte(title),
+		"Title",
+		true, false, false,
+		k.STRING,
+	))
 }
 func (e *Entry) Title() string {
 	return e.entry.GetTitle()

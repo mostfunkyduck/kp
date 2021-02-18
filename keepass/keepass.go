@@ -145,11 +145,12 @@ type OptionalWrapper struct {
 	Value   Value
 }
 
-type Value struct {
-	Value      []byte
-	Name       string // v1 compatibility - attachments have their own name within entries
-	Searchable bool   // indicates whether this value should be included in searches
-	Protected  bool
-	ReadOnly   bool
-	Type       ValueType
+type Value interface {
+	FormattedValue(full bool) string
+	Value() []byte
+	Name() string
+	Searchable() bool
+	Protected() bool
+	ReadOnly() bool
+	Type() ValueType
 }

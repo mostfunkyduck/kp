@@ -1,11 +1,11 @@
 package keepassv2_test
 
 import (
-	"reflect"
 	"strings"
 	"testing"
 
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
 	g "github.com/tobischo/gokeepasslib/v3"
@@ -38,7 +38,7 @@ func TestNewEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, val := range values {
-		lcName := strings.ToLower(val.Name)
+		lcName := strings.ToLower(val.Name())
 		if _, present := expectedFields[lcName]; present {
 			expectedFields[lcName] = true
 		}
@@ -57,32 +57,41 @@ func TestRegularPath(t *testing.T) {
 
 func TestEntryGetSet(t *testing.T) {
 	r := createTestResources(t)
-	value := k.Value{
-		Name:  "TestEntrySetGet",
-		Value: []byte("test value"),
-	}
+	value := c.NewValue(
+		[]byte("test value"),
+		"TestEntrySetGet",
+		false, false, false,
+		k.STRING,
+	)
 
-	retVal := r.BlankEntry.Get(value.Name)
-	blankValue := k.Value{}
-	if !reflect.DeepEqual(retVal, blankValue) {
-		t.Fatalf("[%v] != [%v]", retVal, blankValue)
+	retVal := r.BlankEntry.Get(value.Name())
+	if retVal != nil {
+		t.Fatalf("%v", retVal)
 	}
 	if !r.BlankEntry.Set(value) {
 		t.Fatalf("could not set value")
 	}
 
-	entryValue := string(r.BlankEntry.Get(value.Name).Value)
-	if entryValue != string(value.Value) {
-		t.Fatalf("[%s] != [%s], %v", entryValue, value.Name, value)
+	name := value.Name()
+	entryValue := string(r.BlankEntry.Get(name).Value())
+	if entryValue != string(value.Value()) {
+		t.Fatalf("[%s] != [%s], %v", entryValue, name, value)
 	}
 
 	secondValue := "asldkfj"
-	value.Value = []byte(secondValue)
-	if !r.BlankEntry.Set(value) {
+	newVal := c.NewValue(
+		[]byte(secondValue),
+		value.Name(),
+		value.Searchable(),
+		value.Protected(),
+		value.ReadOnly(),
+		value.Type(),
+	)
+	if !r.BlankEntry.Set(newVal) {
 		t.Fatalf("could not overwrite value: %v", value)
 	}
 
-	entryValue = string(r.BlankEntry.Get(value.Name).Value)
+	entryValue = string(r.BlankEntry.Get(value.Name()).Value())
 	if entryValue != secondValue {
 		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
 	}

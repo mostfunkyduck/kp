@@ -47,14 +47,14 @@ func Select(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		defaultSelections := []string{}
 		values, err := entry.Values()
 		if err != nil {
-			shell.Printf("error retrieving values for entry '%s': %s", entry.Title, err)
+			shell.Printf("error retrieving values for entry '%s': %s\n", entry.Title, err)
 			return
 		}
 		for _, val := range values {
-			options = append(options, val.Name)
+			options = append(options, val.Name())
 			for _, def := range defaultsRaw {
-				if strings.EqualFold(def, val.Name) {
-					defaultSelections = append(defaultSelections, val.Name)
+				if strings.EqualFold(def, val.Name()) {
+					defaultSelections = append(defaultSelections, val.Name())
 				}
 			}
 		}
@@ -66,22 +66,18 @@ func Select(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			Default: defaultSelections,
 		}
 		if err := survey.AskOne(prompt, &selections); err != nil {
-			shell.Printf("could not select fields: %s", err)
+			shell.Printf("could not select fields: %s\n", err)
 			return
 		}
 
 		for _, val := range selections {
 			fullValue := entry.Get(val)
-			if fullValue.Name == "" {
-				shell.Printf("error retrieving value for %s", fullValue.Value)
+			if fullValue.Name() == "" {
+				shell.Printf("error retrieving value for %s\n", val)
 				return
 			}
 
-			value := string(fullValue.Value)
-			if !fullMode && fullValue.Protected {
-				value = "[protected]"
-			}
-			shell.Printf("%12s:\t%-12s\n", fullValue.Name, value)
+			shell.Printf("%12s:\t%-12s\n", fullValue.Name(), fullValue.FormattedValue(fullMode))
 		}
 	}
 }

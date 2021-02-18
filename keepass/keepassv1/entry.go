@@ -14,7 +14,7 @@ import (
 const (
 	fieldUn         = "username"
 	fieldPw         = "password"
-	fieldUrl        = "url"
+	fieldUrl        = "URL"
 	fieldNotes      = "notes"
 	fieldTitle      = "title"
 	fieldAttachment = "attachment"
@@ -39,50 +39,64 @@ func (e *Entry) UUIDString() (string, error) {
 }
 
 func (e *Entry) Get(field string) (rv k.Value) {
+	var value []byte
+	var name = field
+	searchable := true
+	protected := false
+	valueType := k.STRING
 	switch strings.ToLower(field) {
-	case fieldTitle:
-		rv.Value = []byte(e.entry.Title)
-	case fieldUn:
-		rv.Value = []byte(e.entry.Username)
-	case fieldPw:
-		rv.Value = []byte(e.entry.Password)
-	case fieldUrl:
-		rv.Value = []byte(e.entry.URL)
-	case fieldNotes:
-		rv.Value = []byte(e.entry.Notes)
-	case fieldAttachment:
+	case strings.ToLower(fieldTitle):
+		value = []byte(e.entry.Title)
+	case strings.ToLower(fieldUn):
+		value = []byte(e.entry.Username)
+	case strings.ToLower(fieldPw):
+		searchable = false
+		protected = true
+		value = []byte(e.entry.Password)
+	case strings.ToLower(fieldUrl):
+		value = []byte(e.entry.URL)
+	case strings.ToLower(fieldNotes):
+		value = []byte(e.entry.Notes)
+		valueType = k.LONGSTRING
+	case strings.ToLower(fieldAttachment):
 		if !e.entry.HasAttachment() {
-			return k.Value{}
+			return nil
 		}
-		return k.Value{
-			Name:  e.entry.Attachment.Name,
-			Value: e.entry.Attachment.Data,
-		}
-	}
-	if string(rv.Value) != "" {
-		rv.Name = field
+		name = e.entry.Attachment.Name
+		value = e.entry.Attachment.Data
+		valueType = k.BINARY
+	default:
+		return nil
 	}
 
-	return
+	return c.NewValue(
+		value,
+		name,
+		searchable,
+		protected,
+		false,
+		valueType,
+	)
 }
 
 func (e *Entry) Set(value k.Value) (updated bool) {
 	updated = true
-	field := value.Name
+	field := value.Name()
+	fieldValue := value.Value()
 	switch strings.ToLower(field) {
-	case fieldTitle:
-		e.entry.Title = string(value.Value)
-	case fieldUn:
-		e.entry.Username = string(value.Value)
-	case fieldPw:
-		e.entry.Password = string(value.Value)
-	case fieldUrl:
-		e.entry.URL = string(value.Value)
-	case fieldNotes:
-		e.entry.Notes = string(value.Value)
-	case fieldAttachment:
-		e.entry.Attachment.Name = value.Name
-		e.entry.Attachment.Data = value.Value
+	case strings.ToLower(fieldTitle):
+		e.entry.Title = string(fieldValue)
+	case strings.ToLower(fieldUn):
+		e.entry.Username = string(fieldValue)
+	case strings.ToLower(fieldPw):
+		e.entry.Password = string(fieldValue)
+	case strings.ToLower(fieldUrl):
+		e.entry.URL = string(fieldValue)
+	case strings.ToLower(fieldNotes):
+		e.entry.Notes = string(fieldValue)
+	case strings.ToLower(fieldAttachment):
+		e.entry.Attachment.Name = field
+		e.entry.Attachment.Data = fieldValue
 	default:
 		updated = false
 	}
@@ -146,31 +160,45 @@ func (e *Entry) Raw() interface{} {
 }
 
 func (e *Entry) Password() string {
-	return string(e.Get("password").Value)
+	return string(e.Get("password").Value())
 }
 
 func (e *Entry) SetPassword(password string) {
-	e.Set(k.Value{Name: "password", Value: []byte(password)})
+	e.Set(c.NewValue(
+		[]byte(password),
+		"password",
+		false,
+		true,
+		false,
+		k.STRING,
+	))
 }
 
 func (e *Entry) Title() string {
-	return string(e.Get("title").Value)
+	return string(e.Get("title").Value())
 }
 
 func (e *Entry) SetTitle(title string) {
-	e.Set(k.Value{Name: "title", Value: []byte(title)})
+	e.Set(c.NewValue(
+		[]byte(title),
+		"title",
+		true,
+		false,
+		false,
+		k.STRING,
+	))
 }
 
 func (e *Entry) Values() (vals []k.Value, err error) {
 	path, _ := e.Path()
-	vals = append(vals, k.Value{Name: "location", Value: []byte(path), ReadOnly: true, Searchable: false})
-	vals = append(vals, k.Value{Name: fieldTitle, Value: []byte(e.Title()), Searchable: true})
-	vals = append(vals, k.Value{Name: "URL", Value: []byte(e.Get(fieldUrl).Value), Searchable: true})
-	vals = append(vals, k.Value{Name: fieldUn, Value: []byte(e.Get(fieldUn).Value), Searchable: true})
-	vals = append(vals, k.Value{Name: fieldPw, Value: []byte(e.Password()), Searchable: true, Protected: true})
-	vals = append(vals, k.Value{Name: fieldNotes, Value: []byte(e.Get(fieldNotes).Value), Searchable: true, Type: k.LONGSTRING})
+	vals = append(vals, c.NewValue([]byte(path), "location", false, false, true, k.STRING))
+	vals = append(vals, e.Get(fieldTitle))
+	vals = append(vals, e.Get(fieldUrl))
+	vals = append(vals, e.Get(fieldUn))
+	vals = append(vals, e.Get(fieldPw))
+	vals = append(vals, e.Get(fieldNotes))
 	if e.entry.HasAttachment() {
-		vals = append(vals, k.Value{Name: fieldAttachment, Value: e.Get(fieldAttachment).Value, Searchable: true, Type: k.BINARY})
+		vals = append(vals, e.Get(fieldAttachment))
 	}
 	return
 }

@@ -2,11 +2,13 @@ package keepassv2
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
 
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
@@ -174,20 +176,23 @@ func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
 	if meta == nil {
 		return k.OptionalWrapper{
 			Present: true,
-			Value:   k.Value{},
+			Value:   nil,
 		}, nil
 	}
 
 	content, err := meta.GetContent()
-	if err != nil {
+	if err == io.EOF {
+		content = ""
+	} else if err != nil {
 		return k.OptionalWrapper{Present: true}, err
 	}
 	return k.OptionalWrapper{
 		Present: true,
-		Value: k.Value{
-			Type:  k.BINARY,
-			Value: []byte(content),
-			Name:  name,
-		},
+		Value: c.NewValue(
+			[]byte(content),
+			name,
+			false, false, false,
+			k.BINARY,
+		),
 	}, nil
 }

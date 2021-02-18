@@ -40,8 +40,9 @@ func verifyDefaultEntry(e kp.Entry) error {
 	}
 
 	for k, v := range values {
-		if string(e.Get(k).Value) != v {
-			return fmt.Errorf("%s != %s", v, string(e.Get(k).Value))
+		val := string(e.Get(k).Value())
+		if val != v {
+			return fmt.Errorf("%s != %s", v, val)
 		}
 	}
 

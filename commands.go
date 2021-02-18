@@ -16,6 +16,7 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	"github.com/sethvargo/go-password/password"
@@ -242,11 +243,11 @@ func isPresent(shell *ishell.Shell, path string) (ok bool) {
 func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 	var err error
 	var input string
-	switch value.Type {
+	switch value.Type() {
 	case k.STRING:
-		shell.Printf("%s: [%s]  ", value.Name, string(value.Value))
-		if value.Protected {
-			input, err = GetProtected(shell, string(value.Value))
+		shell.Printf("%s: [%s]  ", value.Name(), value.FormattedValue(false))
+		if value.Protected() {
+			input, err = GetProtected(shell, string(value.Value()))
 		} else {
 			input, err = shell.ReadLineErr()
 		}
@@ -269,7 +270,7 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 	}
 
 	if input == "" {
-		return string(value.Value), nil
+		return string(value.Value()), nil
 	}
 
 	return input, nil
@@ -284,13 +285,20 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	}
 	valsToUpdate := []k.Value{}
 	for _, value := range vals {
-		if !value.ReadOnly && !(value.Type == k.BINARY) {
+		if !value.ReadOnly() && value.Type() != k.BINARY {
 			newValue, err := doPrompt(shell, value)
 			if err != nil {
-				return fmt.Errorf("could not get value for %s, %s", value.Name, err)
+				return fmt.Errorf("could not get value for %s, %s", value.Name(), err)
 			}
-			value.Value = []byte(newValue)
-			valsToUpdate = append(valsToUpdate, value)
+			updatedValue := c.NewValue(
+				[]byte(newValue),
+				value.Name(),
+				value.Searchable(),
+				value.Protected(),
+				value.ReadOnly(),
+				value.Type(),
+			)
+			valsToUpdate = append(valsToUpdate, updatedValue)
 		}
 	}
 
@@ -344,7 +352,7 @@ func GetLongString(value k.Value) (text string, err error) {
 	defer os.Remove(filename)
 
 	// start with what's already there
-	if _, err = file.Write(value.Value); err != nil {
+	if _, err = file.Write(value.Value()); err != nil {
 		return "", err
 	}
 
@@ -443,11 +451,11 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	// FIXME hardcoded values
 	case "username":
 		// FIXME rewire this so that the entry provides the copy function
-		data = string(entry.Get("username").Value)
+		data = string(entry.Get("username").Value())
 	case "password":
 		data = entry.Password()
 	case "url":
-		data = string(entry.Get("url").Value)
+		data = string(entry.Get("URL").Value())
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}

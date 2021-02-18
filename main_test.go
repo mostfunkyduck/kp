@@ -11,6 +11,7 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/abiosoft/readline"
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	keepass2 "github.com/tobischo/gokeepasslib/v3"
@@ -94,10 +95,13 @@ func createTestResources(t *testing.T) (r testResources) {
 		"Notes":    "notes",
 	}
 	for key, v := range settings {
-		val := k.Value{
-			Name:  key,
-			Value: []byte(v),
-		}
+		val := c.NewValue(
+			[]byte(v),
+			key,
+			false, false, false,
+			k.STRING,
+		)
+
 		r.Entry.Set(val)
 	}
 
@@ -116,10 +120,10 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	}
 	testShowOutput(o, fmt.Sprintf("Location:\t%s", path), t)
 	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Title()), t)
-	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("URL").Value), t)
-	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("UserName").Value), t)
+	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("URL").Value()), t)
+	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("UserName").Value()), t)
 	if redactedPassword {
-		testShowOutput(o, "Password:\t[redacted]", t)
+		testShowOutput(o, "Password:\t[protected]", t)
 	} else {
 		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Password()), t)
 	}
@@ -129,7 +133,7 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	//testShowOutput(o, fmt.Sprintf("Notes:\t\n>\t%s", strings.ReplaceAll(string(r.Entry.Get("notes").Value), "\n", "\n>\t")), t)
 
 	att := r.Entry.Get("attachment")
-	if len(att.Value) != 0 || att.Name != "" {
-		testShowOutput(o, fmt.Sprintf("Attachment:\t%s", att.Name), t)
+	if att != nil {
+		testShowOutput(o, fmt.Sprintf("Attachment:\t%s", att.Name()), t)
 	}
 }

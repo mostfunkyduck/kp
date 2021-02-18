@@ -9,15 +9,16 @@ import (
 
 	"github.com/abiosoft/ishell"
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 )
 
 func listAttachment(entry k.Entry) (s string, err error) {
 	attachment := entry.Get("attachment")
-	if len(attachment.Value) == 0 && attachment.Name == "" {
+	if len(attachment.Value()) == 0 && attachment.Name() == "" {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name, len(attachment.Value))
+	s = fmt.Sprintf("Name: %s\nSize: %d bytes", attachment.Name(), len(attachment.Value()))
 	return
 }
 
@@ -30,17 +31,17 @@ func getAttachment(entry k.Entry, outputLocation string) (s string, err error) {
 	defer f.Close()
 
 	attachment := entry.Get("attachment")
-	if len(attachment.Value) == 0 {
+	if len(attachment.Value()) == 0 {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
-	written, err := f.Write(attachment.Value)
+	written, err := f.Write(attachment.Value())
 	if err != nil {
 		err = fmt.Errorf("could not write to [%s]", outputLocation)
 		return
 	}
 
-	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", attachment.Name, written, outputLocation)
+	s = fmt.Sprintf("wrote %s (%d bytes) to %s\n", attachment.Name(), written, outputLocation)
 	return
 }
 
@@ -90,7 +91,13 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 		return "", fmt.Errorf("could not open %s: %s", path, err)
 	}
 
-	entry.Set(k.Value{Name: "attachment", Value: data})
+	entry.Set(c.NewValue(
+		data,
+		"attachment",
+		false, false, false,
+		k.BINARY,
+	))
+
 	DBChanged = true
 	return "added attachment to database", nil
 }

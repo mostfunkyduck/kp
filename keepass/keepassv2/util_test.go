@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	runner "github.com/mostfunkyduck/kp/keepass/tests"
 	g "github.com/tobischo/gokeepasslib/v3"
@@ -21,7 +22,12 @@ func createTestResources(t *testing.T) runner.Resources {
 	}
 	newEnt := g.NewEntry()
 	entry := main.WrapEntry(&newEnt, db)
-	if !entry.Set(k.Value{Name: "Title", Value: []byte(name)}) {
+	if !entry.Set(c.NewValue(
+		[]byte(name),
+		"Title",
+		false, false, false,
+		k.STRING,
+	)) {
 		t.Fatalf("could not set title")
 	}
 	if err := entry.SetParent(group); err != nil {

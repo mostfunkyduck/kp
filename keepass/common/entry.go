@@ -118,34 +118,14 @@ func (e *Entry) Output(full bool) (val string) {
 		return
 	}
 	for _, val := range values {
-		// If the value type is string, print as is
-		// If the value type is a long string, print truncated version (ideally done the same way as the regular string)
-		// If it's a binary - print the size of the binary
-		var value string
-		if val.Type == k.BINARY {
-			value = fmt.Sprintf("binary: %d bytes", len(val.Value))
-		} else {
-			value = string(val.Value)
-			if val.Protected && !full {
-				value = "[redacted]"
-			}
 
-			if val.Type == k.LONGSTRING {
-				// Long fields are going to need a line break so the first line isn't corrupted
-				value = "\n" + value
-
-				// Add indentations for all line breaks to differentiate note lines from field lines
-				value = strings.ReplaceAll(value, "\n", "\n>\t")
-			}
-		}
-
-		title := strings.Title(val.Name)
+		title := strings.Title(val.Name())
 
 		// v2 is inconsistent with v1 in how it uses 'username', this makes them look the same
 		if title == "UserName" {
 			title = "Username"
 		}
-		fmt.Fprintf(&b, "%s:\t%s\n", title, value)
+		fmt.Fprintf(&b, "%s:\t%s\n", title, val.FormattedValue(full))
 	}
 	return b.String()
 }
@@ -157,10 +137,10 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string, err error) {
 		return []string{}, fmt.Errorf("error reading values from entry: %s", err)
 	}
 	for _, val := range values {
-		if !val.Searchable {
+		if !val.Searchable() {
 			continue
 		}
-		content := string(val.Value)
+		content := string(val.FormattedValue(true))
 		if term.FindString(content) != "" {
 			// something in this entry matched, let's return it
 			path, _ := e.Path()
