@@ -27,6 +27,8 @@ func fillOutEntry(r testResources) error {
 	return nil
 }
 
+// verifyDefaultEntry goes through each of the default v1 values
+// and test if they show up as expected in the entry passed in
 func verifyDefaultEntry(e kp.Entry) error {
 	// mild hack, but these are formatted in line with what v2 uses
 	// v1 is good enough to do a case insensitive match

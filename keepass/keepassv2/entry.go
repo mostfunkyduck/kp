@@ -109,33 +109,22 @@ func (e *Entry) SetCreationTime(t time.Time) {
 func (e *Entry) Values() (values []k.Value, err error) {
 	// we need to arrange this with the regular, "default" values that appear in v1 coming first
 	// to preserve UX and predictability of where the fields appear
-	defaultValues := make(map[string]k.Value)
-	defaultValueNames := []string{
-		"title",
-		"notes",
-		"password",
-		"username",
-		"url",
-	}
 
-	// set blank defaults just in case an entry is somehow missing these values
-	for _, name := range defaultValueNames {
-		newVal := c.NewValue(
-			[]byte(strings.Title(name)),
-			"",
-			false, false, false,
-			k.STRING,
-		)
-		defaultValues[name] = newVal
-	}
+	// NOTE: the capitalization/formatting here will be how the default value for the field is rendered
+	// default values will be set by comparing the actual values in the underlying entry to this list using strings.EqualFold
+	// the code uses the existing formatting if it exists, otherwise it will pull from here
+	orderedDefaultValues := []string{"Title", "URL", "Username", "Password", "Notes"}
 
+	defaultValues := map[string]k.Value{}
 	for _, each := range e.entry.Values {
 		valueType := k.STRING
+
 		// notes are always "long", as are strings where the user already entered a lot of spew
 		if len(each.Value.Content) > 30 || strings.ToLower(each.Key) == "notes" {
 			valueType = k.LONGSTRING
 		}
 
+		// build the Value object that will wrap this actual value
 		newValue := c.NewValue(
 			[]byte(each.Value.Content),
 			each.Key,
@@ -144,11 +133,10 @@ func (e *Entry) Values() (values []k.Value, err error) {
 			valueType,
 		)
 		defaultValue := false
-		for _, val := range defaultValueNames {
-			lcName := strings.ToLower(newValue.Name())
-			if val == lcName {
-				defaultValues[lcName] = newValue
+		for _, val := range orderedDefaultValues {
+			if strings.EqualFold(each.Key, val) {
 				defaultValue = true
+				defaultValues[val] = newValue
 			}
 		}
 		if !defaultValue {
@@ -156,14 +144,26 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		}
 	}
 
-	values = append([]k.Value{
-		defaultValues["title"],
-		defaultValues["url"],
-		defaultValues["username"],
-		defaultValues["password"],
-		defaultValues["notes"],
-	}, values...)
+	// prepend the non-default values with the defaults, in expected order
+	defaultValueObjects := []k.Value{}
+	for _, val := range orderedDefaultValues {
+		valObject := defaultValues[val]
+		if valObject == nil {
+			protected := strings.EqualFold(val, "password")
+			valObject = c.NewValue(
+				[]byte(""),
+				val,
+				true,
+				protected,
+				false,
+				k.STRING,
+			)
+		}
+		defaultValueObjects = append(defaultValueObjects, valObject)
+	}
+	values = append(defaultValueObjects, values...)
 
+	// Prepend everything with the location
 	path, err := e.Path()
 	if err != nil {
 		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
@@ -178,6 +178,7 @@ func (e *Entry) Values() (values []k.Value, err error) {
 		),
 	}, values...)
 
+	// now append entries for the binaries
 	for _, each := range e.entry.Binaries {
 		binary, err := e.DB().Binary(each.Value.ID, each.Name)
 		if err != nil {

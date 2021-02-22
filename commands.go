@@ -285,7 +285,7 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 	}
 	valsToUpdate := []k.Value{}
 	for _, value := range vals {
-		if !value.ReadOnly() && value.Type() != k.BINARY {
+		if value != nil && !value.ReadOnly() && value.Type() != k.BINARY {
 			newValue, err := doPrompt(shell, value)
 			if err != nil {
 				return fmt.Errorf("could not get value for %s, %s", value.Name(), err)
