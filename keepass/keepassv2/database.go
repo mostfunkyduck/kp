@@ -26,11 +26,13 @@ func NewDatabase(db *g.Database, savePath string, options k.Options) k.Database 
 		options:  options,
 	}
 	dbWrapper.SetCurrentLocation(dbWrapper.Root())
-	// the v2 library "helpfully" prepopulates the db with a bunch of trash, let's purge it
-	root := dbWrapper.Root()
-	for _, group := range root.Groups() {
-		if err := root.RemoveSubgroup(group); err != nil {
-			fmt.Printf("could not purge initial subgroup %s: %s\n", group.Name(), err)
+	// the v2 library prepopulates the db with a bunch of sample data, let's purge it
+	if _, err := os.Stat(savePath); err != nil {
+		root := dbWrapper.Root()
+		for _, group := range root.Groups() {
+			if err := root.RemoveSubgroup(group); err != nil {
+				fmt.Printf("could not purge initial subgroup %s: %s\n", group.Name(), err)
+			}
 		}
 	}
 	return dbWrapper
