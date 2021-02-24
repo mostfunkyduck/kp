@@ -7,6 +7,7 @@ import (
 	"github.com/abiosoft/ishell"
 	main "github.com/mostfunkyduck/kp"
 	k "github.com/mostfunkyduck/kp/keepass"
+	c "github.com/mostfunkyduck/kp/keepass/common"
 )
 
 func testShowOutput(output string, substr string, t *testing.T) {
@@ -32,7 +33,11 @@ func TestShowNoArgs(t *testing.T) {
 
 func TestShowValidArgs(t *testing.T) {
 	r := createTestResources(t)
-	r.Context.Args = []string{r.Entry.Path()}
+	path, err := r.Entry.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	r.Context.Args = []string{path}
 	main.Show(r.Shell)(r.Context)
 
 	testEntry(true, t, r)
@@ -41,11 +46,14 @@ func TestShowValidArgs(t *testing.T) {
 func TestShowAttachment(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{r.Path}
-	att := k.Value{
-		Name:  "asdf",
-		Value: []byte("yaakov is cool"),
-	}
-	r.Entry.Set("attachment", att)
+	att := c.NewValue(
+		[]byte("yaakov is cool"),
+		"asdf",
+		false, false, false,
+		k.BINARY,
+	)
+
+	r.Entry.Set(att)
 
 	main.Show(r.Shell)(r.Context)
 

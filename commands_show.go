@@ -31,6 +31,6 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		entry.Output(shell, fullMode)
+		shell.Println(entry.Output(fullMode))
 	}
 }

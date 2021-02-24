@@ -1,13 +1,25 @@
 package main_test
 
 import (
-	main "github.com/mostfunkyduck/kp"
+	"fmt"
 	"testing"
+
+	main "github.com/mostfunkyduck/kp"
+	kp "github.com/mostfunkyduck/kp/keepass"
 )
 
 // prepares stdin to fill out a new entry with default values and decline to save
+var entryValues = []string{
+	"first\n",
+	"second\n",
+	"third\n",
+	"fourth\n", "fourth\n", // password confirmation
+	"\n", // notes open in editor, needs manual verification
+}
+
 func fillOutEntry(r testResources) error {
-	for _, each := range []string{"\n", "\n", "\n", "\n", "\n", "N", "n"} {
+	allValues := append(entryValues, []string{"N", "n"}...)
+	for _, each := range allValues {
 		if _, err := r.Readline.WriteStdin([]byte(each)); err != nil {
 			return err
 		}
@@ -15,13 +27,36 @@ func fillOutEntry(r testResources) error {
 	return nil
 }
 
+// verifyDefaultEntry goes through each of the default v1 values
+// and test if they show up as expected in the entry passed in
+func verifyDefaultEntry(e kp.Entry) error {
+	// mild hack, but these are formatted in line with what v2 uses
+	// v1 is good enough to do a case insensitive match
+	// this could be improved in the future with calls to the utility functions, but works for now
+	values := map[string]string{
+		"Title":    "first",
+		"URL":      "second",
+		"UserName": "third",
+		"Password": "fourth",
+		"Notes":    "",
+	}
+
+	for k, v := range values {
+		val := string(e.Get(k).Value())
+		if val != v {
+			return fmt.Errorf("%s != %s", v, val)
+		}
+	}
+
+	return nil
+}
 func TestNewEntry(t *testing.T) {
 	r := createTestResources(t)
-	entryName := "asdfsadf"
 	r.Db.SetCurrentLocation(r.Group)
 	originalEntriesLen := len(r.Group.Entries())
 	r.Context.Args = []string{
-		entryName,
+		// will be overwritten by fillOutEntry
+		"replaceme",
 	}
 
 	if err := fillOutEntry(r); err != nil {
@@ -34,10 +69,22 @@ func TestNewEntry(t *testing.T) {
 		t.Fatalf("wrong number of entries after initial entry creation: [%d] != [%d] (%s)", len(entries), originalEntriesLen+1, output)
 	}
 
-	expectedPath := r.Group.Path() + entryName
+	expectedPath, err := r.Group.Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	// the fillOutEntry form replaced the default title name with this one
+	expectedPath += "first"
 	// assuming that ordering is deterministic, if it isn't then this test will randomly fail
-	if entries[1].Path() != expectedPath {
-		t.Fatalf("[%s] != [%s] (%s)", entries[1].Path(), expectedPath, output)
+	entryPath, err := entries[1].Path()
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	if entryPath != expectedPath {
+		t.Fatalf("[%s] != [%s] (%s)", entryPath, expectedPath, output)
+	}
+	if err := verifyDefaultEntry(entries[1]); err != nil {
+		t.Fatalf(err.Error())
 	}
 }
 

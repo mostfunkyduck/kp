@@ -17,3 +17,5 @@ cscope.*
 # vendor/
 
 kp
+TODOS
+coverage.out

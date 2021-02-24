@@ -27,7 +27,12 @@ func Search(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		// kpcli makes a fake group for search results, which gets into trouble when entries have the same name in different paths
 		// this takes a different approach of printing out full paths and letting the user type them in later
 		// a little more typing for the user, less oddness in the implementation though
-		for _, result := range currentLocation.Search(term) {
+		searchResults, err := currentLocation.Search(term)
+		if err != nil {
+			shell.Println("error during search: " + err.Error())
+			return
+		}
+		for _, result := range searchResults {
 			// the tab makes it a little more readable
 			shell.Printf("\t%s\n", result)
 		}

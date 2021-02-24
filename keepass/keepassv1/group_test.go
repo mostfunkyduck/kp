@@ -4,21 +4,9 @@ import (
 	"strconv"
 	"testing"
 
-	v1 "github.com/mostfunkyduck/kp/keepass/v1"
+	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
-
-func TestProperties(t *testing.T) {
-	name := "test name"
-	group := &keepass.Group{
-		Name: name,
-	}
-	groupWrapper := v1.NewGroup(group)
-	wrapperName := groupWrapper.Name()
-	if wrapperName != name {
-		t.Fatalf("%s != %s", wrapperName, name)
-	}
-}
 
 func TestGroupFunctions(t *testing.T) {
 	ttlEntries := 50
@@ -40,7 +28,7 @@ func TestGroupFunctions(t *testing.T) {
 		g.Name = "group #" + strconv.Itoa(i)
 	}
 
-	groupWrapper := v1.NewGroup(group)
+	groupWrapper := v1.WrapGroup(group, &v1.Database{})
 	// assuming stable ordering because the shell is premised on that for path traversal
 	// (if the entries and groups change order, the user can't specify which one to change properly)
 	for i, each := range groupWrapper.Groups() {
@@ -57,7 +45,7 @@ func TestGroupFunctions(t *testing.T) {
 
 	for i, each := range groupWrapper.Entries() {
 		name := "entry #" + strconv.Itoa(i)
-		title := each.Get("title").Value.(string)
+		title := string(each.Title())
 		if title != name {
 			t.Errorf("%s != %s", title, name)
 		}

@@ -6,6 +6,7 @@ package keepassv1
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	k "github.com/mostfunkyduck/kp/keepass"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -21,16 +22,16 @@ var backupExtension = ".kpbackup"
 
 func NewDatabase(db *keepass.Database, savePath string) k.Database {
 	rv := &Database{
-		currentLocation: NewGroup(db.Root()),
-		db:              db,
-		savePath:        savePath,
+		db:       db,
+		savePath: savePath,
 	}
+	rv.SetCurrentLocation(WrapGroup(db.Root(), rv))
 	return rv
 }
 
 // Root returns the DB root
 func (d *Database) Root() k.Group {
-	return NewGroup(d.db.Root())
+	return WrapGroup(d.db.Root(), d)
 }
 
 // Backup will create a backup of the current database to a temporary location
@@ -117,7 +118,19 @@ func (d *Database) Raw() interface{} {
 }
 
 // Path will walk up the group hierarchy to determine the path to the current location
-func (d *Database) Path() (fullPath string) {
+func (d *Database) Path() (fullPath string, err error) {
 	group := d.CurrentLocation()
 	return group.Path()
+}
+
+func (d *Database) Search(term *regexp.Regexp) (paths []string, err error) {
+	return d.Root().Search(term)
+}
+
+// Binary returns an OptionalWrapper with Present sent to false as v1 doesn't handle binaries
+// through the database
+func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
+	return k.OptionalWrapper{
+		Present: false,
+	}, nil
 }

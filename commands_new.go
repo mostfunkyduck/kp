@@ -32,7 +32,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		if entry != nil {
-			shell.Printf("entry '%s' already exists!\n", entry.Path())
+			shell.Printf("entry '%s' already exists!\n", entry.Title())
 			return
 		}
 
@@ -42,7 +42,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		shell.ShowPrompt(false)
-		entry, err = location.NewEntry()
+		entry, err = location.NewEntry(pathBits[len(pathBits)-1])
 		if err != nil {
 			shell.Printf("error creating new entry: %s\n", err)
 			return
@@ -51,20 +51,13 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		entry.SetLastModificationTime(time.Now())
 		entry.SetLastAccessTime(time.Now())
 
-		err = promptForEntry(shell, entry, pathBits[len(pathBits)-1])
+		err = promptForEntry(shell, entry, entry.Title())
 		shell.ShowPrompt(true)
 		if err != nil {
 			shell.Printf("could not collect user input: %s\n", err)
 			if err := location.RemoveEntry(entry); err != nil {
 				shell.Printf("could not remove malformed entry from group: %s\n", err)
 			}
-			return
-		}
-
-		// FIXME this needs removal, db will currently prompt twice
-		DBChanged = true
-		if err := promptAndSave(shell); err != nil {
-			shell.Printf("failed to save database: %s\n", err)
 			return
 		}
 	}

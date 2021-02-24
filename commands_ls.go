@@ -21,7 +21,7 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 			// if this is the path to an entry, just output that and be done with it
 			if entry != nil {
-				shell.Printf("%s\n", entry.Get("title").Value.(string))
+				shell.Printf("%s\n", entry.Title())
 				return
 			}
 
@@ -36,7 +36,7 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		lines = append(lines, "\n=== Entries ===")
 		for i, entry := range location.Entries() {
-			lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Get("title").Value.(string)))
+			lines = append(lines, fmt.Sprintf("%d: %s", i, entry.Title()))
 		}
 		for _, line := range lines {
 			shell.Println(line)

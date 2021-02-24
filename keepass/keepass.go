@@ -4,8 +4,6 @@ import (
 	"io"
 	"regexp"
 	"time"
-
-	"github.com/abiosoft/ishell"
 )
 
 type version int
@@ -17,25 +15,32 @@ const (
 
 // abstracts a wrapper for v1 or v2 implementations to use to describe the database and to implement shell commands
 type KeepassWrapper interface {
-	// Returns the underlying object that the wrapper wraps aroud
+	// Raw returns the underlying object that the wrapper wraps aroud
 	Raw() interface{}
 
-	// returns the path to the object's location
-	Path() string
+	// Path returns the path to the object's location
+	Path() (string, error)
+
+	// Search searches this object and all nested objects for a given regular expression
+	Search(*regexp.Regexp) ([]string, error)
 }
 
 type Database interface {
 	KeepassWrapper
-	// Returns the current location for the shell
+	// Binary returns a binary with a given ID, naming it with a given name
+	// the OptionalWrapper is used because v2 is the only version that implements this
+	Binary(id int, name string) (OptionalWrapper, error)
+	// CurrentLocation returns the current location for the shell
 	CurrentLocation() Group
-	// Returns the root of the database
+	SetCurrentLocation(Group)
 	Root() Group
 	Save() error
-	// Returns the path of the DB on the filesystem
+
+	// SavePath returns the path to which the database will be saved
 	SavePath() string
-	SetCurrentLocation(Group)
 	SetSavePath(newPath string)
-	// Sets options for interacting with the database file
+
+	// SetOptions sets options for interacting with the database file
 	SetOptions(Options) error
 }
 
@@ -45,8 +50,13 @@ type Options struct {
 	Password  string
 }
 
+type UUIDer interface {
+	// UUIDString returns the string form of this object's UUID
+	UUIDString() (string, error)
+}
 type Group interface {
 	KeepassWrapper
+	UUIDer
 	// Returns all entries in this group
 	Entries() []Entry
 
@@ -56,6 +66,8 @@ type Group interface {
 	// Returns this group's parent, if it has one
 	Parent() Group
 	SetParent(Group) error
+	// inverse of 'SetParent', needed mainly for the internals of keepassv2
+	AddEntry(Entry) error
 
 	Name() string
 	SetName(string)
@@ -63,39 +75,85 @@ type Group interface {
 	IsRoot() bool
 
 	// Creates a new subgroup with a given name under this group
-	NewSubgroup(name string) Group
-
+	NewSubgroup(name string) (Group, error)
 	RemoveSubgroup(Group) error
+	AddSubgroup(Group) error
 
-	NewEntry() (Entry, error)
-
+	NewEntry(name string) (Entry, error)
 	RemoveEntry(Entry) error
-
-	Search(*regexp.Regexp) []string
 }
 
 type Entry interface {
+	UUIDer
 	KeepassWrapper
-	// We only need the string version of the UUID for this application
-	UUIDString() string
-	// Returns the value for a given field, or nil if the field doesn't exist
+	// Returns the value for a given field, or an empty struct if the field doesn't exist
 	Get(string) Value
 
-	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
-	Set(field string, value Value) bool
+	// Title and Password are needed to ensure that v1 and v2 both render
+	// their specific representations of that data (they access it in different ways, fun times)
+	Title() string
+	SetTitle(string)
+	Password() string
+	SetPassword(string)
 
-	// Sets the last accessed time on the entry
+	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
+	Set(value Value) bool
+
+	LastAccessTime() time.Time
 	SetLastAccessTime(time.Time)
+
+	LastModificationTime() time.Time
 	SetLastModificationTime(time.Time)
+
+	CreationTime() time.Time
 	SetCreationTime(time.Time)
+
+	ExpiredTime() time.Time
+	SetExpiredTime(time.Time)
 
 	Parent() Group
 	SetParent(Group) error
 
-	Output(shell *ishell.Shell, full bool)
+	// Formats an entry for printing
+	Output(full bool) string
+
+	// Values returns all referencable value fields from the database
+	//
+	// NOTE: values are not references, updating them must be done through the Set* functions
+	Values() (values []Value, err error)
+
+	// DB returns the Database this entry is associated with
+	DB() Database
+	SetDB(Database)
 }
 
-type Value struct {
-	Value interface{} // can be either binary or string data
-	Name  string      // v1 compatibility - attachments have their own name within entries
+type ValueType int
+
+const (
+	STRING ValueType = iota
+	LONGSTRING
+	BINARY
+)
+
+// OptionalWrapper wraps Values with functions that force the caller of a function to detect whether the value being
+// returned is implemented by the function, this is to help bridge the gap between v2 and v1
+// Proper usage:
+// if wrapper.Present {
+//   <use value>
+// } else {
+// 	 <adapt>
+// }
+type OptionalWrapper struct {
+	Present bool
+	Value   Value
+}
+
+type Value interface {
+	FormattedValue(full bool) string
+	Value() []byte
+	Name() string
+	Searchable() bool
+	Protected() bool
+	ReadOnly() bool
+	Type() ValueType
 }
