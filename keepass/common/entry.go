@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	k "github.com/mostfunkyduck/kp/keepass"
 )
@@ -111,6 +112,17 @@ func (e *Entry) Output(full bool) (val string) {
 	fmt.Fprintf(&b, "Creation Time:\t%s\n", FormatTime(e.driver.CreationTime()))
 	fmt.Fprintf(&b, "Last Modified:\t%s\n", FormatTime(e.driver.LastModificationTime()))
 	fmt.Fprintf(&b, "Last Accessed:\t%s\n", FormatTime(e.driver.LastAccessTime()))
+	expiredTime := e.driver.ExpiredTime()
+	// do we want to highlight this as expired?
+	highlightExpiry := false
+	if expiredTime != (time.Time{}) && expiredTime.Before(time.Now()) {
+		highlightExpiry = true
+		fmt.Fprintf(&b, "\033[31m")
+	}
+	fmt.Fprintf(&b, "Expiration Date:\t%s\n", FormatTime(e.driver.ExpiredTime()))
+	if highlightExpiry {
+		fmt.Fprintf(&b, "\033[0m")
+	}
 
 	values, err := e.driver.Values()
 	if err != nil {
@@ -121,10 +133,6 @@ func (e *Entry) Output(full bool) (val string) {
 
 		title := strings.Title(val.Name())
 
-		// v2 is inconsistent with v1 in how it uses 'username', this makes them look the same
-		if title == "UserName" {
-			title = "Username"
-		}
 		fmt.Fprintf(&b, "%s:\t%s\n", title, val.FormattedValue(full))
 	}
 	return b.String()

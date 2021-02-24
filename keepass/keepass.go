@@ -108,6 +108,9 @@ type Entry interface {
 	CreationTime() time.Time
 	SetCreationTime(time.Time)
 
+	ExpiredTime() time.Time
+	SetExpiredTime(time.Time)
+
 	Parent() Group
 	SetParent(Group) error
 

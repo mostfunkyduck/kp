@@ -84,6 +84,9 @@ func (e *Entry) Set(value k.Value) bool {
 }
 
 func (e *Entry) LastAccessTime() time.Time {
+	if e.entry.Times.LastAccessTime == nil {
+		return time.Time{}
+	}
 	return e.entry.Times.LastAccessTime.Time
 }
 
@@ -92,6 +95,9 @@ func (e *Entry) SetLastAccessTime(t time.Time) {
 }
 
 func (e *Entry) LastModificationTime() time.Time {
+	if e.entry.Times.LastModificationTime == nil {
+		return time.Time{}
+	}
 	return e.entry.Times.LastModificationTime.Time
 }
 func (e *Entry) SetLastModificationTime(t time.Time) {
@@ -99,11 +105,25 @@ func (e *Entry) SetLastModificationTime(t time.Time) {
 }
 
 func (e *Entry) CreationTime() time.Time {
+	if e.entry.Times.CreationTime == nil {
+		return time.Time{}
+	}
 	return e.entry.Times.CreationTime.Time
 }
 
 func (e *Entry) SetCreationTime(t time.Time) {
 	e.entry.Times.CreationTime = &w.TimeWrapper{Time: t}
+}
+
+func (e *Entry) ExpiredTime() time.Time {
+	if e.entry.Times.ExpiryTime == nil {
+		return time.Time{}
+	}
+	return e.entry.Times.ExpiryTime.Time
+}
+
+func (e *Entry) SetExpiredTime(t time.Time) {
+	e.entry.Times.ExpiryTime = &w.TimeWrapper{Time: t}
 }
 
 func (e *Entry) Values() (values []k.Value, err error) {

@@ -127,6 +127,13 @@ func (e *Entry) SetCreationTime(t time.Time) {
 	e.entry.CreationTime = t
 }
 
+func (e *Entry) ExpiredTime() time.Time {
+	return e.entry.ExpiryTime
+}
+
+func (e *Entry) SetExpiredTime(t time.Time) {
+	e.entry.ExpiryTime = t
+}
 func (e *Entry) SetParent(g k.Group) error {
 	if err := e.entry.SetParent(g.Raw().(*keepass.Group)); err != nil {
 		return fmt.Errorf("could not set entry's group: %s", err)
