@@ -112,7 +112,7 @@ func createTestResources(t *testing.T) (r testResources) {
 	return
 }
 
-func testEntry(redactedPassword bool, t *testing.T, r testResources) {
+func testEntry(full bool, t *testing.T, r testResources) {
 	o := r.F.outputHolder.output
 	path, err := r.Entry.Path()
 	if err != nil {
@@ -121,8 +121,13 @@ func testEntry(redactedPassword bool, t *testing.T, r testResources) {
 	testShowOutput(o, fmt.Sprintf("Location:\t%s", path), t)
 	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Title()), t)
 	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("URL").Value()), t)
-	testShowOutput(o, fmt.Sprintf("Username:\t%s", r.Entry.Get("UserName").Value()), t)
-	if redactedPassword {
+	// compensating for v1 and v2 formatting differently
+	unFieldName := "Username"
+	if os.Getenv("KPVERSION") == "2" {
+		unFieldName = "UserName"
+	}
+	testShowOutput(o, fmt.Sprintf("%s:\t%s", unFieldName, r.Entry.Username()), t)
+	if full {
 		testShowOutput(o, "Password:\t[protected]", t)
 	} else {
 		testShowOutput(o, fmt.Sprintf("Password:\t%s", r.Entry.Password()), t)

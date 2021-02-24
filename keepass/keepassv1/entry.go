@@ -209,3 +209,16 @@ func (e *Entry) Values() (vals []k.Value, err error) {
 	}
 	return
 }
+
+func (e *Entry) Username() string {
+	return e.Get(fieldUn).FormattedValue(true)
+}
+
+func (e *Entry) SetUsername(name string) {
+	e.Set(c.NewValue(
+		[]byte(name),
+		fieldUn,
+		true, false, false,
+		k.STRING,
+	))
+}

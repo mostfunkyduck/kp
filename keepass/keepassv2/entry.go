@@ -12,6 +12,15 @@ import (
 	w "github.com/tobischo/gokeepasslib/v3/wrappers"
 )
 
+// field name constants
+const (
+	fieldUn    = "UserName"
+	fieldPw    = "Password"
+	fieldUrl   = "URL"
+	fieldNotes = "Notes"
+	fieldTitle = "Title"
+)
+
 type Entry struct {
 	c.Entry
 	entry *g.Entry
@@ -133,7 +142,7 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	// NOTE: the capitalization/formatting here will be how the default value for the field is rendered
 	// default values will be set by comparing the actual values in the underlying entry to this list using strings.EqualFold
 	// the code uses the existing formatting if it exists, otherwise it will pull from here
-	orderedDefaultValues := []string{"Title", "URL", "Username", "Password", "Notes"}
+	orderedDefaultValues := []string{fieldTitle, fieldUrl, fieldUn, fieldPw, fieldNotes}
 
 	defaultValues := map[string]k.Value{}
 	for _, each := range e.entry.Values {
@@ -236,4 +245,17 @@ func (e *Entry) SetTitle(title string) {
 }
 func (e *Entry) Title() string {
 	return e.entry.GetTitle()
+}
+
+func (e *Entry) Username() string {
+	return e.Get(fieldUn).FormattedValue(true)
+}
+
+func (e *Entry) SetUsername(name string) {
+	e.Set(c.NewValue(
+		[]byte(name),
+		fieldUn,
+		true, false, false,
+		k.STRING,
+	))
 }

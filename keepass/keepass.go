@@ -93,8 +93,12 @@ type Entry interface {
 	// their specific representations of that data (they access it in different ways, fun times)
 	Title() string
 	SetTitle(string)
+
 	Password() string
 	SetPassword(string)
+
+	Username() string
+	SetUsername(name string)
 
 	// Sets a given field to a given value, returns bool indicating whether or not the field was updated
 	Set(value Value) bool
