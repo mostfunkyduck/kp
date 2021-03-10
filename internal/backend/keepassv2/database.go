@@ -7,19 +7,19 @@ import (
 	"os"
 	"regexp"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 type Database struct {
 	db              *g.Database
-	currentLocation k.Group
+	currentLocation t.Group
 	savePath        string
-	options         k.Options
+	options         t.Options
 }
 
-func NewDatabase(db *g.Database, savePath string, options k.Options) k.Database {
+func NewDatabase(db *g.Database, savePath string, options t.Options) t.Database {
 	dbWrapper := &Database{
 		db:       db,
 		savePath: savePath,
@@ -46,7 +46,7 @@ func (d *Database) Raw() interface{} {
 	return d.db
 }
 
-func (d *Database) Root() k.Group {
+func (d *Database) Root() t.Group {
 	return &RootGroup{
 		db:   d,
 		root: d.db.Content.Root,
@@ -132,11 +132,11 @@ func (d *Database) Save() error {
 	return nil
 }
 
-func (d *Database) CurrentLocation() k.Group {
+func (d *Database) CurrentLocation() t.Group {
 	return d.currentLocation
 }
 
-func (d *Database) SetCurrentLocation(g k.Group) {
+func (d *Database) SetCurrentLocation(g t.Group) {
 	d.currentLocation = g
 }
 
@@ -144,7 +144,7 @@ func (d *Database) SetSavePath(newPath string) {
 	d.savePath = newPath
 }
 
-func (d *Database) SetOptions(opts k.Options) error {
+func (d *Database) SetOptions(opts t.Options) error {
 	d.options = opts
 	if opts.KeyReader == nil {
 		d.db.Credentials = g.NewPasswordCredentials(opts.Password)
@@ -179,11 +179,11 @@ func (d *Database) Path() (string, error) {
 // this function takes a 'Name' parameter so it can properly create the values
 // Returns an empty Value (not even with a Name) if the binary doesn't exit,
 // Returns a full Value if it does
-func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
+func (d *Database) Binary(id int, name string) (t.OptionalWrapper, error) {
 	binaryMeta := d.db.Content.Meta.Binaries
 	meta := binaryMeta.Find(id)
 	if meta == nil {
-		return k.OptionalWrapper{
+		return t.OptionalWrapper{
 			Present: true,
 			Value:   nil,
 		}, nil
@@ -193,15 +193,15 @@ func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
 	if err == io.EOF {
 		content = ""
 	} else if err != nil {
-		return k.OptionalWrapper{Present: true}, err
+		return t.OptionalWrapper{Present: true}, err
 	}
-	return k.OptionalWrapper{
+	return t.OptionalWrapper{
 		Present: true,
 		Value: c.NewValue(
 			[]byte(content),
 			name,
 			false, false, false,
-			k.BINARY,
+			t.BINARY,
 		),
 	}, nil
 }

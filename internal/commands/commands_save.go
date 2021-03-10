@@ -2,12 +2,12 @@ package commands
 
 import (
 	"github.com/abiosoft/ishell"
-	"github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func Save(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		db := shell.Get("db").(keepass.Database)
+		db := shell.Get("db").(t.Database)
 		savePath := db.SavePath()
 		if savePath == "" {
 			shell.Println("no path associated with this database! use 'saveas' if this is the first time saving the file")

@@ -4,16 +4,16 @@ import (
 	"strings"
 	"testing"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
-	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	main "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
+	runner "github.com/mostfunkyduck/kp/internal/backend/tests"
+	"github.com/mostfunkyduck/kp/internal/backend/types"
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 func TestNoParent(t *testing.T) {
 	r := runner.Resources{}
-	r.Db = main.NewDatabase(g.NewDatabase(), "/dev/null", k.Options{})
+	r.Db = main.NewDatabase(g.NewDatabase(), "/dev/null", types.Options{})
 	newEnt := g.NewEntry()
 	r.Entry = main.WrapEntry(&newEnt, r.Db)
 
@@ -61,7 +61,7 @@ func TestEntryGetSet(t *testing.T) {
 		[]byte("test value"),
 		"TestEntrySetGet",
 		false, false, false,
-		k.STRING,
+		types.STRING,
 	)
 
 	retVal := r.BlankEntry.Get(value.Name())

@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		currentLocation := db.CurrentLocation()
 		location := currentLocation
 		if len(c.Args) > 0 {

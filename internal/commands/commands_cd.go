@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		args := c.Args
 		currentLocation := db.CurrentLocation()
 		if len(c.Args) == 0 {
@@ -31,7 +31,7 @@ func Cd(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	}
 }
 
-func changeDirectory(db k.Database, newLocation k.Group, shell *ishell.Shell) {
+func changeDirectory(db t.Database, newLocation t.Group, shell *ishell.Shell) {
 	db.SetCurrentLocation(newLocation)
 	path, err := db.Path()
 	if err != nil {

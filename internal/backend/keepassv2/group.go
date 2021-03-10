@@ -4,8 +4,8 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	gokeepasslib "github.com/tobischo/gokeepasslib/v3"
 )
 
@@ -19,7 +19,7 @@ func (g *Group) Raw() interface{} {
 }
 
 // WrapGroup wraps a bare gokeepasslib.Group and a database in a Group wrapper
-func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
+func WrapGroup(g *gokeepasslib.Group, db t.Database) t.Group {
 	if g == nil {
 		return nil
 	}
@@ -31,21 +31,21 @@ func WrapGroup(g *gokeepasslib.Group, db k.Database) k.Group {
 	return gr
 }
 
-func (g *Group) Groups() (rv []k.Group) {
+func (g *Group) Groups() (rv []t.Group) {
 	for i := range g.group.Groups {
 		rv = append(rv, WrapGroup(&g.group.Groups[i], g.DB()))
 	}
 	return
 }
 
-func (g *Group) Entries() (rv []k.Entry) {
+func (g *Group) Entries() (rv []t.Entry) {
 	for i := range g.group.Entries {
 		rv = append(rv, WrapEntry(&g.group.Entries[i], g.DB()))
 	}
 	return
 }
 
-func (g *Group) Parent() k.Group {
+func (g *Group) Parent() t.Group {
 	pathGroups, err := c.FindPathToGroup(g.DB().Root(), g)
 	if err != nil {
 		return nil
@@ -56,7 +56,7 @@ func (g *Group) Parent() k.Group {
 	return nil
 }
 
-func (g *Group) SetParent(parent k.Group) error {
+func (g *Group) SetParent(parent t.Group) error {
 	oldParent := g.Parent()
 
 	// If the group is being renamed, the parents will be the same
@@ -102,7 +102,7 @@ func (g *Group) IsRoot() bool {
 }
 
 // Creates a new subgroup with a given name under this group
-func (g *Group) NewSubgroup(name string) (k.Group, error) {
+func (g *Group) NewSubgroup(name string) (t.Group, error) {
 	newGroup := gokeepasslib.NewGroup()
 	newGroupWrapper := WrapGroup(&newGroup, g.DB())
 	newGroupWrapper.SetName(name)
@@ -116,7 +116,7 @@ func (g *Group) updateWrapper(group *gokeepasslib.Group) {
 	g.group = group
 }
 
-func (g *Group) AddSubgroup(subgroup k.Group) error {
+func (g *Group) AddSubgroup(subgroup t.Group) error {
 	for _, each := range g.Groups() {
 		if each.Name() == subgroup.Name() {
 			return fmt.Errorf("group named '%s' already exists", each.Name())
@@ -131,7 +131,7 @@ func (g *Group) AddSubgroup(subgroup k.Group) error {
 // RemoveSubgroup will remove a group from a parent group
 // If this function returns an error, that means that either the UUIDs on the parent or child
 // were corrupted or the group didn't actually exist in the parent
-func (g *Group) RemoveSubgroup(subgroup k.Group) error {
+func (g *Group) RemoveSubgroup(subgroup t.Group) error {
 	subUUID, err := subgroup.UUIDString()
 	if err != nil {
 		return fmt.Errorf("could not read UUID on subgroup '%s': %s", subgroup.Name(), err)
@@ -155,7 +155,7 @@ func (g *Group) RemoveSubgroup(subgroup k.Group) error {
 	return fmt.Errorf("could not find group with UUID '%s'", subUUID)
 }
 
-func (g *Group) AddEntry(e k.Entry) error {
+func (g *Group) AddEntry(e t.Entry) error {
 	for _, each := range g.Entries() {
 		if each.Title() == e.Title() {
 			return fmt.Errorf("entry named '%s' already exists", each.Title())
@@ -165,7 +165,7 @@ func (g *Group) AddEntry(e k.Entry) error {
 	// TODO update entry wrapper
 	return nil
 }
-func (g *Group) NewEntry(name string) (k.Entry, error) {
+func (g *Group) NewEntry(name string) (t.Entry, error) {
 	entry := gokeepasslib.NewEntry()
 	entryWrapper := WrapEntry(&entry, g.DB())
 	// the order in which these values are added determines how they are output in the terminal
@@ -175,21 +175,21 @@ func (g *Group) NewEntry(name string) (k.Entry, error) {
 		[]byte(""),
 		"URL",
 		true, false, false,
-		k.STRING,
+		t.STRING,
 	))
 	entryWrapper.Set(c.NewValue(
 		// This needs to be formatted this way to tie in to how keepass2 looks for usernames
 		[]byte(""),
 		"UserName",
 		true, false, false,
-		k.STRING,
+		t.STRING,
 	))
 	entryWrapper.SetPassword("")
 	entryWrapper.Set(c.NewValue(
 		[]byte(""),
 		"Notes",
 		true, false, false,
-		k.LONGSTRING,
+		t.LONGSTRING,
 	))
 	if err := entryWrapper.SetParent(g); err != nil {
 		return nil, fmt.Errorf("could not add entry to group: %s", err)
@@ -197,7 +197,7 @@ func (g *Group) NewEntry(name string) (k.Entry, error) {
 	return entryWrapper, nil
 }
 
-func (g *Group) RemoveEntry(entry k.Entry) error {
+func (g *Group) RemoveEntry(entry t.Entry) error {
 	raw := g.group
 	entryUUID, err := entry.UUIDString()
 	if err != nil {

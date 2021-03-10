@@ -10,10 +10,10 @@ import (
 
 	"github.com/abiosoft/ishell"
 	"github.com/abiosoft/readline"
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
+	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
+	"github.com/mostfunkyduck/kp/internal/backend/types"
 	keepass2 "github.com/tobischo/gokeepasslib/v3"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -37,15 +37,15 @@ func (f FakeWriter) Write(p []byte) (n int, err error) {
 type testResources struct {
 	Shell    *ishell.Shell
 	Context  *ishell.Context
-	Group    k.Group
+	Group    types.Group
 	Path     string
-	Db       k.Database
-	Entry    k.Entry
+	Db       types.Database
+	Entry    types.Entry
 	F        FakeWriter
 	Readline *readline.Instance
 }
 
-func initDBv1() (k.Database, error) {
+func initDBv1() (types.Database, error) {
 	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
 	if err != nil {
 		return nil, fmt.Errorf("could not open test db: %s", err)
@@ -54,9 +54,9 @@ func initDBv1() (k.Database, error) {
 	return v1.NewDatabase(db, ""), nil
 }
 
-func initDBv2() (k.Database, error) {
+func initDBv2() (types.Database, error) {
 	db := keepass2.NewDatabase()
-	dbWrapper := v2.NewDatabase(db, "", k.Options{})
+	dbWrapper := v2.NewDatabase(db, "", types.Options{})
 	return dbWrapper, nil
 }
 
@@ -99,7 +99,7 @@ func createTestResources(t *testing.T) (r testResources) {
 			[]byte(v),
 			key,
 			false, false, false,
-			k.STRING,
+			types.STRING,
 		)
 
 		r.Entry.Set(val)

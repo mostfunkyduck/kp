@@ -7,12 +7,12 @@ import (
 	"fmt"
 	"regexp"
 
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 type RootGroup struct {
-	db   k.Database
+	db   t.Database
 	root *g.RootData
 }
 
@@ -20,7 +20,7 @@ func (r *RootGroup) Raw() interface{} {
 	return r.root
 }
 
-func (r *RootGroup) Groups() (rv []k.Group) {
+func (r *RootGroup) Groups() (rv []t.Group) {
 	for i := range r.root.Groups {
 		rv = append(rv, WrapGroup(&r.root.Groups[i], r.db))
 	}
@@ -33,15 +33,15 @@ func (r *RootGroup) Path() (string, error) {
 
 // technically, this could return all the entries in the database, but since
 // that's inconsistent with other groups, leaving it this way for now
-func (r *RootGroup) Entries() (rv []k.Entry) {
-	return []k.Entry{}
+func (r *RootGroup) Entries() (rv []t.Entry) {
+	return []t.Entry{}
 }
 
-func (r *RootGroup) Parent() k.Group {
+func (r *RootGroup) Parent() t.Group {
 	return nil
 }
 
-func (r *RootGroup) SetParent(parent k.Group) error {
+func (r *RootGroup) SetParent(parent t.Group) error {
 	return fmt.Errorf("cannot set parent for root group")
 }
 
@@ -57,7 +57,7 @@ func (r *RootGroup) IsRoot() bool {
 }
 
 // Creates a new subgroup with a given name under this group
-func (r *RootGroup) NewSubgroup(name string) (k.Group, error) {
+func (r *RootGroup) NewSubgroup(name string) (t.Group, error) {
 	newGroup := g.NewGroup()
 	newGroupWrapper := WrapGroup(&newGroup, r.db)
 	newGroupWrapper.SetName(name)
@@ -67,7 +67,7 @@ func (r *RootGroup) NewSubgroup(name string) (k.Group, error) {
 	return newGroupWrapper, nil
 }
 
-func (r *RootGroup) RemoveSubgroup(subgroup k.Group) error {
+func (r *RootGroup) RemoveSubgroup(subgroup t.Group) error {
 	subUUID, err := subgroup.UUIDString()
 	if err != nil {
 		return fmt.Errorf("could not read UUID on '%s': %s", subgroup.Name(), err)
@@ -91,14 +91,14 @@ func (r *RootGroup) RemoveSubgroup(subgroup k.Group) error {
 	return fmt.Errorf("could not find group with UUID '%s'", subUUID)
 }
 
-func (r *RootGroup) AddEntry(e k.Entry) error {
+func (r *RootGroup) AddEntry(e t.Entry) error {
 	return fmt.Errorf("cannot add entries to root group")
 }
-func (r *RootGroup) NewEntry(name string) (k.Entry, error) {
+func (r *RootGroup) NewEntry(name string) (t.Entry, error) {
 	return nil, fmt.Errorf("cannot add entries to root group")
 }
 
-func (r *RootGroup) RemoveEntry(entry k.Entry) error {
+func (r *RootGroup) RemoveEntry(entry t.Entry) error {
 	return fmt.Errorf("root group does not hold entries")
 }
 
@@ -117,7 +117,7 @@ func (r *RootGroup) UUIDString() (string, error) {
 	return "<root group>", nil
 }
 
-func (r *RootGroup) AddSubgroup(subgroup k.Group) error {
+func (r *RootGroup) AddSubgroup(subgroup t.Group) error {
 	for _, each := range r.Groups() {
 		if each.Name() == subgroup.Name() {
 			return fmt.Errorf("group named '%s' already exists", each.Name())

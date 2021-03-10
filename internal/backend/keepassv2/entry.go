@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	g "github.com/tobischo/gokeepasslib/v3"
 	w "github.com/tobischo/gokeepasslib/v3/wrappers"
 )
@@ -26,7 +26,7 @@ type Entry struct {
 	entry *g.Entry
 }
 
-func WrapEntry(entry *g.Entry, db k.Database) k.Entry {
+func WrapEntry(entry *g.Entry, db t.Database) t.Entry {
 	wrapper := &Entry{
 		entry: entry,
 	}
@@ -52,7 +52,7 @@ func (e *Entry) UUIDString() (string, error) {
 	return string(str), nil
 }
 
-func (e Entry) Get(field string) k.Value {
+func (e Entry) Get(field string) t.Value {
 	values, err := e.Values()
 	if err != nil {
 		// swallowing
@@ -67,7 +67,7 @@ func (e Entry) Get(field string) k.Value {
 	return nil
 }
 
-func (e *Entry) Set(value k.Value) bool {
+func (e *Entry) Set(value t.Value) bool {
 	for i, each := range e.entry.Values {
 		if each.Key == value.Name() {
 			oldContent := each.Value.Content
@@ -135,7 +135,7 @@ func (e *Entry) SetExpiredTime(t time.Time) {
 	e.entry.Times.ExpiryTime = &w.TimeWrapper{Time: t}
 }
 
-func (e *Entry) Values() (values []k.Value, err error) {
+func (e *Entry) Values() (values []t.Value, err error) {
 	// we need to arrange this with the regular, "default" values that appear in v1 coming first
 	// to preserve UX and predictability of where the fields appear
 
@@ -144,13 +144,13 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	// the code uses the existing formatting if it exists, otherwise it will pull from here
 	orderedDefaultValues := []string{fieldTitle, fieldUrl, fieldUn, fieldPw, fieldNotes}
 
-	defaultValues := map[string]k.Value{}
+	defaultValues := map[string]t.Value{}
 	for _, each := range e.entry.Values {
-		valueType := k.STRING
+		valueType := t.STRING
 
 		// notes are always "long", as are strings where the user already entered a lot of spew
 		if len(each.Value.Content) > 30 || strings.ToLower(each.Key) == "notes" {
-			valueType = k.LONGSTRING
+			valueType = t.LONGSTRING
 		}
 
 		// build the Value object that will wrap this actual value
@@ -174,7 +174,7 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	}
 
 	// prepend the non-default values with the defaults, in expected order
-	defaultValueObjects := []k.Value{}
+	defaultValueObjects := []t.Value{}
 	for _, val := range orderedDefaultValues {
 		valObject := defaultValues[val]
 		if valObject == nil {
@@ -185,7 +185,7 @@ func (e *Entry) Values() (values []k.Value, err error) {
 				true,
 				protected,
 				false,
-				k.STRING,
+				t.STRING,
 			)
 		}
 		defaultValueObjects = append(defaultValueObjects, valObject)
@@ -195,15 +195,15 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	// Prepend everything with the location
 	path, err := e.Path()
 	if err != nil {
-		return []k.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
+		return []t.Value{}, fmt.Errorf("could not retrieve entry's path: %s", err)
 	}
 
-	values = append([]k.Value{
+	values = append([]t.Value{
 		c.NewValue(
 			[]byte(path),
 			"location",
 			false, false, true,
-			k.STRING,
+			t.STRING,
 		),
 	}, values...)
 
@@ -211,10 +211,10 @@ func (e *Entry) Values() (values []k.Value, err error) {
 	for _, each := range e.entry.Binaries {
 		binary, err := e.DB().Binary(each.Value.ID, each.Name)
 		if err != nil {
-			return []k.Value{}, fmt.Errorf("could not retrieve binary named '%s' with ID '%d': %s", each.Name, each.Value.ID, err)
+			return []t.Value{}, fmt.Errorf("could not retrieve binary named '%s' with ID '%d': %s", each.Name, each.Value.ID, err)
 		}
 		if !binary.Present {
-			return []k.Value{}, fmt.Errorf("binary retrieval not implemented, this shouldn't happen on v2, but here we are")
+			return []t.Value{}, fmt.Errorf("binary retrieval not implemented, this shouldn't happen on v2, but here we are")
 		}
 		values = append(values, binary.Value)
 	}
@@ -227,7 +227,7 @@ func (e *Entry) SetPassword(password string) {
 		[]byte(password),
 		"Password",
 		false, true, false,
-		k.STRING,
+		t.STRING,
 	))
 }
 
@@ -240,7 +240,7 @@ func (e *Entry) SetTitle(title string) {
 		[]byte(title),
 		"Title",
 		true, false, false,
-		k.STRING,
+		t.STRING,
 	))
 }
 func (e *Entry) Title() string {
@@ -256,6 +256,6 @@ func (e *Entry) SetUsername(name string) {
 		[]byte(name),
 		fieldUn,
 		true, false, false,
-		k.STRING,
+		t.STRING,
 	))
 }

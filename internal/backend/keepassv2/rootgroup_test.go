@@ -4,10 +4,10 @@ import (
 	"regexp"
 	"testing"
 
-	k "github.com/mostfunkyduck/kp/keepass"
+	"github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
-func findGroupInGroup(parent k.Group, child k.Group) bool {
+func findGroupInGroup(parent types.Group, child types.Group) bool {
 	for _, group := range parent.Groups() {
 		if group.Name() == child.Name() {
 			return true

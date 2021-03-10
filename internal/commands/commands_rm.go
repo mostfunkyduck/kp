@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 // purgeGroup recursively removes all subgroups and entries from a group
-func purgeGroup(group k.Group) error {
+func purgeGroup(group t.Group) error {
 	for _, e := range group.Entries() {
 		if err := group.RemoveEntry(e); err != nil {
 			return fmt.Errorf("could not remove entry '%s' from group '%s': %s", e.Title(), group.Name(), err)
@@ -27,7 +27,7 @@ func purgeGroup(group k.Group) error {
 	return nil
 }
 
-func removeEntry(parentLocation k.Group, entryName string) error {
+func removeEntry(parentLocation t.Group, entryName string) error {
 	for i, e := range parentLocation.Entries() {
 		if e.Title() == entryName || strconv.Itoa(i) == entryName {
 			if err := parentLocation.RemoveEntry(e); err != nil {
@@ -54,7 +54,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			targetPath = c.Args[1]
 		}
 
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		currentLocation := db.CurrentLocation()
 		newLocation, entry, err := TraversePath(db, currentLocation, targetPath)
 		if err != nil {

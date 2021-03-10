@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
@@ -21,7 +21,7 @@ func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 
 		pathBits := strings.Split(args[0], "/")
 		parentPath := strings.Join(pathBits[0:len(pathBits)-1], "/")

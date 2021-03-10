@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/mostfunkyduck/kp/internal/utils"
-	k "github.com/mostfunkyduck/kp/keepass"
 )
 
 func generateRandomString(length int) (str string) {
@@ -75,7 +75,7 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			file = _file
 		}
 
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		shell.Printf("enter password: ")
 		pw, err := shell.ReadPasswordErr()
 		if err != nil {
@@ -94,7 +94,7 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		opts := k.Options{
+		opts := t.Options{
 			Password:  pw,
 			KeyReader: file,
 		}

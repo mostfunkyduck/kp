@@ -17,7 +17,7 @@ init:
 # allow nolint from when bad stuff creeps in and needs a separate commit
 nolint: test kp
 
-kp: *.go keepass/*.go keepass/*/*.go
+kp: *.go internal/*/*.go internal/backend/*/*.go
 	go build -gcflags "-N -I ." -ldflags "-X main.VersionRevision=$(REVISION) -X main.VersionBuildDate=$(DATE) -X main.VersionBuildTZ=UTC -X main.VersionBranch=$(BRANCH) -X main.VersionRelease=$(RELEASE) -X main.VersionHostname=$(HOSTNAME)" 
 
 cscope:
@@ -41,16 +41,16 @@ install: kp
 	cp ./kp /usr/local/bin/kp
 
 # allow testing v1 and v2 separately or together
-coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./keepass,./keepass/common
+coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./internal/backend/types,./internal/backend/common
 
 testv1:
-	KPVERSION=1 go test ./internal/commands ./keepass/keepassv1 $(coveragecmd),./keepass/keepassv1
+	KPVERSION=1 go test ./internal/utils ./internal/commands ./internal/backend/keepassv1 $(coveragecmd),./internal/backend/keepassv1
 
 testv2:
-	KPVERSION=2 go test ./internal/commands ./keepass/keepassv2 $(coveragecmd),./keepass/keepassv2
+	KPVERSION=2 go test ./internal/utils ./internal/commands ./internal/backend/keepassv2 $(coveragecmd),./internal/backend/keepassv2
 
 test: testv1 testv2
 
-# quick command to vet the entire source tree
+# quick command to vet the entire source tree, need to enumerate all targets because of linter pickiness
 vet:
-	go vet . ./internal/* ./keepass/keepassv1 ./keepass/keepassv2
+	go vet . ./internal/utils ./internal/commands ./internal/backend/types ./internal/backend/keepassv1 ./internal/backend/keepassv2 ./internal/backend/common ./internal/backend/tests

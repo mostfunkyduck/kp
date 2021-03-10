@@ -3,8 +3,8 @@ package keepassv1
 import (
 	"fmt"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -13,7 +13,7 @@ type Group struct {
 	group *keepass.Group
 }
 
-func WrapGroup(group *keepass.Group, db k.Database) k.Group {
+func WrapGroup(group *keepass.Group, db t.Database) t.Group {
 	if group == nil {
 		return nil
 	}
@@ -26,7 +26,7 @@ func WrapGroup(group *keepass.Group, db k.Database) k.Group {
 	return g
 }
 
-func (g *Group) AddSubgroup(subgroup k.Group) error {
+func (g *Group) AddSubgroup(subgroup t.Group) error {
 	for _, group := range g.Groups() {
 		if group.Name() == subgroup.Name() {
 			return fmt.Errorf("group named '%s' already exists at this location", group.Name())
@@ -38,7 +38,7 @@ func (g *Group) AddSubgroup(subgroup k.Group) error {
 	return nil
 }
 
-func (g *Group) AddEntry(e k.Entry) error {
+func (g *Group) AddEntry(e t.Entry) error {
 	for _, each := range g.Entries() {
 		if each.Title() == e.Title() {
 			return fmt.Errorf("entry named '%s' already exists at this location", e.Title())
@@ -61,25 +61,25 @@ func (g *Group) SetName(name string) {
 	g.group.Name = name
 }
 
-func (g *Group) Parent() k.Group {
+func (g *Group) Parent() t.Group {
 	return WrapGroup(g.group.Parent(), g.DB())
 }
 
-func (g *Group) SetParent(parent k.Group) error {
+func (g *Group) SetParent(parent t.Group) error {
 	if err := g.group.SetParent(parent.Raw().(*keepass.Group)); err != nil {
 		return fmt.Errorf("could not change group parent: %s", err)
 	}
 	return nil
 }
 
-func (g *Group) Entries() (rv []k.Entry) {
+func (g *Group) Entries() (rv []t.Entry) {
 	for _, each := range g.group.Entries() {
 		rv = append(rv, WrapEntry(each, g.DB()))
 	}
 	return rv
 }
 
-func (g *Group) Groups() (rv []k.Group) {
+func (g *Group) Groups() (rv []t.Group) {
 	for _, each := range g.group.Groups() {
 		rv = append(rv, WrapGroup(each, g.DB()))
 	}
@@ -90,7 +90,7 @@ func (g *Group) IsRoot() bool {
 	return g.Parent() == nil
 }
 
-func (g *Group) NewSubgroup(name string) (k.Group, error) {
+func (g *Group) NewSubgroup(name string) (t.Group, error) {
 	for _, group := range g.Groups() {
 		if group.Name() == name {
 			return nil, fmt.Errorf("group named '%s' already exists", name)
@@ -101,7 +101,7 @@ func (g *Group) NewSubgroup(name string) (k.Group, error) {
 	return WrapGroup(newGroup, g.DB()), nil
 }
 
-func (g *Group) RemoveSubgroup(subgroup k.Group) error {
+func (g *Group) RemoveSubgroup(subgroup t.Group) error {
 	for _, each := range subgroup.Groups() {
 		if err := subgroup.RemoveSubgroup(each); err != nil {
 			return fmt.Errorf("could not purge subgroups in group '%s': %s", each.Name(), err)
@@ -119,7 +119,7 @@ func (g *Group) Raw() interface{} {
 	return g.group
 }
 
-func (g *Group) NewEntry(name string) (k.Entry, error) {
+func (g *Group) NewEntry(name string) (t.Entry, error) {
 	// FIXME allows dupe entries
 	entry, err := g.group.NewEntry()
 	if err != nil {
@@ -129,7 +129,7 @@ func (g *Group) NewEntry(name string) (k.Entry, error) {
 	return WrapEntry(entry, g.DB()), nil
 }
 
-func (g *Group) RemoveEntry(e k.Entry) error {
+func (g *Group) RemoveEntry(e t.Entry) error {
 	return g.group.RemoveEntry(e.Raw().(*keepass.Entry))
 }
 

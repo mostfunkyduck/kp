@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
@@ -24,7 +24,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		// the user may enter a path, either absolute or relative, in which case
 		// we need to crawl to that location to make the new entry
 

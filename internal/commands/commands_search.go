@@ -4,14 +4,14 @@ import (
 	"regexp"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 // This implements the equivalent of kpcli's "find" command, just with a name
 // that won't be confused for the shell command of the same name
 func Search(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		currentLocation := shell.Get("db").(k.Database).Root()
+		currentLocation := shell.Get("db").(t.Database).Root()
 		errString, ok := syntaxCheck(c, 1)
 		if !ok {
 			shell.Println(errString)

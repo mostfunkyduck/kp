@@ -9,25 +9,25 @@ import (
 	"strings"
 	"time"
 
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 type Entry struct {
-	db     k.Database
-	driver k.Entry
+	db     t.Database
+	driver t.Entry
 }
 
 // findPathToEntry returns all the groups in the path leading to an entry *but not the entry itself*
 // the path returned will also not include the source group
-func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
+func findPathToEntry(source t.Group, target t.Entry) (rv []t.Group, err error) {
 	// this library doesn't appear to support child->parent links, so we have to find the needful ourselves
 	for _, entry := range source.Entries() {
 		equal, err := CompareUUIDs(target, entry)
 		if err != nil {
-			return []k.Group{}, err
+			return []t.Group{}, err
 		}
 		if equal {
-			return []k.Group{source}, nil
+			return []t.Group{source}, nil
 		}
 	}
 
@@ -37,13 +37,13 @@ func findPathToEntry(source k.Group, target k.Entry) (rv []k.Group, err error) {
 		if err != nil {
 			// not putting the path in this error message because it might trigger an infinite loop
 			// since this is part of the path traversal algo
-			return []k.Group{}, fmt.Errorf("error finding path to '%s' from '%s': %s", target.Title(), group.Name(), err)
+			return []t.Group{}, fmt.Errorf("error finding path to '%s' from '%s': %s", target.Title(), group.Name(), err)
 		}
 		if len(newGroups) > 0 {
-			return append([]k.Group{source}, newGroups...), nil
+			return append([]t.Group{source}, newGroups...), nil
 		}
 	}
-	return []k.Group{}, nil
+	return []t.Group{}, nil
 }
 
 // Path returns the fully qualified path to the entry, if there's no parent, only the name is returned
@@ -60,7 +60,7 @@ func (e *Entry) Path() (path string, err error) {
 	return
 }
 
-func (e *Entry) Parent() k.Group {
+func (e *Entry) Parent() t.Group {
 	pathGroups, err := findPathToEntry(e.DB().Root(), e.driver)
 	if err != nil {
 		return nil
@@ -72,7 +72,7 @@ func (e *Entry) Parent() k.Group {
 	return pathGroups[len(pathGroups)-1]
 }
 
-func (e *Entry) SetParent(g k.Group) error {
+func (e *Entry) SetParent(g t.Group) error {
 	pathGroups, err := FindPathToGroup(e.DB().Root(), g)
 	if len(pathGroups) == 0 || err != nil {
 		errorString := fmt.Sprintf("could not find a path from the db root to '%s', is this a valid group?", g.Name())
@@ -160,15 +160,15 @@ func (e *Entry) Search(term *regexp.Regexp) (paths []string, err error) {
 	return
 }
 
-func (e *Entry) DB() k.Database {
+func (e *Entry) DB() t.Database {
 	return e.db
 }
 
-func (e *Entry) SetDB(db k.Database) {
+func (e *Entry) SetDB(db t.Database) {
 	e.db = db
 }
 
 // SetEntry sets the internal entry driver for this wrapper
-func (e *Entry) SetDriver(entry k.Entry) {
+func (e *Entry) SetDriver(entry t.Entry) {
 	e.driver = entry
 }

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"regexp"
 
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 type Group struct {
-	db     k.Database
-	driver k.Group
+	db     t.Database
+	driver t.Group
 }
 
 func (g *Group) Path() (rv string, err error) {
@@ -26,14 +26,14 @@ func (g *Group) Path() (rv string, err error) {
 	return rv + g.driver.Name() + "/", nil
 }
 
-func FindPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
+func FindPathToGroup(source t.Group, target t.Group) (rv []t.Group, err error) {
 	// the v2 library doesn't appear to support child->parent links, so we have to find the needful ourselves
 
 	// loop through every group in the top level of the path
 	for _, group := range source.Groups() {
 		same, err := CompareUUIDs(group, target)
 		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
+			return []t.Group{}, fmt.Errorf("could not compare UUIDS: %s", err)
 		}
 
 		// If the group that we're looking at in the path is the target,
@@ -41,7 +41,7 @@ func FindPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 		if same {
 			// this will essentially say that if the target group exists in the source group, build a path
 			// to the source group
-			ret := []k.Group{source}
+			ret := []t.Group{source}
 			return ret, nil
 		}
 
@@ -49,28 +49,28 @@ func FindPathToGroup(source k.Group, target k.Group) (rv []k.Group, err error) {
 		// If the target is in a subgroup tree here, the full path will end up being returned
 		pathGroups, err := FindPathToGroup(group, target)
 		if err != nil {
-			return []k.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
+			return []t.Group{}, fmt.Errorf("could not find path from group '%s' to group '%s': %s", group.Name(), target.Name(), err)
 		}
 
 		// if the target group is a child of this group, return the full path
 		if len(pathGroups) != 0 {
-			ret := append([]k.Group{source}, pathGroups...)
+			ret := append([]t.Group{source}, pathGroups...)
 			return ret, nil
 		}
 	}
-	return []k.Group{}, nil
+	return []t.Group{}, nil
 }
 
-func (g *Group) DB() k.Database {
+func (g *Group) DB() t.Database {
 	return g.db
 }
 
-func (g *Group) SetDB(d k.Database) {
+func (g *Group) SetDB(d t.Database) {
 	g.db = d
 }
 
 // sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
-func (g *Group) SetDriver(gr k.Group) {
+func (g *Group) SetDriver(gr t.Group) {
 	g.driver = gr
 }
 

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
+	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 

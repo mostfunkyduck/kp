@@ -15,10 +15,10 @@ import (
 
 	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
+	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/sethvargo/go-password/password"
 	keepass2 "github.com/tobischo/gokeepasslib/v3"
 	"zombiezen.com/go/sandpass/pkg/keepass"
@@ -32,7 +32,7 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 }
 
 // TODO break this function down, it's too long and mildly complicated
-func OpenV2DB(shell *ishell.Shell, dbPath string, keyPath string) (db k.Database, ok bool) {
+func OpenV2DB(shell *ishell.Shell, dbPath string, keyPath string) (db t.Database, ok bool) {
 	for {
 		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
 			dbPath = envDbfile
@@ -92,11 +92,11 @@ func OpenV2DB(shell *ishell.Shell, dbPath string, keyPath string) (db k.Database
 			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
 			return nil, false
 		}
-		return v2.NewDatabase(db, shell.Get("filePath").(string), k.Options{}), true
+		return v2.NewDatabase(db, shell.Get("filePath").(string), t.Options{}), true
 	}
 }
 
-func OpenDB(shell *ishell.Shell, dbPath string, keyPath string) (db k.Database, ok bool) {
+func OpenDB(shell *ishell.Shell, dbPath string, keyPath string) (db t.Database, ok bool) {
 	for {
 		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
 			dbPath = envDbfile
@@ -187,8 +187,8 @@ func setLockfile(filePath string) error {
 }
 
 // getEntryByPath returns the entry at path 'path' using context variables in shell 'shell'
-func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
-	db := shell.Get("db").(k.Database)
+func getEntryByPath(shell *ishell.Shell, path string) (entry t.Entry, ok bool) {
+	db := shell.Get("db").(t.Database)
 	location, entry, err := TraversePath(db, db.CurrentLocation(), path)
 	if err != nil {
 		return nil, false
@@ -221,26 +221,26 @@ func getEntryByPath(shell *ishell.Shell, path string) (entry k.Entry, ok bool) {
 }
 
 func isPresent(shell *ishell.Shell, path string) (ok bool) {
-	db := shell.Get("db").(k.Database)
+	db := shell.Get("db").(t.Database)
 	l, e, err := TraversePath(db, db.CurrentLocation(), path)
 	return err == nil && (l != nil || e != nil)
 }
 
-// doPrompt takes a k.Value, prompts for a new value, returns the value entered
-func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
+// doPrompt takes a t.Value, prompts for a new value, returns the value entered
+func doPrompt(shell *ishell.Shell, value t.Value) (string, error) {
 	var err error
 	var input string
 	switch value.Type() {
-	case k.STRING:
+	case t.STRING:
 		shell.Printf("%s: [%s]  ", value.Name(), value.FormattedValue(false))
 		if value.Protected() {
 			input, err = GetProtected(shell, string(value.Value()))
 		} else {
 			input, err = shell.ReadLineErr()
 		}
-	case k.BINARY:
+	case t.BINARY:
 		return "", fmt.Errorf("tried to edit binary directly")
-	case k.LONGSTRING:
+	case t.LONGSTRING:
 		shell.Printf("'%s' is a long text field, open in editor? [y/N] ", value.Name())
 		edit, err1 := shell.ReadLineErr()
 		if err1 != nil {
@@ -264,15 +264,15 @@ func doPrompt(shell *ishell.Shell, value k.Value) (string, error) {
 }
 
 // promptForEntry loops through all values in an entry, prompts to edit them, then applies any changes
-func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
+func promptForEntry(shell *ishell.Shell, e t.Entry, title string) error {
 	// make a copy of the entry's values for modification
 	vals, err := e.Values()
 	if err != nil {
 		return fmt.Errorf("error retrieving values for entry '%s': %s", e.Title(), err)
 	}
-	valsToUpdate := []k.Value{}
+	valsToUpdate := []t.Value{}
 	for _, value := range vals {
-		if value != nil && !value.ReadOnly() && value.Type() != k.BINARY {
+		if value != nil && !value.ReadOnly() && value.Type() != t.BINARY {
 			newValue, err := doPrompt(shell, value)
 			if err != nil {
 				return fmt.Errorf("could not get value for %s, %s", value.Name(), err)
@@ -327,7 +327,7 @@ func OpenFileInEditor(filename string) error {
 
 	return cmd.Run()
 }
-func GetLongString(value k.Value) (text string, err error) {
+func GetLongString(value t.Value) (text string, err error) {
 	// https://samrapdev.com/capturing-sensitive-input-with-editor-in-golang-from-the-cli/
 	file, err := ioutil.TempFile(os.TempDir(), "*")
 	if err != nil {
@@ -414,7 +414,7 @@ func PromptAndSave(shell *ishell.Shell) error {
 		return nil
 	}
 
-	db := shell.Get("db").(k.Database)
+	db := shell.Get("db").(t.Database)
 	if err := db.Save(); err != nil {
 		return fmt.Errorf("could not save database: %s", err)
 	}
@@ -480,7 +480,7 @@ func confirmOverwrite(shell *ishell.Shell, path string) bool {
 // TraversePath, given a starting location and a UNIX-style path, will walk the path and return the final location or an error
 // if the path points to an entry, the parent group is returned as well as the entry.
 // If the path points to a group, the entry will be nil
-func TraversePath(d k.Database, startingLocation k.Group, fullPath string) (finalLocation k.Group, finalEntry k.Entry, err error) {
+func TraversePath(d t.Database, startingLocation t.Group, fullPath string) (finalLocation t.Group, finalEntry t.Entry, err error) {
 	currentLocation := startingLocation
 	root := d.Root()
 	if fullPath == "/" {

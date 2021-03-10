@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/abiosoft/ishell"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	"github.com/mostfunkyduck/kp/internal/backend/types"
 	main "github.com/mostfunkyduck/kp/internal/commands"
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
 )
 
 func testShowOutput(output string, substr string, t *testing.T) {
@@ -50,7 +50,7 @@ func TestShowAttachment(t *testing.T) {
 		[]byte("yaakov is cool"),
 		"asdf",
 		false, false, false,
-		k.BINARY,
+		types.BINARY,
 	)
 
 	r.Entry.Set(att)

@@ -3,17 +3,17 @@ package keepassv2_test
 import (
 	"testing"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
-	main "github.com/mostfunkyduck/kp/keepass/keepassv2"
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	main "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
+	runner "github.com/mostfunkyduck/kp/internal/backend/tests"
+	types "github.com/mostfunkyduck/kp/internal/backend/types"
 	g "github.com/tobischo/gokeepasslib/v3"
 )
 
 func createTestResources(t *testing.T) runner.Resources {
 	name := "test yo"
 	groupName := "group"
-	db := main.NewDatabase(g.NewDatabase(), "/dev/null", k.Options{})
+	db := main.NewDatabase(g.NewDatabase(), "/dev/null", types.Options{})
 	newgrp := g.NewGroup()
 	group := main.WrapGroup(&newgrp, db)
 	group.SetName(groupName)
@@ -26,7 +26,7 @@ func createTestResources(t *testing.T) runner.Resources {
 		[]byte(name),
 		"Title",
 		false, false, false,
-		k.STRING,
+		types.STRING,
 	)) {
 		t.Fatalf("could not set title")
 	}

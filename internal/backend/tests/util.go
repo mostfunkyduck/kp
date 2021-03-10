@@ -1,15 +1,15 @@
 package tests
 
 import (
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 type Resources struct {
-	Db    k.Database
-	Entry k.Entry
-	Group k.Group
+	Db    t.Database
+	Entry t.Entry
+	Group t.Group
 	// BlankEntry and BlankGroup are empty resources for testing freshly
 	// allocated structs
-	BlankEntry k.Entry
-	BlankGroup k.Group
+	BlankEntry t.Entry
+	BlankGroup t.Group
 }

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -25,7 +25,7 @@ type Entry struct {
 	entry *keepass.Entry
 }
 
-func WrapEntry(entry *keepass.Entry, db k.Database) k.Entry {
+func WrapEntry(entry *keepass.Entry, db t.Database) t.Entry {
 	e := &Entry{
 		entry: entry,
 	}
@@ -38,12 +38,12 @@ func (e *Entry) UUIDString() (string, error) {
 	return e.entry.UUID.String(), nil
 }
 
-func (e *Entry) Get(field string) (rv k.Value) {
+func (e *Entry) Get(field string) (rv t.Value) {
 	var value []byte
 	var name = field
 	searchable := true
 	protected := false
-	valueType := k.STRING
+	valueType := t.STRING
 	switch strings.ToLower(field) {
 	case strings.ToLower(fieldTitle):
 		value = []byte(e.entry.Title)
@@ -57,14 +57,14 @@ func (e *Entry) Get(field string) (rv k.Value) {
 		value = []byte(e.entry.URL)
 	case strings.ToLower(fieldNotes):
 		value = []byte(e.entry.Notes)
-		valueType = k.LONGSTRING
+		valueType = t.LONGSTRING
 	case strings.ToLower(fieldAttachment):
 		if !e.entry.HasAttachment() {
 			return nil
 		}
 		name = e.entry.Attachment.Name
 		value = e.entry.Attachment.Data
-		valueType = k.BINARY
+		valueType = t.BINARY
 	default:
 		return nil
 	}
@@ -79,7 +79,7 @@ func (e *Entry) Get(field string) (rv k.Value) {
 	)
 }
 
-func (e *Entry) Set(value k.Value) (updated bool) {
+func (e *Entry) Set(value t.Value) (updated bool) {
 	updated = true
 	field := value.Name()
 	fieldValue := value.Value()
@@ -134,14 +134,14 @@ func (e *Entry) ExpiredTime() time.Time {
 func (e *Entry) SetExpiredTime(t time.Time) {
 	e.entry.ExpiryTime = t
 }
-func (e *Entry) SetParent(g k.Group) error {
+func (e *Entry) SetParent(g t.Group) error {
 	if err := e.entry.SetParent(g.Raw().(*keepass.Group)); err != nil {
 		return fmt.Errorf("could not set entry's group: %s", err)
 	}
 	return nil
 }
 
-func (e *Entry) Parent() k.Group {
+func (e *Entry) Parent() t.Group {
 	group := e.entry.Parent()
 	if group == nil {
 		return nil
@@ -177,7 +177,7 @@ func (e *Entry) SetPassword(password string) {
 		false,
 		true,
 		false,
-		k.STRING,
+		t.STRING,
 	))
 }
 
@@ -192,13 +192,13 @@ func (e *Entry) SetTitle(title string) {
 		true,
 		false,
 		false,
-		k.STRING,
+		t.STRING,
 	))
 }
 
-func (e *Entry) Values() (vals []k.Value, err error) {
+func (e *Entry) Values() (vals []t.Value, err error) {
 	path, _ := e.Path()
-	vals = append(vals, c.NewValue([]byte(path), "location", false, false, true, k.STRING))
+	vals = append(vals, c.NewValue([]byte(path), "location", false, false, true, t.STRING))
 	vals = append(vals, e.Get(fieldTitle))
 	vals = append(vals, e.Get(fieldUrl))
 	vals = append(vals, e.Get(fieldUn))
@@ -219,6 +219,6 @@ func (e *Entry) SetUsername(name string) {
 		[]byte(name),
 		fieldUn,
 		true, false, false,
-		k.STRING,
+		t.STRING,
 	))
 }

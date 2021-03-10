@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
-	c "github.com/mostfunkyduck/kp/keepass/common"
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
-func listAttachment(entry k.Entry) (s string, err error) {
+func listAttachment(entry t.Entry) (s string, err error) {
 	attachment := entry.Get("attachment")
 	if len(attachment.Value()) == 0 && attachment.Name() == "" {
 		err = fmt.Errorf("entry has no attachment")
@@ -22,7 +22,7 @@ func listAttachment(entry k.Entry) (s string, err error) {
 	return
 }
 
-func getAttachment(entry k.Entry, outputLocation string) (s string, err error) {
+func getAttachment(entry t.Entry, outputLocation string) (s string, err error) {
 	f, err := os.Create(outputLocation)
 	if err != nil {
 		err = fmt.Errorf("could not open [%s]", outputLocation)
@@ -54,7 +54,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 
 		args := c.Args
 		path := args[0]
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		currentLocation := db.CurrentLocation()
 		location, _, err := TraversePath(db, currentLocation, path)
 		if err != nil {
@@ -85,7 +85,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 	}
 }
 
-func createAttachment(entry k.Entry, name string, path string) (output string, err error) {
+func createAttachment(entry t.Entry, name string, path string) (output string, err error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not open %s: %s", path, err)
@@ -95,7 +95,7 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 		data,
 		"attachment",
 		false, false, false,
-		k.BINARY,
+		t.BINARY,
 	))
 
 	return "added attachment to database", nil
@@ -103,7 +103,7 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 
 // helper function run running attach commands. 'args' are all arguments after the attach command
 // for instance, 'attach get foo bar' will result in args being '[foo, bar]'
-func runAttachCommands(args []string, cmd string, entry k.Entry, shell *ishell.Shell) (output string, err error) {
+func runAttachCommands(args []string, cmd string, entry t.Entry, shell *ishell.Shell) (output string, err error) {
 	switch cmd {
 	// attach create attachmentName /path/to/file
 	case "create":

@@ -2,11 +2,11 @@ package common
 
 import (
 	"fmt"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"time"
 )
 
-func CompareUUIDs(me k.UUIDer, them k.UUIDer) (bool, error) {
+func CompareUUIDs(me t.UUIDer, them t.UUIDer) (bool, error) {
 	myUUID, err := me.UUIDString()
 	if err != nil {
 		return false, err

@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"strings"
 )
 
@@ -12,11 +12,11 @@ type Value struct {
 	searchable bool   // indicates whether this value should be included in searches
 	protected  bool
 	readOnly   bool
-	valueType  k.ValueType
+	valueType  t.ValueType
 }
 
 // NewValue initializes a value object
-func NewValue(value []byte, name string, searchable bool, protected bool, readOnly bool, valueType k.ValueType) Value {
+func NewValue(value []byte, name string, searchable bool, protected bool, readOnly bool, valueType t.ValueType) Value {
 	return Value{
 		value:      value,
 		name:       name,
@@ -30,7 +30,7 @@ func NewValue(value []byte, name string, searchable bool, protected bool, readOn
 // FormattedValue returns the appropriately formatted value contents, with the `full` argument determining
 // whether protected values should be returned in cleartext
 func (v Value) FormattedValue(full bool) string {
-	if v.Type() == k.BINARY {
+	if v.Type() == t.BINARY {
 		return fmt.Sprintf("binary: %d bytes", len(v.value))
 	}
 
@@ -38,7 +38,7 @@ func (v Value) FormattedValue(full bool) string {
 		return "[protected]"
 	}
 
-	if v.Type() == k.LONGSTRING {
+	if v.Type() == t.LONGSTRING {
 		value := string(v.Value())
 		// Long fields are going to need a line break so the first line isn't corrupted
 		value = "\n" + value
@@ -69,6 +69,6 @@ func (v Value) ReadOnly() bool {
 	return v.readOnly
 }
 
-func (v Value) Type() k.ValueType {
+func (v Value) Type() t.ValueType {
 	return v.valueType
 }

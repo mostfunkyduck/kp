@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
+	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/mostfunkyduck/kp/internal/commands"
 	"github.com/mostfunkyduck/kp/internal/utils"
-	k "github.com/mostfunkyduck/kp/keepass"
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
 	keepass2 "github.com/tobischo/gokeepasslib/v3"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
@@ -31,7 +31,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 		baseGroup = baseGroup[0 : len(baseGroup)-1]
 		rawPath = strings.Join(baseGroup, "/")
 
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 		location := db.CurrentLocation()
 		location, _, err := commands.TraversePath(db, location, rawPath)
 		if err != nil {
@@ -70,13 +70,13 @@ func main() {
 
 	shell.Set("filePath", *dbFile)
 
-	var dbWrapper k.Database
+	var dbWrapper t.Database
 	var ok bool
 	_, exists := os.LookupEnv("KP_DATABASE")
 	if *dbFile == "" && !exists {
 		if *keepassVersion == 2 {
 			db := keepass2.NewDatabase()
-			dbWrapper = v2.NewDatabase(db, "", k.Options{})
+			dbWrapper = v2.NewDatabase(db, "", t.Options{})
 		} else {
 			db, err := keepass.New(&keepass.Options{})
 			if err != nil {

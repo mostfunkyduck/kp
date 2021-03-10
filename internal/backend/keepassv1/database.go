@@ -8,19 +8,19 @@ import (
 	"os"
 	"regexp"
 
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 type Database struct {
-	currentLocation k.Group
+	currentLocation t.Group
 	db              *keepass.Database
 	savePath        string
 }
 
 var backupExtension = ".kpbackup"
 
-func NewDatabase(db *keepass.Database, savePath string) k.Database {
+func NewDatabase(db *keepass.Database, savePath string) t.Database {
 	rv := &Database{
 		db:       db,
 		savePath: savePath,
@@ -30,7 +30,7 @@ func NewDatabase(db *keepass.Database, savePath string) k.Database {
 }
 
 // Root returns the DB root
-func (d *Database) Root() k.Group {
+func (d *Database) Root() t.Group {
 	return WrapGroup(d.db.Root(), d)
 }
 
@@ -94,7 +94,7 @@ func (d *Database) Save() error {
 	return nil
 }
 
-func (d *Database) SetOptions(o k.Options) error {
+func (d *Database) SetOptions(o t.Options) error {
 	opts := &keepass.Options{
 		Password: o.Password,
 		KeyFile:  o.KeyReader,
@@ -105,11 +105,11 @@ func (d *Database) SetOptions(o k.Options) error {
 	return nil
 }
 
-func (d *Database) CurrentLocation() k.Group {
+func (d *Database) CurrentLocation() t.Group {
 	return d.currentLocation
 }
 
-func (d *Database) SetCurrentLocation(g k.Group) {
+func (d *Database) SetCurrentLocation(g t.Group) {
 	d.currentLocation = g
 }
 
@@ -129,8 +129,8 @@ func (d *Database) Search(term *regexp.Regexp) (paths []string, err error) {
 
 // Binary returns an OptionalWrapper with Present sent to false as v1 doesn't handle binaries
 // through the database
-func (d *Database) Binary(id int, name string) (k.OptionalWrapper, error) {
-	return k.OptionalWrapper{
+func (d *Database) Binary(id int, name string) (t.OptionalWrapper, error) {
+	return t.OptionalWrapper{
 		Present: false,
 	}, nil
 }

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
-	k "github.com/mostfunkyduck/kp/keepass"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )
 
 func finish(shell *ishell.Shell) {
@@ -15,7 +15,7 @@ func finish(shell *ishell.Shell) {
 	}
 }
 
-func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) error {
+func moveEntry(shell *ishell.Shell, e t.Entry, db t.Database, location string) error {
 	parent, existingEntry, err := TraversePath(db, db.CurrentLocation(), location)
 	if existingEntry != nil {
 		shell.Printf("'%s' already exists! overwrite? [y/N]  ")
@@ -44,7 +44,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 		// trim the path so that we're only looking at the parent group
 		pathBits := strings.Split(location, "/")
 		path := strings.Join(pathBits[0:len(pathBits)-1], "/")
-		var entry k.Entry
+		var entry t.Entry
 		parent, entry, err = TraversePath(db, db.CurrentLocation(), path)
 		if err != nil {
 			return fmt.Errorf("error finding path '%s': %s\n", location, err)
@@ -66,7 +66,7 @@ func moveEntry(shell *ishell.Shell, e k.Entry, db k.Database, location string) e
 	return nil
 }
 
-func moveGroup(g k.Group, db k.Database, location string) error {
+func moveGroup(g t.Group, db t.Database, location string) error {
 	newNameBits := strings.Split(location, "/")
 	newName := newNameBits[len(newNameBits)-1]
 	if newName == "" {
@@ -107,7 +107,7 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		syntaxCheck(c, 2)
 		srcPath := c.Args[0]
 		dstPath := c.Args[1]
-		db := shell.Get("db").(k.Database)
+		db := shell.Get("db").(t.Database)
 
 		l, e, err := TraversePath(db, db.CurrentLocation(), srcPath)
 		if err != nil {

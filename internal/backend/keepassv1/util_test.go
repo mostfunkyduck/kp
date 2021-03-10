@@ -3,13 +3,13 @@ package keepassv1_test
 import (
 	"testing"
 
-	k "github.com/mostfunkyduck/kp/keepass"
-	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
+	runner "github.com/mostfunkyduck/kp/internal/backend/tests"
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
-func initDatabase() (k.Database, error) {
+func initDatabase() (t.Database, error) {
 	// each 'key round' takes quite a while, make sure to use the minimum
 	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
 	if err != nil {

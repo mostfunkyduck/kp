@@ -3,7 +3,7 @@ package keepassv1_test
 import (
 	"testing"
 
-	runner "github.com/mostfunkyduck/kp/keepass/tests"
+	runner "github.com/mostfunkyduck/kp/internal/backend/tests"
 )
 
 func TestRegularPath(t *testing.T) {

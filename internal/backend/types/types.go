@@ -1,4 +1,4 @@
-package keepass
+package types
 
 import (
 	"io"
