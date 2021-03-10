@@ -1,11 +1,11 @@
-package main_test
+package commands_test
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/abiosoft/ishell"
-	main "github.com/mostfunkyduck/kp"
+	main "github.com/mostfunkyduck/kp/internal/commands"
 	k "github.com/mostfunkyduck/kp/keepass"
 	c "github.com/mostfunkyduck/kp/keepass/common"
 )

@@ -1,11 +1,11 @@
-package main_test
+package commands_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	main "github.com/mostfunkyduck/kp"
+	main "github.com/mostfunkyduck/kp/internal/commands"
 )
 
 func createGroup(group string, r testResources) error {

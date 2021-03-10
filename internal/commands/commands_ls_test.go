@@ -1,10 +1,10 @@
-package main_test
+package commands_test
 
 import (
 	"strings"
 	"testing"
 
-	main "github.com/mostfunkyduck/kp"
+	main "github.com/mostfunkyduck/kp/internal/commands"
 )
 
 // Tests ls within a group that contains a subgroup and an entry

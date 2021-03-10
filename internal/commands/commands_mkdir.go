@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"regexp"
@@ -64,8 +64,7 @@ func NewGroup(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		shell.Printf("new location: %s\n", p)
 
-		DBChanged = true
-		if err := promptAndSave(shell); err != nil {
+		if err := PromptAndSave(shell); err != nil {
 			shell.Printf("could not save database: %s\n", err)
 		}
 	}

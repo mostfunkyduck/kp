@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -9,8 +9,7 @@ import (
 )
 
 func finish(shell *ishell.Shell) {
-	DBChanged = true
-	if err := promptAndSave(shell); err != nil {
+	if err := PromptAndSave(shell); err != nil {
 		shell.Printf("error saving database: %s\n", err)
 		return
 	}

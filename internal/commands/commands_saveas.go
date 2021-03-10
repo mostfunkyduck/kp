@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"io"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/kp/internal/utils"
 	k "github.com/mostfunkyduck/kp/keepass"
 )
 
@@ -104,7 +105,7 @@ func SaveAs(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		oldPath := db.SavePath()
-		if err := removeLockfile(oldPath); err != nil {
+		if err := utils.RemoveLockfile(oldPath); err != nil {
 			shell.Printf("could not remove lockfile from old path '%s'\n", oldPath)
 		}
 		db.SetSavePath(savePath)

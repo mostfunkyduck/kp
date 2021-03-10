@@ -1,4 +1,4 @@
-package main_test
+package commands_test
 
 // Scaffolding for running shell command tests
 

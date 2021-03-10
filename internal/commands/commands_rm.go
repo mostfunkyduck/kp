@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -98,8 +98,7 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 
 		shell.Printf("successfully removed '%s'\n", targetPath)
 
-		DBChanged = true
-		if err := promptAndSave(shell); err != nil {
+		if err := PromptAndSave(shell); err != nil {
 			shell.Printf("could not save: %s\n", err)
 		}
 	}

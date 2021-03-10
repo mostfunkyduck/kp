@@ -1,10 +1,10 @@
-package main_test
+package commands_test
 
 import (
 	"fmt"
 	"testing"
 
-	main "github.com/mostfunkyduck/kp"
+	main "github.com/mostfunkyduck/kp/internal/commands"
 	kp "github.com/mostfunkyduck/kp/keepass"
 )
 

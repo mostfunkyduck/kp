@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"fmt"
@@ -98,7 +98,6 @@ func createAttachment(entry k.Entry, name string, path string) (output string, e
 		k.BINARY,
 	))
 
-	DBChanged = true
 	return "added attachment to database", nil
 }
 

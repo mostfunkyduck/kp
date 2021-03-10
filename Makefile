@@ -41,16 +41,16 @@ install: kp
 	cp ./kp /usr/local/bin/kp
 
 # allow testing v1 and v2 separately or together
-coveragecmd := -coverprofile coverage.out -coverpkg=.,./keepass,./keepass/common
+coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./keepass,./keepass/common
 
 testv1:
-	KPVERSION=1 go test . ./keepass/keepassv1 $(coveragecmd),./keepass/keepassv1
+	KPVERSION=1 go test ./internal/commands ./keepass/keepassv1 $(coveragecmd),./keepass/keepassv1
 
 testv2:
-	KPVERSION=2 go test . ./keepass/keepassv2 $(coveragecmd),./keepass/keepassv2
+	KPVERSION=2 go test ./internal/commands ./keepass/keepassv2 $(coveragecmd),./keepass/keepassv2
 
 test: testv1 testv2
 
 # quick command to vet the entire source tree
 vet:
-	go vet . ./keepass/keepassv1 ./keepass/keepassv2
+	go vet . ./internal/* ./keepass/keepassv1 ./keepass/keepassv2

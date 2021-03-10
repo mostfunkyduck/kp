@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/kp/internal/commands"
+	"github.com/mostfunkyduck/kp/internal/utils"
 	k "github.com/mostfunkyduck/kp/keepass"
 	v1 "github.com/mostfunkyduck/kp/keepass/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/keepass/keepassv2"
@@ -20,7 +22,6 @@ var (
 	keepassVersion = flag.Int("kpversion", 1, "which version of keepass to use (1 or 2)")
 	version        = flag.Bool("version", false, "print version and exit")
 	noninteractive = flag.String("n", "", "execute a given command and exit")
-	DBChanged      = false
 )
 
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
@@ -32,7 +33,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 
 		db := shell.Get("db").(k.Database)
 		location := db.CurrentLocation()
-		location, _, err := TraversePath(db, location, rawPath)
+		location, _, err := commands.TraversePath(db, location, rawPath)
 		if err != nil {
 			return []string{}
 		}
@@ -85,9 +86,9 @@ func main() {
 		}
 	} else {
 		if *keepassVersion == 2 {
-			dbWrapper, ok = openV2DB(shell)
+			dbWrapper, ok = commands.OpenV2DB(shell, *dbFile, *keyFile)
 		} else {
-			dbWrapper, ok = openDB(shell)
+			dbWrapper, ok = commands.OpenDB(shell, *dbFile, *keyFile)
 		}
 		if !ok {
 			shell.Println("could not open database")
@@ -106,48 +107,48 @@ func main() {
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "ls",
 		Help:                "ls [path]",
-		Func:                Ls(shell),
+		Func:                commands.Ls(shell),
 		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "new",
 		Help:                "new <path>",
 		LongHelp:            "creates a new entry at <path>",
-		Func:                NewEntry(shell),
+		Func:                commands.NewEntry(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "mkdir",
 		LongHelp:            "create a new group",
 		Help:                "mkdir <group name>",
-		Func:                NewGroup(shell),
+		Func:                commands.NewGroup(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "saveas",
 		LongHelp: "save this db to a new file with an optional key to be generated",
 		Help:     "saveas <file.kdb> [file.key]",
-		Func:     SaveAs(shell),
+		Func:     commands.SaveAs(shell),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "select",
 		Help:                "select [-f] <entry>",
 		LongHelp:            "shows details on a given value in an entry, passwords will be redacted unless '-f' is specified",
-		Func:                Select(shell),
+		Func:                commands.Select(shell),
 		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
 		Help:                "show [-f] <entry>",
 		LongHelp:            "shows details on a given entry, passwords will be redacted unless '-f' is specified",
-		Func:                Show(shell),
+		Func:                commands.Show(shell),
 		CompleterWithPrefix: fileCompleter(shell, true),
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "cd",
 		Help:                "cd <path>",
 		LongHelp:            "changes the current group to a different path",
-		Func:                Cd(shell),
+		Func:                commands.Cd(shell),
 		CompleterWithPrefix: fileCompleter(shell, false),
 	})
 
@@ -161,21 +162,21 @@ func main() {
 		Help:                "attach create <entry> <name> <filesystem location>",
 		LongHelp:            "creates a new attachment based on a local file",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Attach(shell, "create"),
+		Func:                commands.Attach(shell, "create"),
 	})
 	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "get",
 		Help:                "attach get <entry> <filesystem location>",
 		LongHelp:            "retrieves an attachment and outputs it to a filesystem location",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Attach(shell, "get"),
+		Func:                commands.Attach(shell, "get"),
 	})
 	attachCmd.AddCmd(&ishell.Cmd{
 		Name:                "details",
 		Help:                "attach details <entry>",
 		LongHelp:            "shows the details of the attachment on an entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Attach(shell, "details"),
+		Func:                commands.Attach(shell, "details"),
 	})
 	shell.AddCmd(attachCmd)
 
@@ -184,7 +185,7 @@ func main() {
 		Name:                "search",
 		Help:                "search <term>",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Search(shell),
+		Func:                commands.Search(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -192,7 +193,7 @@ func main() {
 		Help:                "rm <entry>",
 		LongHelp:            "removes an entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Rm(shell),
+		Func:                commands.Rm(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -200,7 +201,7 @@ func main() {
 		Help:                "xp <entry>",
 		LongHelp:            "copies a password to the clipboard",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Xp(shell),
+		Func:                commands.Xp(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -208,28 +209,28 @@ func main() {
 		Help:                "edit <entry>",
 		LongHelp:            "edits an existing entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Edit(shell),
+		Func:                commands.Edit(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "pwd",
 		Help:     "pwd",
 		LongHelp: "shows path of current group",
-		Func:     Pwd(shell),
+		Func:     commands.Pwd(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "save",
 		Help:     "save",
 		LongHelp: "saves the database to its most recently used path",
-		Func:     Save(shell),
+		Func:     commands.Save(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "xx",
 		Help:     "xx",
 		LongHelp: "clears the clipboard",
-		Func:     Xx(shell),
+		Func:     commands.Xx(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -237,7 +238,7 @@ func main() {
 		Help:                "xu",
 		LongHelp:            "copies username to the clipboard",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Xu(shell),
+		Func:                commands.Xu(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -245,7 +246,7 @@ func main() {
 		Help:                "xw",
 		LongHelp:            "copies url to clipboard",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Xw(shell),
+		Func:                commands.Xw(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -253,7 +254,7 @@ func main() {
 		Help:                "mv <soruce> <destination>",
 		LongHelp:            "moves entries between groups",
 		CompleterWithPrefix: fileCompleter(shell, true),
-		Func:                Mv(shell),
+		Func:                commands.Mv(shell),
 	})
 
 	shell.AddCmd(&ishell.Cmd{
@@ -276,13 +277,13 @@ func main() {
 
 	fmt.Println("exiting")
 	// This will run after the shell exits
-	if DBChanged {
-		if err := promptAndSave(shell); err != nil {
-			fmt.Printf("error attempting to save database: %s\n", err)
-		}
+	//if DBChanged {
+	// TODO incorporate a `changed` status in to the DB object
+	if err := commands.PromptAndSave(shell); err != nil {
+		fmt.Printf("error attempting to save database: %s\n", err)
 	}
 
-	if err := removeLockfile(dbWrapper.SavePath()); err != nil {
+	if err := utils.RemoveLockfile(dbWrapper.SavePath()); err != nil {
 		fmt.Printf("could not remove lock file: %s\n", err)
 	} else {
 		fmt.Println("no changes detected since last save.")

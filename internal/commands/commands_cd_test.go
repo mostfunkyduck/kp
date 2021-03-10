@@ -1,9 +1,9 @@
-package main_test
+package commands_test
 
 import (
 	"testing"
 
-	main "github.com/mostfunkyduck/kp"
+	main "github.com/mostfunkyduck/kp/internal/commands"
 )
 
 func TestCdToGroup(t *testing.T) {

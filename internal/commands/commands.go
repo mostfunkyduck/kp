@@ -1,4 +1,4 @@
-package main
+package commands
 
 // All the commands that the shell will run
 // Note: do NOT use context.Err() here, it will impede testing.
@@ -32,16 +32,15 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 }
 
 // TODO break this function down, it's too long and mildly complicated
-func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
+func OpenV2DB(shell *ishell.Shell, dbPath string, keyPath string) (db k.Database, ok bool) {
 	for {
-		dbPath := *dbFile
-		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && *dbFile == "" {
+		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
 			dbPath = envDbfile
 		}
 
 		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
 		if _, err := os.Stat(lockfilePath); err == nil {
-			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
+			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbPath)
 			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
 			line, err := shell.ReadLineErr()
 			if err != nil {
@@ -61,7 +60,7 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 			return nil, false
 		}
 
-		creds, err := getV2Credentials(shell)
+		creds, err := getV2Credentials(shell, keyPath)
 		if err != nil {
 			shell.Println(err.Error())
 			return nil, false
@@ -97,16 +96,15 @@ func openV2DB(shell *ishell.Shell) (db k.Database, ok bool) {
 	}
 }
 
-func openDB(shell *ishell.Shell) (db k.Database, ok bool) {
+func OpenDB(shell *ishell.Shell, dbPath string, keyPath string) (db k.Database, ok bool) {
 	for {
-		dbPath := *dbFile
-		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && *dbFile == "" {
+		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
 			dbPath = envDbfile
 		}
 
 		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
 		if _, err := os.Stat(lockfilePath); err == nil {
-			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", *dbFile)
+			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbPath)
 			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
 			line, err := shell.ReadLineErr()
 			if err != nil {
@@ -126,8 +124,7 @@ func openDB(shell *ishell.Shell) (db k.Database, ok bool) {
 			return nil, false
 		}
 
-		keyPath := *keyFile
-		if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && *keyFile == "" {
+		if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && keyPath == "" {
 			keyPath = envKeyfile
 		}
 
@@ -184,16 +181,6 @@ func setLockfile(filePath string) error {
 	if filePath != "" {
 		if _, err := os.Create(filePath + ".lock"); err != nil {
 			return fmt.Errorf("could not create lock file at path '%s.lock': %s", filePath, err)
-		}
-	}
-	return nil
-}
-
-// removeLockfile removes the lock file on the current savepath of the database
-func removeLockfile(filePath string) error {
-	if filePath != "" {
-		if err := os.Remove(filePath + ".lock"); err != nil {
-			return fmt.Errorf("could not remove lockfile: %s", err)
 		}
 	}
 	return nil
@@ -312,8 +299,8 @@ func promptForEntry(shell *ishell.Shell, e k.Entry, title string) error {
 
 	if updated {
 		shell.Println("edit successful, database has changed!")
-		DBChanged = true
-		if err := promptAndSave(shell); err != nil {
+
+		if err := PromptAndSave(shell); err != nil {
 			shell.Printf("could not save: %s", err)
 		}
 	}
@@ -414,7 +401,7 @@ func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err e
 
 // promptAndSave prompts the user to save and returns whether or not they agreed to do so.
 // it also makes sure that there's actually a path to save to
-func promptAndSave(shell *ishell.Shell) error {
+func PromptAndSave(shell *ishell.Shell) error {
 
 	shell.Printf("save database?: [Y/n]  ")
 	line, err := shell.ReadLineErr()
@@ -433,7 +420,7 @@ func promptAndSave(shell *ishell.Shell) error {
 	}
 
 	// FIXME this should be a property of the DB, not a global
-	DBChanged = false
+
 	shell.Println("database saved!")
 	return nil
 }
@@ -558,7 +545,7 @@ loop:
 
 // getV2Credentials builds a keepass2 db credentials object based on the cli arguments
 // and environment variables
-func getV2Credentials(shell *ishell.Shell) (*keepass2.DBCredentials, error) {
+func getV2Credentials(shell *ishell.Shell, keyPath string) (*keepass2.DBCredentials, error) {
 	password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
 	if !passwordInEnv {
 		shell.Print("enter database password: ")
@@ -571,8 +558,7 @@ func getV2Credentials(shell *ishell.Shell) (*keepass2.DBCredentials, error) {
 
 	creds := keepass2.NewPasswordCredentials(password)
 
-	keyPath := *keyFile // this is the flag in main.go
-	if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && *keyFile == "" {
+	if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && keyPath == "" {
 		keyPath = envKeyfile
 	}
 
