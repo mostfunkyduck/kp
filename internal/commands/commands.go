@@ -327,6 +327,7 @@ func OpenFileInEditor(filename string) error {
 
 	return cmd.Run()
 }
+
 func GetLongString(value t.Value) (text string, err error) {
 	// https://samrapdev.com/capturing-sensitive-input-with-editor-in-golang-from-the-cli/
 	file, err := ioutil.TempFile(os.TempDir(), "*")
