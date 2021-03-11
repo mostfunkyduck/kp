@@ -88,10 +88,6 @@ There are two main components, the shell and the libraries that interact with th
 # Future plans
 In priority order:
 
-1. finish v2
- 1. add the ability to add and remove fields from entries
- 1. test more thoroughly to make sure it's not corrupting the DB
+1. finish v2 by adding feature to add and remove fields as well as throwing in some more testing
 1. fill in test coverage
- 1. coverage is currently pretty basic, 100% is not needed, but would be good to come as close as reasonable
-1. implement for other systems
- 1. there is no reason that this couldn't be implemented for things like `pass`
+1. implement for other systems, such as `pass`, because why not?
