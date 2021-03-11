@@ -79,9 +79,6 @@ ok      github.com/mostfunkyduck/kp/keepass/keepassv2   0.087s  coverage: 25.0% 
 go build -gcflags "-N -I ." -ldflags "-X main.VersionRevision=`git show | head -1 | awk '{print $NF}' | cut -c 1-5` -X main.VersionBuildDate=`date -u +%Y-%m-%d-%H-%M` -X main.VersionBuildTZ=UTC -X main.VersionBranch=`git branch 2>/dev/null | grep '\*' | sed "s/* //"` -X main.VersionRelease=0.1 -X main.VersionHostname=`hostname`"
 ```
 
-# Development
-Currently, the code is not properly organized, which will be fixed in the near future.  Once that's done, I will add an architecture diagram that should make it easy to grok how this works.
-
 ## Overview
 There are two main components, the shell and the libraries that interact with the database directly.  The shell interfaces with the database through those abstractionsso that the actual logic is the same for v1 and v2.  The shell works by having individual files for each command which are strung together in `main.go`.
 
