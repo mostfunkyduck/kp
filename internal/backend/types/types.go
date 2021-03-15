@@ -1,15 +1,14 @@
 package types
 
 import (
-	"io"
 	"regexp"
 	"time"
 )
 
-type version int
+type Version int
 
 const (
-	V1 version = iota
+	V1 Version = iota
 	V2
 )
 
@@ -30,24 +29,50 @@ type Database interface {
 	// Binary returns a binary with a given ID, naming it with a given name
 	// the OptionalWrapper is used because v2 is the only version that implements this
 	Binary(id int, name string) (OptionalWrapper, error)
+
+	// Changed indicates whether the DB has been changed during the user's session
+	Changed() bool
+	SetChanged(bool)
+
 	// CurrentLocation returns the current location for the shell
 	CurrentLocation() Group
 	SetCurrentLocation(Group)
 	Root() Group
 	Save() error
 
-	// SavePath returns the path to which the database will be saved
-	SavePath() string
-	SetSavePath(newPath string)
+	// Init initializes a database wrapper, using the given parameters.  Existing DB will be opened, otherwise the wrapper will be configured to save to that location
+	Init(Options) error
 
-	// SetOptions sets options for interacting with the database file
-	SetOptions(Options) error
+	// Lock will lock the database by dropping a lockfile
+	Lock() error
+
+	// Unlock will remove the lockfile created by Lock()
+	Unlock() error
+
+	// Locked will determine if the lockfile is in place
+	Locked() bool
+
+	// SavePath dictates where the DB will be saved
+	SavePath() string
+	SetSavePath(string)
+
+	// Version will return the Version enum for this database
+	Version() Version
 }
 
-// Options for SetOptions in the database interface
+// Options are parameters to use for calls to the database interface's Init function
 type Options struct {
-	KeyReader io.Reader
-	Password  string
+	// the path to the database
+	DBPath string
+
+	// the path to the key
+	KeyPath string
+
+	// the password for the database
+	Password string
+
+	// How many rounds of encryption to use for the new key (currently only supported by keepassv1)
+	KeyRounds int
 }
 
 type UUIDer interface {

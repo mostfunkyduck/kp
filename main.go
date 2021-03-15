@@ -11,9 +11,6 @@ import (
 	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/mostfunkyduck/kp/internal/commands"
-	"github.com/mostfunkyduck/kp/internal/utils"
-	keepass2 "github.com/tobischo/gokeepasslib/v3"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 var (
@@ -59,6 +56,34 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 func buildVersionString() string {
 	return fmt.Sprintf("%s.%s-%s.%s (built on %s from %s)", VersionRelease, VersionBuildDate, VersionBuildTZ, VersionBranch, VersionHostname, VersionRevision)
 }
+
+// promptForDBPassword will determine the password based on environment vars or, lacking those, a prompt to the user
+func promptForDBPassword(shell *ishell.Shell) (string, error) {
+	// we are prompting for the password
+	shell.Print("enter database password: ")
+	return shell.ReadPasswordErr()
+}
+
+// newDB will create or open a DB with the parameters specified.  `open` indicates whether the DB should be opened or not (vs created)
+func newDB(dbPath string, password string, keyPath string, version int) (t.Database, error) {
+	var dbWrapper t.Database
+	switch version {
+		case 2:
+			dbWrapper = &v2.Database{}
+		case 1:
+			dbWrapper = &v1.Database{}
+		default:
+			return nil, fmt.Errorf("invalid version '%d'", version)
+	}
+	dbOpts := t.Options {
+		DBPath: dbPath,
+		Password: password,
+		KeyPath: keyPath,
+	}
+	err := dbWrapper.Init(dbOpts)
+	return dbWrapper, err
+}
+
 func main() {
 	flag.Parse()
 
@@ -68,41 +93,71 @@ func main() {
 		os.Exit(1)
 	}
 
-	shell.Set("filePath", *dbFile)
-
 	var dbWrapper t.Database
-	var ok bool
-	_, exists := os.LookupEnv("KP_DATABASE")
-	if *dbFile == "" && !exists {
-		if *keepassVersion == 2 {
-			db := keepass2.NewDatabase()
-			dbWrapper = v2.NewDatabase(db, "", t.Options{})
-		} else {
-			db, err := keepass.New(&keepass.Options{})
+
+	dbPath, exists := os.LookupEnv("KP_DATABASE")
+	if !exists {
+		dbPath = *dbFile
+	}
+
+	// default to the flag argument
+	keyPath := *keyFile
+
+	if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && keyPath == "" {
+		keyPath = envKeyfile
+	}
+
+	for {
+		// if the password is coming from an environment variable, we need to terminate
+		// after the first attempt or it will fall into an infinite loop
+		var err error
+		password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
+		if !passwordInEnv {
+			password, err = promptForDBPassword(shell)
+
 			if err != nil {
-				shell.Printf("could not create new database: %s", err)
+				shell.Printf("could not retrieve password: %s", err)
+				os.Exit(1)
 			}
-			dbWrapper = v1.NewDatabase(db, "")
 		}
-	} else {
-		if *keepassVersion == 2 {
-			dbWrapper, ok = commands.OpenV2DB(shell, *dbFile, *keyFile)
-		} else {
-			dbWrapper, ok = commands.OpenDB(shell, *dbFile, *keyFile)
+
+		dbWrapper, err = newDB(dbPath, password, keyPath, *keepassVersion)
+		if err != nil {
+			// typically, these errors will be a bad password, so we want to keep prompting until the user gives up
+			// if, however, the password is in an environment variable, we want to abort immediately so the program doesn't fall
+			// in to an infinite loop
+			shell.Printf("could not open database: %s\n", err)
+			if passwordInEnv {
+				os.Exit(1)
+			}
+			continue
 		}
-		if !ok {
-			shell.Println("could not open database")
+		break
+	}
+
+	if dbWrapper.Locked() {
+		shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbWrapper.SavePath())
+		shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
+		line, err := shell.ReadLineErr()
+		if err != nil {
+			shell.Printf("could not read user input: %s\n", line)
+			os.Exit(1)
+		}
+
+		if line != "yes" {
+			shell.Println("aborting")
 			os.Exit(1)
 		}
 	}
 
-	shell.Printf("opened database at %s\n", shell.Get("filePath").(string))
+	if err := dbWrapper.Lock(); err != nil {
+		shell.Printf("aborting, could not lock database: %s\n", err)
+		os.Exit(1)
+	}
+	shell.Printf("opened database at %s\n", dbWrapper.SavePath())
 
-	// FIXME now that we're using a wrapper around the DB, all this cruft in the shell context vars should go there
-	// FIXME could even make it live as a global instead of a shell var
-	shell.Set("currentLocation", dbWrapper.Root())
 	shell.Set("db", dbWrapper)
-	shell.SetPrompt(fmt.Sprintf("/%s > ", dbWrapper.Root().Name()))
+	shell.SetPrompt(fmt.Sprintf("/%s > ", dbWrapper.CurrentLocation().Name()))
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "ls",
@@ -126,17 +181,21 @@ func main() {
 	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:     "saveas",
-		LongHelp: "save this db to a new file with an optional key to be generated",
-		Help:     "saveas <file.kdb> [file.key]",
+		LongHelp: "save this db to a new file, existing credentials will be used, the new location will /not/ be used as the main save path",
+		Help:     "saveas <file.kdb>",
 		Func:     commands.SaveAs(shell),
 	})
-	shell.AddCmd(&ishell.Cmd{
-		Name:                "select",
-		Help:                "select [-f] <entry>",
-		LongHelp:            "shows details on a given value in an entry, passwords will be redacted unless '-f' is specified",
-		Func:                commands.Select(shell),
-		CompleterWithPrefix: fileCompleter(shell, true),
-	})
+
+	if dbWrapper.Version() == t.V2 {
+		shell.AddCmd(&ishell.Cmd{
+			Name:                "select",
+			Help:                "select [-f] <entry>",
+			LongHelp:            "shows details on a given value in an entry, passwords will be redacted unless '-f' is specified",
+			Func:                commands.Select(shell),
+			CompleterWithPrefix: fileCompleter(shell, true),
+		})
+	}
+
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
 		Help:                "show [-f] <entry>",
@@ -275,17 +334,21 @@ func main() {
 		shell.Run()
 	}
 
-	fmt.Println("exiting")
 	// This will run after the shell exits
-	//if DBChanged {
-	// TODO incorporate a `changed` status in to the DB object
-	if err := commands.PromptAndSave(shell); err != nil {
-		fmt.Printf("error attempting to save database: %s\n", err)
-	}
+	fmt.Println("exiting")
 
-	if err := utils.RemoveLockfile(dbWrapper.SavePath()); err != nil {
-		fmt.Printf("could not remove lock file: %s\n", err)
+	if dbWrapper.Changed() {
+		if err := commands.PromptAndSave(shell); err != nil {
+			fmt.Printf("error attempting to save database: %s\n", err)
+			os.Exit(1)
+		}
 	} else {
 		fmt.Println("no changes detected since last save.")
+	}
+
+
+	if err := dbWrapper.Unlock(); err != nil {
+		fmt.Printf("failed to unlock db: %s", err)
+		os.Exit(1)
 	}
 }

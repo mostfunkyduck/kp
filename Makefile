@@ -42,15 +42,15 @@ install: kp
 
 # allow testing v1 and v2 separately or together
 coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./internal/backend/types,./internal/backend/common
-
+internalpkgs := ./internal/commands
 testv1:
-	KPVERSION=1 go test ./internal/utils ./internal/commands ./internal/backend/keepassv1 $(coveragecmd),./internal/backend/keepassv1
+	KPVERSION=1 go test $(internalpkgs) ./internal/backend/keepassv1 $(coveragecmd)
 
 testv2:
-	KPVERSION=2 go test ./internal/utils ./internal/commands ./internal/backend/keepassv2 $(coveragecmd),./internal/backend/keepassv2
+	KPVERSION=2 go test $(internalpkgs) ./internal/backend/keepassv2 $(coveragecmd)
 
 test: testv1 testv2
 
 # quick command to vet the entire source tree, need to enumerate all targets because of linter pickiness
 vet:
-	go vet . ./internal/utils ./internal/commands ./internal/backend/types ./internal/backend/keepassv1 ./internal/backend/keepassv2 ./internal/backend/common ./internal/backend/tests
+	go vet . ./internal/commands ./internal/backend/types ./internal/backend/keepassv1 ./internal/backend/keepassv2 ./internal/backend/common ./internal/backend/tests

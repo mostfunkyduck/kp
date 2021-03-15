@@ -1,10 +1,13 @@
 package keepassv1_test
 
 import (
+	"io/ioutil"
+	"os"
 	"regexp"
 	"testing"
 
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
+	"github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
@@ -20,12 +23,22 @@ func TestTitle(t *testing.T) {
 
 func TestEntrySearch(t *testing.T) {
 	title := "TestEntrySearch"
-	db, err := keepass.New(&keepass.Options{})
+	tmpfile, err := ioutil.TempFile("", "kp_unit_tests")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatalf("could not create temp file for DB: %s", tmpfile.Name())
 	}
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
+	defer os.Remove(tmpfile.Name())
 
-	dbWrapper := v1.NewDatabase(db, "/dev/null")
+	dbWrapper := v1.Database{}
+	dbOptions := types.Options{
+		DBPath:    tmpfile.Name(),
+		KeyRounds: 1,
+	}
+	if err := dbWrapper.Init(dbOptions); err != nil {
+		t.Fatal(err)
+	}
 	sg, err := dbWrapper.Root().NewSubgroup("DOESN'T MATCH")
 	if err != nil {
 		t.Fatal(err)

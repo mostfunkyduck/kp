@@ -1,22 +1,35 @@
 package keepassv1_test
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	runner "github.com/mostfunkyduck/kp/internal/backend/tests"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 func initDatabase() (t.Database, error) {
-	// each 'key round' takes quite a while, make sure to use the minimum
-	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
+	dbWrapper := &v1.Database{}
+	// yes, unit tests should avoid the file system.  baby steps.
+	tmpfile, err := ioutil.TempFile("", "kp_unit_tests")
 	if err != nil {
-		return nil, err
+		return dbWrapper, fmt.Errorf("could not create temp file for DB: %s", tmpfile.Name())
 	}
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
+	defer os.Remove(tmpfile.Name())
 
-	dbWrapper := v1.NewDatabase(db, "/dev/null")
+	dbOptions := t.Options{
+		DBPath: tmpfile.Name(),
+		// each 'key round' takes quite a while, make sure to use the minimum
+		KeyRounds: 1,
+	}
+	if err := dbWrapper.Init(dbOptions); err != nil {
+		return dbWrapper, fmt.Errorf("could not init db with provided options: %s", err)
+	}
 	return dbWrapper, nil
 }
 

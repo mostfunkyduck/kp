@@ -4,6 +4,7 @@ package commands_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -14,8 +15,6 @@ import (
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
 	"github.com/mostfunkyduck/kp/internal/backend/types"
-	keepass2 "github.com/tobischo/gokeepasslib/v3"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 // the Write() method can't store output locally b/c it isn't a pointer target
@@ -45,21 +44,6 @@ type testResources struct {
 	Readline *readline.Instance
 }
 
-func initDBv1() (types.Database, error) {
-	db, err := keepass.New(&keepass.Options{KeyRounds: 1})
-	if err != nil {
-		return nil, fmt.Errorf("could not open test db: %s", err)
-	}
-
-	return v1.NewDatabase(db, ""), nil
-}
-
-func initDBv2() (types.Database, error) {
-	db := keepass2.NewDatabase()
-	dbWrapper := v2.NewDatabase(db, "", types.Options{})
-	return dbWrapper, nil
-}
-
 func createTestResources(t *testing.T) (r testResources) {
 	var err error
 	r.Readline, err = readline.New("")
@@ -70,16 +54,35 @@ func createTestResources(t *testing.T) (r testResources) {
 	r.Path = "test/test"
 	r.Context = &ishell.Context{}
 	version := os.Getenv("KPVERSION")
-	if version == "1" {
-		r.Db, err = initDBv1()
-	} else if version == "2" {
-		r.Db, err = initDBv2()
-	} else {
-		t.Fatalf("KPVERSION environment variable invalid (value: '%s'), rerun with it as either '1' or '2'", version)
-	}
+
+	tmpFile, err := ioutil.TempFile("", "kp_unit_tests")
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// this will allow the init code to create the db from scratch
+	tmpFile.Close()
+	os.Remove(tmpFile.Name())
+
+	// this will remove it afterwards, which will break everything if the tests try to save
+	// but save tests can run their own init
+	defer os.Remove(tmpFile.Name())
+	opts := types.Options{
+		DBPath:    tmpFile.Name(),
+		KeyRounds: 1,
+	}
+	if version == "1" {
+		r.Db = &v1.Database{}
+	} else if version == "2" {
+		r.Db = &v2.Database{}
+	} else {
+		t.Fatalf("KPVERSION environment variable invalid (value: '%s'), rerun with it as either '1' or '2'", version)
+	}
+
+	if err := r.Db.Init(opts); err != nil {
+		t.Fatal(err)
+	}
+
 	r.Shell.Set("db", r.Db)
 	r.Group, _ = r.Db.Root().NewSubgroup("test")
 

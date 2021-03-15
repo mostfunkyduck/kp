@@ -69,7 +69,7 @@ func (g *Group) SetDB(d t.Database) {
 	g.db = d
 }
 
-// sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
+// SetDriver sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
 func (g *Group) SetDriver(gr t.Group) {
 	g.driver = gr
 }

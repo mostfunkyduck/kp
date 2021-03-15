@@ -168,7 +168,7 @@ func (e *Entry) SetDB(db t.Database) {
 	e.db = db
 }
 
-// SetEntry sets the internal entry driver for this wrapper
+// SetDriver sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
 func (e *Entry) SetDriver(entry t.Entry) {
 	e.driver = entry
 }

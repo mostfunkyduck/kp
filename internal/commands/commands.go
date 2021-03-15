@@ -5,7 +5,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -16,12 +15,8 @@ import (
 	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
 	c "github.com/mostfunkyduck/kp/internal/backend/common"
-	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
-	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/sethvargo/go-password/password"
-	keepass2 "github.com/tobischo/gokeepasslib/v3"
-	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
@@ -29,161 +24,6 @@ func syntaxCheck(c *ishell.Context, numArgs int) (errorString string, ok bool) {
 		return "syntax: " + c.Cmd.Help, false
 	}
 	return "", true
-}
-
-// TODO break this function down, it's too long and mildly complicated
-func OpenV2DB(shell *ishell.Shell, dbPath string, keyPath string) (db t.Database, ok bool) {
-	for {
-		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
-			dbPath = envDbfile
-		}
-
-		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
-		if _, err := os.Stat(lockfilePath); err == nil {
-			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbPath)
-			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
-			line, err := shell.ReadLineErr()
-			if err != nil {
-				shell.Printf("could not read user input: %s\n", line)
-				return nil, false
-			}
-
-			if line != "yes" {
-				shell.Println("aborting")
-				return nil, false
-			}
-		}
-
-		dbReader, err := os.Open(dbPath)
-		if err != nil {
-			shell.Printf("could not open db file [%s]: %s\n", dbPath, err)
-			return nil, false
-		}
-
-		creds, err := getV2Credentials(shell, keyPath)
-		if err != nil {
-			shell.Println(err.Error())
-			return nil, false
-		}
-
-		db := keepass2.NewDatabase()
-		db.Credentials = creds
-		err = keepass2.NewDecoder(dbReader).Decode(db)
-		if err != nil {
-			// we need to swallow this error because it spews insane amounts of garbage for no good reason
-			shell.Println("could not open database: is password correct?")
-			// if the password is coming from an environment variable, we need to terminate
-			// after the first attempt or it will fall into an infinite loop
-			_, passwordInEnv := os.LookupEnv("KP_PASSWORD")
-			if !passwordInEnv {
-				// we are prompting for the password
-				// in case this is a bad password, try again
-				continue
-			}
-			return nil, false
-		}
-
-		if err := db.UnlockProtectedEntries(); err != nil {
-			shell.Printf("could not unlock protected entries: %s\n", err)
-			return nil, false
-		}
-
-		if err := setLockfile(dbPath); err != nil {
-			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
-			return nil, false
-		}
-		return v2.NewDatabase(db, shell.Get("filePath").(string), t.Options{}), true
-	}
-}
-
-func OpenDB(shell *ishell.Shell, dbPath string, keyPath string) (db t.Database, ok bool) {
-	for {
-		if envDbfile, found := os.LookupEnv("KP_DATABASE"); found && dbPath == "" {
-			dbPath = envDbfile
-		}
-
-		lockfilePath := fmt.Sprintf("%s.lock", dbPath)
-		if _, err := os.Stat(lockfilePath); err == nil {
-			shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbPath)
-			shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
-			line, err := shell.ReadLineErr()
-			if err != nil {
-				shell.Printf("could not read user input: %s\n", line)
-				return nil, false
-			}
-
-			if line != "yes" {
-				shell.Println("aborting")
-				return nil, false
-			}
-		}
-
-		dbReader, err := os.Open(dbPath)
-		if err != nil {
-			shell.Printf("could not open db file [%s]: %s\n", dbPath, err)
-			return nil, false
-		}
-
-		if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && keyPath == "" {
-			keyPath = envKeyfile
-		}
-
-		var keyReader io.Reader
-		if keyPath != "" {
-			var err error
-			keyReader, err = os.Open(keyPath)
-			if err != nil {
-				shell.Printf("could not open key file [%s]: %s\n", keyPath, err)
-			}
-		}
-
-		password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
-		if !passwordInEnv {
-			shell.Print("enter database password: ")
-			var err error
-			password, err = shell.ReadPasswordErr()
-			if err != nil {
-				shell.Printf("could not obtain password: %s\n", err)
-				return nil, false
-			}
-		}
-
-		// FIXME we want this to use v2 unless v1 is specified
-		// FIXME we also want to decompose this function
-
-		opts := &keepass.Options{
-			Password: password,
-			KeyFile:  keyReader,
-		}
-
-		db, err := keepass.Open(dbReader, opts)
-		if err != nil {
-			shell.Printf("could not open database: %s\n", err)
-			// if the password is coming from an environment variable, we need to terminate
-			// after the first attempt or it will fall into an infinite loop
-			if !passwordInEnv {
-				// we are prompting for the password
-				// in case this is a bad password, try again
-				continue
-			}
-			return nil, false
-		}
-
-		if err := setLockfile(dbPath); err != nil {
-			shell.Printf("could not create lock file at '%s': %s\n", lockfilePath, err)
-			return nil, false
-		}
-		return v1.NewDatabase(db, shell.Get("filePath").(string)), true
-	}
-}
-
-func setLockfile(filePath string) error {
-	if filePath != "" {
-		if _, err := os.Create(filePath + ".lock"); err != nil {
-			return fmt.Errorf("could not create lock file at path '%s.lock': %s", filePath, err)
-		}
-	}
-	return nil
 }
 
 // getEntryByPath returns the entry at path 'path' using context variables in shell 'shell'
@@ -542,33 +382,4 @@ loop:
 	// we went all the way through the path and it points to currentLocation,
 	// if it pointed to an entry, it would have returned above
 	return currentLocation, nil, nil
-}
-
-// getV2Credentials builds a keepass2 db credentials object based on the cli arguments
-// and environment variables
-func getV2Credentials(shell *ishell.Shell, keyPath string) (*keepass2.DBCredentials, error) {
-	password, passwordInEnv := os.LookupEnv("KP_PASSWORD")
-	if !passwordInEnv {
-		shell.Print("enter database password: ")
-		var err error
-		password, err = shell.ReadPasswordErr()
-		if err != nil {
-			return &keepass2.DBCredentials{}, fmt.Errorf("could not obtain password: %s\n", err)
-		}
-	}
-
-	creds := keepass2.NewPasswordCredentials(password)
-
-	if envKeyfile, found := os.LookupEnv("KP_KEYFILE"); found && keyPath == "" {
-		keyPath = envKeyfile
-	}
-
-	if keyPath != "" {
-		var err error
-		creds.Key, err = keepass2.ParseKeyFile(keyPath)
-		if err != nil {
-			return &keepass2.DBCredentials{}, fmt.Errorf("could not parse key file [%s]: %s\n", keyPath, err)
-		}
-	}
-	return creds, nil
 }

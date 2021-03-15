@@ -5,66 +5,74 @@ package keepassv1
 
 import (
 	"fmt"
+	"io"
 	"os"
-	"regexp"
 
+	c "github.com/mostfunkyduck/kp/internal/backend/common"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"zombiezen.com/go/sandpass/pkg/keepass"
 )
 
 type Database struct {
-	currentLocation t.Group
-	db              *keepass.Database
-	savePath        string
+	c.Database
+	db *keepass.Database
 }
 
-var backupExtension = ".kpbackup"
+// Init initializes the v1 database based on the provided options
+func (d *Database) Init(options t.Options) error {
+	var err error
+	var keyReader io.Reader
 
-func NewDatabase(db *keepass.Database, savePath string) t.Database {
-	rv := &Database{
-		db:       db,
-		savePath: savePath,
+	d.SetDriver(d)
+	d.SetSavePath(options.DBPath)
+
+	if options.KeyPath != "" {
+		keyReader, err = os.Open(options.KeyPath)
+		if err != nil {
+			return fmt.Errorf("could not open key file [%s]: %s\n", options.KeyPath, err)
+		}
 	}
-	rv.SetCurrentLocation(WrapGroup(db.Root(), rv))
-	return rv
+
+	opts := &keepass.Options{
+		Password:  options.Password,
+		KeyFile:   keyReader,
+		KeyRounds: options.KeyRounds,
+	}
+
+	// technically, the savepath should not differ from options.DBPath,
+	// but just incase something needs to be changed in the SavePath function, use that
+	savePath := d.SavePath()
+	if _, err := os.Stat(savePath); err == nil {
+		dbReader, err := os.Open(savePath)
+		if err != nil {
+			return fmt.Errorf("could not open db file [%s]: %s\n", savePath, err)
+		}
+
+		db, err := keepass.Open(dbReader, opts)
+		if err != nil {
+			return fmt.Errorf("could not open database: %s\n", err)
+		}
+		d.db = db
+	} else {
+		db, err := keepass.New(opts)
+		if err != nil {
+			return fmt.Errorf("could not create new database with provided options: %s", err)
+		}
+		// need to set the internal db pointer before saving
+		d.db = db
+
+		if err := d.Save(); err != nil {
+			return fmt.Errorf("could not save newly created database: %s", err)
+		}
+	}
+
+	d.SetCurrentLocation(d.Root())
+	return nil
 }
 
 // Root returns the DB root
 func (d *Database) Root() t.Group {
 	return WrapGroup(d.db.Root(), d)
-}
-
-// Backup will create a backup of the current database to a temporary location
-// in case saving the database causes some kind of corruption
-func (d *Database) Backup() error {
-	backupPath := d.SavePath() + backupExtension
-	w, err := os.Create(backupPath)
-	if err != nil {
-		return fmt.Errorf("could not open file '%s': %s", backupPath, err)
-	}
-
-	if err := d.db.Write(w); err != nil {
-		return fmt.Errorf("could not write to file '%s': %s", backupPath, err)
-	}
-	return nil
-}
-
-// RemoveBackup removes a temporary backup file
-func (d *Database) RemoveBackup() error {
-	backupPath := d.SavePath() + backupExtension
-	if err := os.Remove(backupPath); err != nil {
-		return fmt.Errorf("could not remove backup file '%s': %s", backupPath, err)
-	}
-	return nil
-}
-
-// SavePath returns the current save location for the DB
-func (d *Database) SavePath() string {
-	return d.savePath
-}
-
-func (d *Database) SetSavePath(newPath string) {
-	d.savePath = newPath
 }
 
 // Save will backup the DB, save it, then remove the backup is the save was successful
@@ -94,37 +102,8 @@ func (d *Database) Save() error {
 	return nil
 }
 
-func (d *Database) SetOptions(o t.Options) error {
-	opts := &keepass.Options{
-		Password: o.Password,
-		KeyFile:  o.KeyReader,
-	}
-	if err := d.db.SetOpts(opts); err != nil {
-		return fmt.Errorf("could not set DB options: %s", err)
-	}
-	return nil
-}
-
-func (d *Database) CurrentLocation() t.Group {
-	return d.currentLocation
-}
-
-func (d *Database) SetCurrentLocation(g t.Group) {
-	d.currentLocation = g
-}
-
 func (d *Database) Raw() interface{} {
 	return d.db
-}
-
-// Path will walk up the group hierarchy to determine the path to the current location
-func (d *Database) Path() (fullPath string, err error) {
-	group := d.CurrentLocation()
-	return group.Path()
-}
-
-func (d *Database) Search(term *regexp.Regexp) (paths []string, err error) {
-	return d.Root().Search(term)
 }
 
 // Binary returns an OptionalWrapper with Present sent to false as v1 doesn't handle binaries
@@ -133,4 +112,9 @@ func (d *Database) Binary(id int, name string) (t.OptionalWrapper, error) {
 	return t.OptionalWrapper{
 		Present: false,
 	}, nil
+}
+
+// Version returns the t.Version enum representing this DB
+func (d *Database) Version() t.Version {
+	return t.V1
 }

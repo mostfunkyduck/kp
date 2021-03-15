@@ -12,8 +12,7 @@ import (
 )
 
 func TestNoParent(t *testing.T) {
-	r := runner.Resources{}
-	r.Db = main.NewDatabase(g.NewDatabase(), "/dev/null", types.Options{})
+	r := createTestResources(t)
 	newEnt := g.NewEntry()
 	r.Entry = main.WrapEntry(&newEnt, r.Db)
 
