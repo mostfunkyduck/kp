@@ -134,5 +134,5 @@ func (g *Group) RemoveEntry(e t.Entry) error {
 }
 
 func (g *Group) UUIDString() (string, error) {
-	return string(g.group.ID), nil
+	return fmt.Sprint(g.group.ID), nil
 }
