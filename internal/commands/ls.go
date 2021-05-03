@@ -2,9 +2,9 @@ package commands
 
 import (
 	"fmt"
-
 	"github.com/abiosoft/ishell"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
+	"strings"
 )
 
 func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
@@ -13,7 +13,8 @@ func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		currentLocation := db.CurrentLocation()
 		location := currentLocation
 		if len(c.Args) > 0 {
-			newLocation, entry, err := TraversePath(db, currentLocation, c.Args[0])
+			path := strings.Join(c.Args, " ")
+			newLocation, entry, err := TraversePath(db, currentLocation, path)
 			if err != nil {
 				shell.Printf("invalid path: %s\n", err)
 				return

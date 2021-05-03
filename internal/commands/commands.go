@@ -383,3 +383,8 @@ loop:
 	// if it pointed to an entry, it would have returned above
 	return currentLocation, nil, nil
 }
+
+// buildPath will take an array, presumably of the args to a function, and construct a path to a group or entry
+func buildPath(args []string) string {
+	return strings.Join(args, " ")
+}

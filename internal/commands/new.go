@@ -10,20 +10,20 @@ import (
 
 func NewEntry(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
-		args := c.Args
+		path := buildPath(c.Args)
 		errString, ok := syntaxCheck(c, 1)
 		if !ok {
 			shell.Println(errString)
 			return
 		}
-		if isPresent(shell, args[0]) {
-			shell.Printf("cannot create duplicate entity '%s'\n", args[0])
+		if isPresent(shell, path) {
+			shell.Printf("cannot create duplicate entity '%s'\n", path)
 			return
 		}
 
 		db := shell.Get("db").(t.Database)
 
-		pathBits := strings.Split(args[0], "/")
+		pathBits := strings.Split(path, "/")
 		parentPath := strings.Join(pathBits[0:len(pathBits)-1], "/")
 		location, entry, err := TraversePath(db, db.CurrentLocation(), parentPath)
 		if err != nil {

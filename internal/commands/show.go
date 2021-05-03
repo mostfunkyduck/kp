@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"strings"
-
 	"github.com/abiosoft/ishell"
 )
 
@@ -14,15 +12,11 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		fullMode := false
-		path := c.Args[0]
-		for _, arg := range c.Args {
-			if strings.HasPrefix(arg, "-") {
-				if arg == "-f" {
-					fullMode = true
-				}
-				continue
-			}
-			path = arg
+		path := buildPath(c.Args)
+
+		if c.Args[0] == "-f" {
+			fullMode = true
+			path = buildPath(c.Args[1:])
 		}
 
 		entry, ok := getEntryByPath(shell, path)

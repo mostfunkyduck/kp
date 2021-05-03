@@ -47,11 +47,11 @@ func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 			return
 		}
 
-		targetPath := c.Args[0]
+		targetPath := buildPath(c.Args)
 		groupMode := false
-		if len(c.Args) > 1 && c.Args[0] == "-r" {
+		if c.Args[0] == "-r" {
 			groupMode = true
-			targetPath = c.Args[1]
+			targetPath = buildPath(c.Args[1:])
 		}
 
 		db := shell.Get("db").(t.Database)
