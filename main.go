@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/abiosoft/ishell"
+	op "github.com/mostfunkyduck/kp/internal/backend/op"
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
@@ -128,6 +129,8 @@ func promptForDBPassword(shell *ishell.Shell) (string, error) {
 func newDB(dbPath string, password string, keyPath string, version int) (t.Database, error) {
 	var dbWrapper t.Database
 	switch version {
+		case 3:
+			dbWrapper = &op.Database{}
 		case 2:
 			dbWrapper = &v2.Database{}
 		case 1:
