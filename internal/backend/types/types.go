@@ -79,6 +79,7 @@ type UUIDer interface {
 	// UUIDString returns the string form of this object's UUID
 	UUIDString() (string, error)
 }
+
 type Group interface {
 	KeepassWrapper
 	UUIDer

@@ -49,7 +49,10 @@ testv1:
 testv2:
 	KPVERSION=2 go test $(internalpkgs) ./internal/backend/keepassv2 $(coveragecmd)
 
-test: testv1 testv2
+testop:
+	KPVERSION=3 go test $(internalpkgs) ./internal/backend/op $(coveragecmd)
+
+test: testv1 testv2 #testop
 
 # quick command to vet the entire source tree, need to enumerate all targets because of linter pickiness
 vet:
