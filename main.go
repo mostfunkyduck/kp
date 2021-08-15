@@ -22,31 +22,90 @@ var (
 )
 
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
-	return func(prefix string, args []string) (ret []string) {
-		var rawPath string
-		baseGroup := strings.Split(prefix, "/")
-		baseGroup = baseGroup[0 : len(baseGroup)-1]
-		rawPath = strings.Join(baseGroup, "/")
+	return func(searchPrefix string, searchTargets []string) (ret []string) {
+		searchPrefixParts := strings.Split(searchPrefix, "/")
 
+		// if the searchPrefix has a path in it, we need to do our searching in that path for that prefix
+		// otherwise, search here, either for the searchTargets, if they exist, or the non-location part of the searchPrefix
+		searchLocation := ""
+		searchTarget := ""
+		if len(searchPrefixParts) > 1 {
+			searchLocation = strings.Join(searchPrefixParts[0 : len(searchPrefixParts)-1], "/")
+			searchTarget = searchPrefixParts[len(searchPrefixParts)-1]
+		}
+
+		// If there's explicit search targets being passed to the tab completion, respect those
+		if len(searchTargets) > 0 {
+			// if the search target *has* the path, the group name search will fail because it's only the name(title for entries)
+			// the search target is split on spaces
+			fullSearchTarget := strings.Join(searchTargets, " ")
+
+			// this will split the now fully joined path by slashed
+			searchTargetParts := strings.Split(fullSearchTarget, "/")
+
+			// This will make the search target itself be only the name
+			searchTarget = searchTargetParts[len(searchTargetParts)-1]
+
+			// unescape the spaces, the shell needs them, but they break search
+			searchTarget = strings.ReplaceAll(searchTarget, "\\ ", " ")
+
+			if searchLocation == "" {
+				searchLocation = strings.Join(searchTargetParts[0 : len(searchTargetParts)-1], "/")
+			}
+		}
+
+		// now we find the location object for the current searchPrefix, as parsed above
 		db := shell.Get("db").(t.Database)
-		location := db.CurrentLocation()
-		location, _, err := commands.TraversePath(db, location, rawPath)
+		location, _, err := commands.TraversePath(db, db.CurrentLocation(), searchLocation)
+
+		// if the there was an error, return nothing
 		if err != nil {
-			return []string{}
+			return
 		}
 
 		if location != nil {
-			if rawPath != "" {
-				rawPath = rawPath + "/"
-			}
-			for _, g := range location.Groups() {
-				ret = append(ret, rawPath+strings.ReplaceAll(g.Name(), " ", "\\ ")+"/")
+			location = db.CurrentLocation()
+		}
+
+		// There's some duplication here, but basically the idea is that it will search every group and entry
+		// in the current location for anything starting with whatever the searchTarget came out to be
+		// There appear to be 2 modes in play, one where the user has entered an existing path, in which case the code is supposed to return the full path
+		// and one where the user has entered a partial path, in which case the code is supposed to return *only* the completion
+		// This drove me crazy. RIP my sanity. Argh.
+
+		returnedPrefix := ""
+		doCompletion := searchPrefix == "" || len (searchPrefixParts) == 1
+		if !doCompletion  {
+			returnedPrefix = searchLocation + "/"
+		}
+
+		for _, g := range location.Groups() {
+
+			if !strings.HasPrefix(g.Name(), searchTarget) {
+				continue
 			}
 
-			if printEntries {
-				for _, e := range location.Entries() {
-					ret = append(ret, rawPath+e.Title())
+			if searchTarget != "" && doCompletion {
+				// we have to return a completion, not a path. don't ask me why
+				completedName := strings.Replace(g.Name(), searchTarget, "", 1)
+				ret = append(ret, strings.TrimLeft(completedName, " "))
+				continue
+			}
+			ret = append(ret, fmt.Sprintf("%s%s/", returnedPrefix, g.Name()))
+		}
+
+		if printEntries {
+			for _, e := range location.Entries() {
+				if !strings.HasPrefix(e.Title(), searchTarget) {
+					continue
 				}
+				if searchTarget != "" && doCompletion {
+					// we have to return a completion, not a path. don't ask me why
+					completedTitle := strings.Replace(e.Title(), searchTarget, "", 1)
+					ret = append(ret, strings.TrimLeft(completedTitle, " "))
+					continue
+				}
+				ret = append(ret, fmt.Sprintf("%s%s", returnedPrefix, e.Title()))
 			}
 		}
 		return ret

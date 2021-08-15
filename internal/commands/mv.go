@@ -18,7 +18,7 @@ func finish(shell *ishell.Shell) {
 func moveEntry(shell *ishell.Shell, e t.Entry, db t.Database, location string) error {
 	parent, existingEntry, err := TraversePath(db, db.CurrentLocation(), location)
 	if existingEntry != nil {
-		shell.Printf("'%s' already exists! overwrite? [y/N]  ")
+		shell.Printf("'%s' already exists! overwrite? [y/N]  ", existingEntry.Title())
 		input, err := shell.ReadLineErr()
 		if err != nil {
 			return fmt.Errorf("error reading user input: %s\n", err)
@@ -118,7 +118,7 @@ func Mv(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		// is this an entry or a group?
 		if e != nil {
 			if err := moveEntry(shell, e, db, dstPath); err != nil {
-				shell.Printf("couldn't move entry: %s", err)
+				shell.Printf("couldn't move entry: %s\n", err)
 				return
 			}
 		} else {
