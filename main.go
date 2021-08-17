@@ -53,7 +53,6 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 				searchLocation = strings.Join(searchTargetParts[0 : len(searchTargetParts)-1], "/")
 			}
 		}
-
 		// now we find the location object for the current searchPrefix, as parsed above
 		db := shell.Get("db").(t.Database)
 		location, _, err := commands.TraversePath(db, db.CurrentLocation(), searchLocation)
@@ -63,7 +62,7 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 			return
 		}
 
-		if location != nil {
+		if location == nil {
 			location = db.CurrentLocation()
 		}
 
@@ -74,8 +73,8 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 		// This drove me crazy. RIP my sanity. Argh.
 
 		returnedPrefix := ""
-		doCompletion := searchPrefix == "" || len (searchPrefixParts) == 1
-		if !doCompletion  {
+		doCompletion := searchPrefix == "" || len (searchTargets) >= 1
+		if searchLocation != "" {
 			returnedPrefix = searchLocation + "/"
 		}
 
@@ -105,9 +104,11 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 					ret = append(ret, strings.TrimLeft(completedTitle, " "))
 					continue
 				}
+
 				ret = append(ret, fmt.Sprintf("%s%s", returnedPrefix, e.Title()))
 			}
 		}
+
 		return ret
 	}
 }
