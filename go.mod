@@ -6,7 +6,7 @@ require (
 	github.com/AlecAivazis/survey/v2 v2.1.1
 	github.com/abiosoft/ishell v2.0.1-0.20190723053747-1b6ad7eb4d5e+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db
-	github.com/atotto/clipboard v0.1.2
+	github.com/atotto/clipboard v0.1.4
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/fatih/color v1.9.0 // indirect
@@ -25,5 +25,3 @@ require (
 )
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911
-
-replace github.com/atotto/clipboard => github.com/mostfunkyduck/clipboard v0.1.3-0.20190428164314-bdea50a7aaf0

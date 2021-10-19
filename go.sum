@@ -10,6 +10,8 @@ github.com/aead/argon2 v0.0.0-20180111183520-a87724528b07 h1:i9/M2RadeVsPBMNwXFi
 github.com/aead/argon2 v0.0.0-20180111183520-a87724528b07/go.mod h1:Tnm/osX+XXr9R+S71o5/F0E60sRkPVALdhWw25qPImQ=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da h1:KjTM2ks9d14ZYCvmHS9iAKVt9AyzRSqNU1qabPih5BY=
 github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da/go.mod h1:eHEWzANqSiWQsof+nXEI9bUVUyV6F53Fp89EuCh2EAA=
+github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=
+github.com/atotto/clipboard v0.1.4/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/chzyer/logex v1.1.10 h1:Swpa1K6QvQznwJRcfTfQJmTE72DqScAa40E+fbHEXEE=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 h1:q763qf9huN11kDQavWsoZXJNW3xEE4JJyHa5Q25/sd8=
@@ -43,8 +45,6 @@ github.com/mattn/go-isatty v0.0.12 h1:wuysRhFDzyxgEmMf5xjvJ2M9dZoWAXNNr5LSBS7uHX
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b h1:j7+1HpAFS1zy5+Q4qx1fWh90gTKwiN4QCGoY9TWyyO4=
 github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b/go.mod h1:01TrycV0kFyexm33Z7vhZRXopbI8J3TDReVlkTgMUxE=
-github.com/mostfunkyduck/clipboard v0.1.3-0.20190428164314-bdea50a7aaf0 h1:NFfzPdZs3KSedqSm/G9y7Ba6axC3DPmBEjjOCCuBAQc=
-github.com/mostfunkyduck/clipboard v0.1.3-0.20190428164314-bdea50a7aaf0/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911 h1:7Gxt9A2uYmM79TxlO4bvntcKomDfiqBQ5B0deTCkfbM=
 github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911/go.mod h1:VC0meJ3VuSwZ4EJyVzfRoNcnb4ZFLYabCNbjmKdetqc=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
