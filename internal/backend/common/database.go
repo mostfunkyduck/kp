@@ -12,7 +12,7 @@ type Database struct {
 	driver          t.Database
 	currentLocation t.Group
 	changed         bool
-	savePath        string
+	backend         *Backend
 }
 
 // SetDriver sets pointer to the version of itself that can access child methods... FIXME this is a bit of a mind bender
@@ -20,8 +20,17 @@ func (d *Database) SetDriver(driver t.Database) {
 	d.driver = driver
 }
 
+// SetBackend and Backend manage a cached hash representing the state of the backend
+func (d *Database) SetBackend(backend *Backend) {
+	d.backend = backend
+}
+
+func (d *Database) Backend() t.Backend {
+	return d.backend
+}
+
 func (d *Database) lockPath() string {
-	path := d.driver.SavePath()
+	path := d.Backend().Filename()
 	if path == "" {
 		return path
 	}
@@ -75,12 +84,12 @@ var backupExtension = ".kpbackup"
 
 // BackupPath returns the path to which a backup can be written or restored
 func (d *Database) BackupPath() string {
-	return d.driver.SavePath() + backupExtension
+	return d.Backend().Filename() + backupExtension
 }
 
 // Backup executes a backup, if the database exists, otherwise it will do nothing
 func (d *Database) Backup() error {
-	path := d.driver.SavePath()
+	path := d.Backend().Filename()
 	if _, err := os.Stat(path); err != nil {
 		// database path doesn't exist and doesn't need to be backed up
 		return nil
@@ -97,11 +106,11 @@ func (d *Database) Backup() error {
 	return nil
 }
 
-// RestoreBackup will restore a backup from the BackupPath() to the SavePath(). This will overwrite whatever's in the main location, handle with care
+// RestoreBackup will restore a backup from the BackupPath() to the original file path. This will overwrite whatever's in the main location, handle with care
 func (d *Database) RestoreBackup() error {
 	backupPath := d.BackupPath()
 
-	path := d.driver.SavePath()
+	path := d.Backend().Filename()
 
 	if _, err := os.Stat(backupPath); err != nil {
 		return fmt.Errorf("no backup exists at [%s] for [%s], cannot restore", backupPath, path)
@@ -129,15 +138,6 @@ func (d *Database) RemoveBackup() error {
 	return nil
 }
 
-// SavePath returns the current save location for the DB
-func (d *Database) SavePath() string {
-	return d.savePath
-}
-
-func (d *Database) SetSavePath(newPath string) {
-	d.savePath = newPath
-}
-
 // CurrentLocation returns the group currently used as the user's shell location in the DB
 func (d *Database) CurrentLocation() t.Group {
 	return d.currentLocation
@@ -159,4 +159,19 @@ func (d *Database) Path() (string, error) {
 // Search looks through a database for an entry matching a given term
 func (d *Database) Search(term *regexp.Regexp) (paths []string, err error) {
 	return d.driver.Root().Search(term)
+}
+
+// SavePath is a shortcut for getting the backend's filename
+func (d *Database) SavePath() string {
+	return d.Backend().Filename()
+}
+
+// SetSavePath is a shortcut for setting the backend filename
+func (d *Database) SetSavePath(path string) {
+	backend := &Backend{
+		filename: path,
+		// hash is blank since this is considered a new file
+		hash: "",
+	}
+	d.SetBackend(backend)
 }

@@ -54,7 +54,16 @@ func (d *Database) Save() error {
 		return fmt.Errorf("could not back up database: %s", err)
 	}
 
-	path := d.SavePath()
+	modified, err := d.Backend().IsModified()
+	if err != nil {
+		return fmt.Errorf("could not verify that the backend was unmodified: %s", err)
+	}
+
+	if modified {
+		return fmt.Errorf("backend storage has been modified! please reopen before modifying to avoid corrupting or overwriting changes! (changes made since the last save will not be persisted)")
+	}
+
+	path := d.Backend().Filename()
 
 	if err := writeDB(d.db, path); err != nil {
 		// TODO put this call in v1 too
@@ -66,6 +75,13 @@ func (d *Database) Save() error {
 	if err := d.RemoveBackup(); err != nil {
 		return fmt.Errorf("could not remove backup after successful save: %s", err)
 	}
+
+	backend, err := c.InitBackend(path)
+	if err != nil {
+		return fmt.Errorf("failed to initialize backend: %s", err)
+	}
+
+	d.SetBackend(backend)
 	return nil
 }
 
@@ -131,8 +147,12 @@ func (d *Database) Init(opts t.Options) error {
 	if err := d.purge(); err != nil {
 		return fmt.Errorf("failed to clean DB of sample data after initialization: %s", err)
 	}
-	d.SetSavePath(opts.DBPath)
+	backend, err := c.InitBackend(opts.DBPath)
+	if err != nil {
+		return fmt.Errorf("failed to initialize backend: %s", err)
+	}
 
+	d.SetBackend(backend)
 	creds, err := d.credentials(opts)
 	if err != nil {
 		return fmt.Errorf("could not build credentials for given password: %s", err)

@@ -24,8 +24,11 @@ func (d *Database) Init(options t.Options) error {
 	var keyReader io.Reader
 
 	d.SetDriver(d)
-	d.SetSavePath(options.DBPath)
-
+	backend, err := c.InitBackend(options.DBPath)
+	if err != nil {
+		return fmt.Errorf("could not init backend: %s", err)
+	}
+	d.SetBackend(backend)
 	if options.KeyPath != "" {
 		keyReader, err = os.Open(options.KeyPath)
 		if err != nil {
@@ -39,9 +42,7 @@ func (d *Database) Init(options t.Options) error {
 		KeyRounds: options.KeyRounds,
 	}
 
-	// technically, the savepath should not differ from options.DBPath,
-	// but just incase something needs to be changed in the SavePath function, use that
-	savePath := d.SavePath()
+	savePath := d.Backend().Filename()
 	if _, err := os.Stat(savePath); err == nil {
 		dbReader, err := os.Open(savePath)
 		if err != nil {
@@ -75,12 +76,21 @@ func (d *Database) Root() t.Group {
 	return WrapGroup(d.db.Root(), d)
 }
 
-// Save will backup the DB, save it, then remove the backup is the save was successful
+// Save will backup the DB, save it, then remove the backup is the save was successful. it will also check to make sure the file has not changed.
 func (d *Database) Save() error {
-	savePath := d.SavePath()
+	savePath := d.Backend().Filename()
 
 	if savePath == "" {
 		return fmt.Errorf("no save path specified")
+	}
+
+	modified, err := d.Backend().IsModified()
+	if err != nil {
+		return fmt.Errorf("could not verify that the backend was unmodified: %s", err)
+	}
+
+	if modified {
+		return fmt.Errorf("backend storage has been modified! please reopen before modifying to avoid corrupting or overwriting changes! (changes made since the last save will not be persisted)")
 	}
 
 	if err := d.Backup(); err != nil {
@@ -99,6 +109,12 @@ func (d *Database) Save() error {
 	if err := d.RemoveBackup(); err != nil {
 		return fmt.Errorf("could not remove backup after saving: %s", err)
 	}
+
+	backend, err := c.InitBackend(savePath)
+	if err != nil {
+		return fmt.Errorf("error initializing new backend type after save: %s", err)
+	}
+	d.SetBackend(backend)
 	return nil
 }
 

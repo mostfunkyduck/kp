@@ -24,8 +24,22 @@ type KeepassWrapper interface {
 	Search(*regexp.Regexp) ([]string, error)
 }
 
+type Backend interface {
+	// Filename returns the file name for the backend storage
+	Filename() string
+
+	// Hash returns the cached hash representing a unique state of the backend storage
+	Hash() string
+
+	// IsModified returns whether or not the backend has been modified since it was last hashed
+	IsModified() (bool, error)
+}
+
 type Database interface {
 	KeepassWrapper
+	// Backend returns the functions backend struct
+	Backend() Backend
+
 	// Binary returns a binary with a given ID, naming it with a given name
 	// the OptionalWrapper is used because v2 is the only version that implements this
 	Binary(id int, name string) (OptionalWrapper, error)
@@ -52,7 +66,7 @@ type Database interface {
 	// Locked will determine if the lockfile is in place
 	Locked() bool
 
-	// SavePath dictates where the DB will be saved
+	// SavePath and SetSavePath are shortcuts for managing the backend filename
 	SavePath() string
 	SetSavePath(string)
 

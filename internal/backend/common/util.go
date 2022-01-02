@@ -1,8 +1,11 @@
 package common
 
 import (
+	"crypto/md5"
 	"fmt"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
+	"io"
+	"os"
 	"time"
 )
 
@@ -55,4 +58,22 @@ func FormatTime(t time.Time) (formatted string) {
 		formatted = fmt.Sprintf("%s (%s)", t.Local().Format(timeFormat), sinceString)
 	}
 	return
+}
+
+func GenerateFileHash(filename string) (hash string, err error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", fmt.Errorf("could not open file '%s': %s", filename, err)
+	}
+
+	defer file.Close()
+
+	hasher := md5.New()
+	_, err = io.Copy(hasher, file)
+
+	if err != nil {
+		return "", fmt.Errorf("could not hash file '%s': %s", filename, err)
+	}
+
+	return string(hasher.Sum(nil)), nil
 }
