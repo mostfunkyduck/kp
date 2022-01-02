@@ -6,6 +6,7 @@ package commands
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strconv"
@@ -202,7 +203,7 @@ func GetLongString(value t.Value) (text string, err error) {
 
 func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err error) {
 	for {
-		shell.Printf("password: ('g' to generate new)  ")
+		shell.Printf("password: ('g' to generate with defaults, 'c' to generate with custom parameters)  ")
 		pw, err = shell.ReadPasswordErr()
 		if err != nil {
 			return "", fmt.Errorf("failed to read input: %s", err)
@@ -215,12 +216,20 @@ func GetProtected(shell *ishell.Shell, defaultPassword string) (pw string, err e
 
 		// otherwise, we're either generating a new password or reading one from user input
 		if pw == "g" {
-			// FIXME (low pri for now) needs better generation than hardcoding the number of syms
 			pw, err = password.Generate(20, 5, 5, false, false)
 			if err != nil {
 				return "", fmt.Errorf("failed to generate password: %s\n", err)
 			}
 			shell.Println("generated new password")
+			break
+		}
+
+		if pw == "c" {
+			pw, err = generatePassword(shell)
+			if err != nil {
+				return "", fmt.Errorf("failed to generate custom password: %s\n", err)
+			}
+			shell.Println("generated password")
 			break
 		}
 
@@ -387,4 +396,67 @@ loop:
 // buildPath will take an array, presumably of the args to a function, and construct a path to a group or entry
 func buildPath(args []string) string {
 	return strings.Join(args, " ")
+}
+
+// promptWithDefault will prompt for a value, reverting to a given default if no response is given
+func promptWithDefault(shell *ishell.Shell, prompt, varDefault string) (value string, err error) {
+	shell.Printf("%s (%s): ", prompt, varDefault)
+	line, err := shell.ReadLineErr()
+	if err != nil {
+		return "", fmt.Errorf("failed to get response to prompt %s: %s\n", prompt, err)
+	}
+	if line != "" {
+		value = line
+	} else {
+		value = varDefault
+	}
+	return value, nil
+}
+
+// generatePassword will generate a new password based on user inputs
+func generatePassword(shell *ishell.Shell) (pw string, err error) {
+	lengthString, err := promptWithDefault(shell, "password length", "20")
+	if err != nil {
+		return "", fmt.Errorf("failed to generate password length: %s", err)
+	}
+
+	lengthInt, err := strconv.Atoi(lengthString)
+	if err != nil {
+		return "", fmt.Errorf("error converting length string '%s' to int: %s", lengthString, err)
+	}
+
+	// subtract 2 so that there's always room for at least 1 char and 1 symbol
+	numDigits := rand.Intn(lengthInt - 2)
+
+	// likewise, subtract out the number of digits and then an additional 1 so that there's at least 1 character
+	numSymbols := rand.Intn(lengthInt - numDigits - 1)
+
+	symbols := password.Symbols
+	symbolsBlocklist, err := promptWithDefault(shell, fmt.Sprintf("list any symbols to exclude from the symbol map (%s), non-symbols will be ignored", symbols), "")
+	if err != nil {
+		return "", fmt.Errorf("error generating symbol blocklist: %s", err)
+	}
+
+	// prune any symbols entered in the blocklist
+	for _, char := range symbolsBlocklist {
+		symbols = strings.ReplaceAll(symbols, string(char), "")
+	}
+	// if the user blocklisted all symbols, set numSymbols to 0
+	if symbols == "" {
+		numSymbols = 0
+	}
+	gInput := password.GeneratorInput{
+		Symbols: symbols,
+	}
+
+	generator, err := password.NewGenerator(&gInput)
+	if err != nil {
+		return "", fmt.Errorf("could not build password generator: %s", err)
+	}
+
+	pw, err = generator.Generate(lengthInt, numDigits, numSymbols, false, true)
+	if err != nil {
+		return "", fmt.Errorf("could not generate password: %s", err)
+	}
+	return pw, err
 }
