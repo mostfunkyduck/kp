@@ -2,7 +2,6 @@ package keepassv1_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -14,7 +13,7 @@ import (
 func initDatabase() (t.Database, error) {
 	dbWrapper := &v1.Database{}
 	// yes, unit tests should avoid the file system.  baby steps.
-	tmpfile, err := ioutil.TempFile("", "kp_unit_tests")
+	tmpfile, err := os.CreateTemp("", "kp_unit_tests")
 	if err != nil {
 		return dbWrapper, fmt.Errorf("could not create temp file for DB: %s", tmpfile.Name())
 	}

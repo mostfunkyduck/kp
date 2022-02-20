@@ -1,7 +1,6 @@
 package keepassv2_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -16,7 +15,7 @@ func createTestResources(t *testing.T) runner.Resources {
 	name := "test yo"
 	groupName := "group"
 	db := &main.Database{}
-	tmpfile, err := ioutil.TempFile("", "kp_unit_tests")
+	tmpfile, err := os.CreateTemp("", "kp_unit_tests")
 	if err != nil {
 		t.Fatal(err)
 	}

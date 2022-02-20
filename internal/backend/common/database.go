@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
-	"io/ioutil"
 	"os"
 	"regexp"
 )
@@ -95,12 +94,12 @@ func (d *Database) Backup() error {
 		return nil
 	}
 
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(d.BackupPath(), data, 0644); err != nil {
+	if err := os.WriteFile(d.BackupPath(), data, 0644); err != nil {
 		return err
 	}
 	return nil

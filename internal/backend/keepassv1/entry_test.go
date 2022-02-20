@@ -1,7 +1,6 @@
 package keepassv1_test
 
 import (
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -23,7 +22,7 @@ func TestTitle(t *testing.T) {
 
 func TestEntrySearch(t *testing.T) {
 	title := "TestEntrySearch"
-	tmpfile, err := ioutil.TempFile("", "kp_unit_tests")
+	tmpfile, err := os.CreateTemp("", "kp_unit_tests")
 	if err != nil {
 		t.Fatalf("could not create temp file for DB: %s", tmpfile.Name())
 	}

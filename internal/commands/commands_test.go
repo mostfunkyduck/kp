@@ -4,7 +4,6 @@ package commands_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -55,7 +54,7 @@ func createTestResources(t *testing.T) (r testResources) {
 	r.Context = &ishell.Context{}
 	version := os.Getenv("KPVERSION")
 
-	tmpFile, err := ioutil.TempFile("", "kp_unit_tests")
+	tmpFile, err := os.CreateTemp("", "kp_unit_tests")
 	if err != nil {
 		t.Fatal(err)
 	}

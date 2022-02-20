@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -86,7 +85,7 @@ func Attach(shell *ishell.Shell, cmd string) (f func(c *ishell.Context)) {
 }
 
 func createAttachment(entry t.Entry, name string, path string) (output string, err error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("could not open %s: %s", path, err)
 	}

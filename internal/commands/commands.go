@@ -5,7 +5,6 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -171,7 +170,7 @@ func OpenFileInEditor(filename string) error {
 
 func GetLongString(value t.Value) (text string, err error) {
 	// https://samrapdev.com/capturing-sensitive-input-with-editor-in-golang-from-the-cli/
-	file, err := ioutil.TempFile(os.TempDir(), "*")
+	file, err := os.CreateTemp(os.TempDir(), "*")
 	if err != nil {
 		return "", err
 	}
@@ -193,7 +192,7 @@ func GetLongString(value t.Value) (text string, err error) {
 		return "", err
 	}
 
-	bytes, err := ioutil.ReadFile(filename)
+	bytes, err := os.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}

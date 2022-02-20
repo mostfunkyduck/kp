@@ -3,7 +3,6 @@ package keepassv2
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	c "github.com/mostfunkyduck/kp/internal/backend/common"
@@ -210,7 +209,7 @@ func (d *Database) credentials(opts t.Options) (*g.DBCredentials, error) {
 		return nil, fmt.Errorf("could not open key at path [%s]: %s", opts.KeyPath, err)
 	}
 
-	keyData, err := ioutil.ReadAll(keyReader)
+	keyData, err := io.ReadAll(keyReader)
 	if err != nil {
 		return nil, fmt.Errorf("could not read key that was opened from path [%s]: %s", opts.KeyPath, err)
 	}
