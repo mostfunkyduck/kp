@@ -1,7 +1,9 @@
 package common
 
 import (
+	"errors"
 	"fmt"
+	"os"
 )
 
 type Backend struct {
@@ -10,6 +12,13 @@ type Backend struct {
 }
 
 func InitBackend(filename string) (*Backend, error) {
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		// file doesn't exist, so return an empty hash, let the upstream handle creating
+		return &Backend{
+			filename: filename,
+			hash:     "",
+		}, nil
+	}
 	hash, err := GenerateFileHash(filename)
 	if err != nil {
 		return &Backend{}, fmt.Errorf("could not generate backend hash: %s", err)
