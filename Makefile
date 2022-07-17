@@ -18,7 +18,7 @@ init:
 nolint: test kp
 
 kp: *.go internal/*/*.go internal/backend/*/*.go
-	go build -gcflags "-N -I ." -ldflags "-X main.VersionRevision=$(REVISION) -X main.VersionBuildDate=$(DATE) -X main.VersionBuildTZ=UTC -X main.VersionBranch=$(BRANCH) -X main.VersionRelease=$(RELEASE) -X main.VersionHostname=$(HOSTNAME)" 
+	go build -mod=readonly -gcflags "-N -I ." -ldflags "-X main.VersionRevision=$(REVISION) -X main.VersionBuildDate=$(DATE) -X main.VersionBuildTZ=UTC -X main.VersionBranch=$(BRANCH) -X main.VersionRelease=$(RELEASE) -X main.VersionHostname=$(HOSTNAME)" 
 
 cscope:
 	# this will add a local index called 'cscope.out' based on a collection of source files in 'cscope.files'
@@ -44,10 +44,10 @@ install: kp
 coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./internal/backend/types,./internal/backend/common
 internalpkgs := ./internal/commands
 testv1:
-	KPVERSION=1 go test $(internalpkgs) ./internal/backend/keepassv1 $(coveragecmd)
+	KPVERSION=1 go test -mod=readonly $(internalpkgs) ./internal/backend/keepassv1 $(coveragecmd)
 
 testv2:
-	KPVERSION=2 go test $(internalpkgs) ./internal/backend/keepassv2 $(coveragecmd)
+	KPVERSION=2 go test -mod=readonly $(internalpkgs) ./internal/backend/keepassv2 $(coveragecmd)
 
 test: testv1 testv2
 

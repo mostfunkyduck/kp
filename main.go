@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/abiosoft/ishell"
@@ -21,91 +22,95 @@ var (
 	noninteractive = flag.String("n", "", "execute a given command and exit")
 )
 
+/*
+	All examples assume a structure of:
+		one two/
+		  three four/
+				otherstuff
+			stuff
+	I had to hack the completions part of abiosoft/ishell to take proposed completions instead of taking all potential completions
+	The library had breaking on spaces, the following behavior was observed:
+		1.	inputting "one two" would result in "one" being counted as a "priorWord" and "two" being the "wordToComplete"
+		2.	it would then treat the returned values as *potential* matches, which had to match the prefix, which is the argument
+				labeled "wordToComplete"
+		3.	this meant that when "one two" came in, you COULD piece results back together as "one two/stuff", but returning that
+				would not result in matches since it would only return things that started with "two"
+		4.	This also meant that even if you stripped the part before the space (i.e. returning "two/stuff"), the results displayed would be
+		  	prefixed with "two", which broke nested search
+	Therefore, the hack on the ishell library takes the actual completions, so:
+		1.	"one two/st<tab>" will return "uff"
+		2.	"one" will return "one two/"
+		3.  "one two/" will return "stuff" and "three four/"
+*/
 func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string) []string {
-	return func(searchPrefix string, searchTargets []string) (ret []string) {
-		searchPrefixParts := strings.Split(searchPrefix, "/")
-
-		// if the searchPrefix has a path in it, we need to do our searching in that path for that prefix
-		// otherwise, search here, either for the searchTargets, if they exist, or the non-location part of the searchPrefix
+	return func(wordToComplete string, priorWords []string) (ret []string) {
 		searchLocation := ""
-		searchTarget := ""
-		if len(searchPrefixParts) > 1 {
-			searchLocation = strings.Join(searchPrefixParts[0 : len(searchPrefixParts)-1], "/")
-			searchTarget = searchPrefixParts[len(searchPrefixParts)-1]
+		if len(priorWords) > 0 {
+			// join together all the previous tokens so that we compensate for spaces
+			// priorWords will be ["one"], wordToComplete will be "two", we want "one two"
+			wordToComplete = strings.Join(priorWords, " ") + " " + wordToComplete
 		}
 
-		// If there's explicit search targets being passed to the tab completion, respect those
-		if len(searchTargets) > 0 {
-			// if the search target *has* the path, the group name search will fail because it's only the name(title for entries)
-			// the search target is split on spaces
-			fullSearchTarget := strings.Join(searchTargets, " ")
-
-			// this will split the now fully joined path by slashed
-			searchTargetParts := strings.Split(fullSearchTarget, "/")
-
-			// This will make the search target itself be only the name
-			searchTarget = searchTargetParts[len(searchTargetParts)-1]
-
-			// unescape the spaces, the shell needs them, but they break search
-			searchTarget = strings.ReplaceAll(searchTarget, "\\ ", " ")
-
-			if searchLocation == "" {
-				searchLocation = strings.Join(searchTargetParts[0 : len(searchTargetParts)-1], "/")
-			}
+		if wordToComplete[len(wordToComplete)-1] == '/' {
+			// if the phrase we're completing is slash-terminated, it's a group that we're trying
+			// to enumerate the contents of
+			// i.e. "one two/" and we want to get "stuff"
+			searchLocation = wordToComplete
+		} else if strings.Contains(wordToComplete, "/") {
+			// the wordToComplete is at least partially a path
+			// i.e "one two/three", in which case we wanted to match things under "one two/" starting with "three"
+			// this will strip out everything after the last "/" to find the search path
+			rxp := regexp.MustCompile(`(.+\/).+$`)
+			searchLocation = rxp.ReplaceAllString(wordToComplete, "$1")
 		}
-		// now we find the location object for the current searchPrefix, as parsed above
+
+		// get the current location to search for matches
 		db := shell.Get("db").(t.Database)
 		location, _, err := commands.TraversePath(db, db.CurrentLocation(), searchLocation)
-
-		// if the there was an error, return nothing
+		// if the there was an error, assume path doesn't exist
 		if err != nil {
 			return
 		}
 
-		if location == nil {
-			location = db.CurrentLocation()
+		// helper function to identify completions
+		f := func(token string) string {
+			// trim the wordToComplete down to the part after the directory name
+			// we have the directory name in searchLocation, we want to search that directory for the prefix
+			// alternatively, we can determine that we're enumerating a directory, in which case no matching will be done
+			reg := regexp.MustCompile(`.*/`)
+			prefix := reg.ReplaceAllString(wordToComplete, "")
+
+			if prefix == "" {
+				// the wordToComplete was an entire path, we're enumerating the contents of a directory
+				// return the token as-is since we don't have to do any matching to figure out potential completions
+				// i.e. if the user inputted "one two/<tab>", we want to return "stuff" and "three four"
+				return token
+			}
+
+			if strings.HasPrefix(token, prefix) {
+				// the wordToComplete contained a partial prefix of an item in a directory to match
+				// strip the already-matched prefix
+				// i.e. if the user passed in "one two/st<tab>", we will scan "stuff" and "three four" and return "stuff"
+				return strings.TrimPrefix(token, prefix)
+			}
+			return ""
 		}
 
-		// There's some duplication here, but basically the idea is that it will search every group and entry
-		// in the current location for anything starting with whatever the searchTarget came out to be
-		// There appear to be 2 modes in play, one where the user has entered an existing path, in which case the code is supposed to return the full path
-		// and one where the user has entered a partial path, in which case the code is supposed to return *only* the completion
-		// This drove me crazy. RIP my sanity. Argh.
-
-		returnedPrefix := ""
-		doCompletion := searchPrefix == "" || len (searchTargets) >= 1
-		if searchLocation != "" {
-			returnedPrefix = searchLocation + "/"
-		}
-
+		// Loop through all the groups and entries in this group and check for matches
 		for _, g := range location.Groups() {
-
-			if !strings.HasPrefix(g.Name(), searchTarget) {
-				continue
+			completion := f(g.Name() + "/")
+			if completion != "" {
+				ret = append(ret, completion)
 			}
-
-			if searchTarget != "" && doCompletion {
-				// we have to return a completion, not a path. don't ask me why
-				completedName := strings.Replace(g.Name(), searchTarget, "", 1)
-				ret = append(ret, strings.TrimLeft(completedName, " "))
-				continue
-			}
-			ret = append(ret, fmt.Sprintf("%s%s/", returnedPrefix, g.Name()))
 		}
 
+		// loop through entries iff the command needs us to
 		if printEntries {
 			for _, e := range location.Entries() {
-				if !strings.HasPrefix(e.Title(), searchTarget) {
-					continue
+				completion := f(e.Title())
+				if completion != "" {
+					ret = append(ret, completion)
 				}
-				if searchTarget != "" && doCompletion {
-					// we have to return a completion, not a path. don't ask me why
-					completedTitle := strings.Replace(e.Title(), searchTarget, "", 1)
-					ret = append(ret, strings.TrimLeft(completedTitle, " "))
-					continue
-				}
-
-				ret = append(ret, fmt.Sprintf("%s%s", returnedPrefix, e.Title()))
 			}
 		}
 
@@ -128,17 +133,17 @@ func promptForDBPassword(shell *ishell.Shell) (string, error) {
 func newDB(dbPath string, password string, keyPath string, version int) (t.Database, error) {
 	var dbWrapper t.Database
 	switch version {
-		case 2:
-			dbWrapper = &v2.Database{}
-		case 1:
-			dbWrapper = &v1.Database{}
-		default:
-			return nil, fmt.Errorf("invalid version '%d'", version)
+	case 2:
+		dbWrapper = &v2.Database{}
+	case 1:
+		dbWrapper = &v1.Database{}
+	default:
+		return nil, fmt.Errorf("invalid version '%d'", version)
 	}
-	dbOpts := t.Options {
-		DBPath: dbPath,
+	dbOpts := t.Options{
+		DBPath:   dbPath,
 		Password: password,
-		KeyPath: keyPath,
+		KeyPath:  keyPath,
 	}
 	err := dbWrapper.Init(dbOpts)
 	return dbWrapper, err
@@ -405,7 +410,6 @@ func main() {
 	} else {
 		fmt.Println("no changes detected since last save.")
 	}
-
 
 	if err := dbWrapper.Unlock(); err != nil {
 		fmt.Printf("failed to unlock db: %s", err)

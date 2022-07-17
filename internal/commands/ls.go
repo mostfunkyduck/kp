@@ -2,9 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/abiosoft/ishell"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
-	"strings"
 )
 
 func Ls(shell *ishell.Shell) (f func(c *ishell.Context)) {
