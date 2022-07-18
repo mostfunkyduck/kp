@@ -19,3 +19,6 @@ cscope.*
 kp
 TODOS
 coverage.out
+
+.vscode
+local_artifacts/
