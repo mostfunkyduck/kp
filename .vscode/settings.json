@@ -1,0 +1,9 @@
+{
+  "makefile.extensionOutputFolder": "./.vscode",
+  "go.buildFlags": [
+    "-mod=readonly"
+  ],
+  "gopls": {
+  
+  }
+}
