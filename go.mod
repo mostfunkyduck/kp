@@ -8,7 +8,7 @@ require (
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db
 	github.com/atotto/clipboard v0.1.4
 	github.com/sethvargo/go-password v0.2.0
-	github.com/tobischo/gokeepasslib/v3 v3.4.1
+	github.com/tobischo/gokeepasslib/v3 v3.1.0 // cannot be upgraded past v3.1.0 due to a bug in encoding
 	zombiezen.com/go/sandpass v1.1.0
 )
 
@@ -28,6 +28,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 )
 
-replace github.com/abiosoft/ishell => ./vendor/github.com/abiosoft/ishell
+replace github.com/abiosoft/ishell => ./fork/github.com/abiosoft/ishell
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911
