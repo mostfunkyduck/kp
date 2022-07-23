@@ -68,7 +68,7 @@ func (d *Database) Locked() bool {
 		return false
 	}
 	_, exists := os.Stat(path)
-	return exists != nil
+	return exists == nil
 }
 
 func (d *Database) Changed() bool {
