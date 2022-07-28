@@ -51,6 +51,10 @@ func fileCompleter(shell *ishell.Shell, printEntries bool) func(string, []string
 			wordToComplete = strings.Join(priorWords, " ") + " " + wordToComplete
 		}
 
+		if len(wordToComplete) == 0 {
+			return
+		}
+
 		if wordToComplete[len(wordToComplete)-1] == '/' {
 			// if the phrase we're completing is slash-terminated, it's a group that we're trying
 			// to enumerate the contents of
