@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/abiosoft/ishell"
 	"github.com/abiosoft/readline"
+	"github.com/mostfunkyduck/ishell"
 	c "github.com/mostfunkyduck/kp/internal/backend/common"
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"

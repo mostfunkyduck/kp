@@ -4,13 +4,14 @@ go 1.18
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.5
-	github.com/abiosoft/ishell v2.0.1-0.20190723053747-1b6ad7eb4d5e+incompatible
 	github.com/abiosoft/readline v0.0.0-20180607040430-155bce2042db
 	github.com/atotto/clipboard v0.1.4
 	github.com/sethvargo/go-password v0.2.0
 	github.com/tobischo/gokeepasslib/v3 v3.1.0 // cannot be upgraded past v3.1.0 due to a bug in encoding
 	zombiezen.com/go/sandpass v1.1.0
 )
+
+require github.com/mostfunkyduck/ishell v0.0.0-20230117145503-d3c06900b3b6
 
 require (
 	github.com/aead/argon2 v0.0.0-20180111183520-a87724528b07 // indirect
@@ -27,7 +28,5 @@ require (
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 )
-
-replace github.com/abiosoft/ishell => ./fork/github.com/abiosoft/ishell
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911

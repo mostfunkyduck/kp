@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/ishell"
 	v1 "github.com/mostfunkyduck/kp/internal/backend/keepassv1"
 	v2 "github.com/mostfunkyduck/kp/internal/backend/keepassv2"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
@@ -28,7 +28,7 @@ var (
 		  three four/
 				otherstuff
 			stuff
-	I had to hack the completions part of abiosoft/ishell to take proposed completions instead of taking all potential completions
+	I had to hack the completions part of mostfunkyduck/ishell to take proposed completions instead of taking all potential completions
 	The library had breaking on spaces, the following behavior was observed:
 		1.	inputting "one two" would result in "one" being counted as a "priorWord" and "two" being the "wordToComplete"
 		2.	it would then treat the returned values as *potential* matches, which had to match the prefix, which is the argument

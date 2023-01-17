@@ -3,7 +3,7 @@ package commands
 import (
 	"strings"
 
-	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/ishell"
 	// because ishell's checklist isn't rendering properly, at least on WSL
 	"github.com/AlecAivazis/survey/v2"
 )

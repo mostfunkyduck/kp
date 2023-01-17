@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/ishell"
 )
 
 func Edit(shell *ishell.Shell) (f func(c *ishell.Context)) {

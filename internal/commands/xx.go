@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
+	"github.com/mostfunkyduck/ishell"
 )
 
 func Xx(shell *ishell.Shell) (f func(c *ishell.Context)) {

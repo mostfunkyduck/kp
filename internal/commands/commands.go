@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/abiosoft/ishell"
 	"github.com/atotto/clipboard"
+	"github.com/mostfunkyduck/ishell"
 	c "github.com/mostfunkyduck/kp/internal/backend/common"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"github.com/sethvargo/go-password/password"

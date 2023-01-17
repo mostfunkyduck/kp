@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/ishell"
 	c "github.com/mostfunkyduck/kp/internal/backend/common"
 	t "github.com/mostfunkyduck/kp/internal/backend/types"
 )

@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/abiosoft/ishell"
+	"github.com/mostfunkyduck/ishell"
 )
 
 func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
