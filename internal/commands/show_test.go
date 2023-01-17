@@ -63,6 +63,7 @@ func TestShowAttachment(t *testing.T) {
 func TestShowFullMode(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{"-f", r.Path}
+	r.Context.Flags = []string{"-f"}
 	main.Show(r.Shell)(r.Context)
 	testEntry(false, t, r)
 }

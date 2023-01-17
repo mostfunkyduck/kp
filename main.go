@@ -267,6 +267,7 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "show",
+		Flags:               []string{"-f"},
 		Help:                "show [-f] <entry>",
 		LongHelp:            "shows details on a given entry, passwords will be redacted unless '-f' is specified",
 		Func:                commands.Show(shell),

@@ -14,9 +14,11 @@ func Show(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		fullMode := false
 		path := buildPath(c.Args)
 
-		if c.Args[0] == "-f" {
-			fullMode = true
-			path = buildPath(c.Args[1:])
+		for _, flag := range c.Flags {
+			if flag == "-f" {
+				fullMode = true
+				path = buildPath(c.Args[1:])
+			}
 		}
 
 		entry, ok := getEntryByPath(shell, path)

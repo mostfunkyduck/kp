@@ -11,7 +11,7 @@ require (
 	zombiezen.com/go/sandpass v1.1.0
 )
 
-require github.com/mostfunkyduck/ishell v0.0.0-20230117145503-d3c06900b3b6
+require github.com/mostfunkyduck/ishell v0.0.0-20230117153438-905e50e50811
 
 require (
 	github.com/aead/argon2 v0.0.0-20180111183520-a87724528b07 // indirect
