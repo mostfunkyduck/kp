@@ -2,8 +2,11 @@ package common
 
 import (
 	"fmt"
-	t "github.com/mostfunkyduck/kp/internal/backend/types"
 	"strings"
+
+	t "github.com/mostfunkyduck/kp/internal/backend/types"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type Value struct {
@@ -53,8 +56,13 @@ func (v Value) FormattedValue(full bool) string {
 func (v Value) Value() []byte {
 	return v.value
 }
+
 func (v Value) Name() string {
 	return v.name
+}
+
+func (v Value) Title() string {
+	return cases.Title(language.English, cases.NoLower).String(v.Name())
 }
 
 func (v Value) Searchable() bool {

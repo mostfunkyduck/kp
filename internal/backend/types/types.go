@@ -181,11 +181,13 @@ const (
 // OptionalWrapper wraps Values with functions that force the caller of a function to detect whether the value being
 // returned is implemented by the function, this is to help bridge the gap between v2 and v1
 // Proper usage:
-// if wrapper.Present {
-//   <use value>
-// } else {
-// 	 <adapt>
-// }
+//
+//	if wrapper.Present {
+//	  <use value>
+//	} else {
+//
+//		 <adapt>
+//	}
 type OptionalWrapper struct {
 	Present bool
 	Value   Value
@@ -195,6 +197,7 @@ type Value interface {
 	FormattedValue(full bool) string
 	Value() []byte
 	Name() string
+	Title() string
 	Searchable() bool
 	Protected() bool
 	ReadOnly() bool
