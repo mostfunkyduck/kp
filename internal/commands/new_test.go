@@ -42,8 +42,9 @@ func verifyDefaultEntry(e types.Entry) error {
 	}
 
 	for k, v := range values {
-		val := string(e.Get(k).Value())
-		if val != v {
+		val, _ := e.Get(k)
+
+		if string(val.Value()) != v {
 			return fmt.Errorf("%s != %s", v, val)
 		}
 	}

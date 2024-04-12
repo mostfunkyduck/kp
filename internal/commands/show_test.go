@@ -25,7 +25,7 @@ func TestShowNoArgs(t *testing.T) {
 	}
 	r.Context.Cmd = cmd
 	main.Show(r.Shell)(r.Context)
-	expected := "syntax: " + r.Context.Cmd.Help
+	expected := "syntax: " + r.Context.Cmd.Help + "\n"
 	if r.F.outputHolder.output != expected {
 		t.Fatalf("output was incorrect: %s != %s", r.F.outputHolder.output, expected)
 	}
@@ -46,12 +46,13 @@ func TestShowValidArgs(t *testing.T) {
 func TestShowAttachment(t *testing.T) {
 	r := createTestResources(t)
 	r.Context.Args = []string{r.Path}
-	att := c.NewValue(
-		[]byte("yaakov is cool"),
-		"asdf",
-		false, false, false,
-		types.BINARY,
-	)
+	att := c.Attachment{
+		EntryValue: c.NewValue(
+			[]byte("yaakov is cool"),
+			"asdf",
+			false, false, false,
+			types.BINARY,
+		)}
 
 	r.Entry.Set(att)
 

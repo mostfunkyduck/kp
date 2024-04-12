@@ -99,7 +99,6 @@ func (e *Entry) SetParent(g t.Group) error {
 
 func (e *Entry) Output(full bool) (val string) {
 	var b strings.Builder
-	val = "\n"
 	fmt.Fprintf(&b, "\n")
 	// Output all the metadata first
 	uuidString, err := e.driver.UUIDString()
@@ -130,10 +129,7 @@ func (e *Entry) Output(full bool) (val string) {
 		return
 	}
 	for _, val := range values {
-
-		title := strings.Title(val.Name())
-
-		fmt.Fprintf(&b, "%s:\t%s\n", title, val.FormattedValue(full))
+		fmt.Fprintln(&b, val.Output(full))
 	}
 	return b.String()
 }

@@ -71,8 +71,8 @@ func Select(shell *ishell.Shell) (f func(c *ishell.Context)) {
 		}
 
 		for _, val := range selections {
-			fullValue := entry.Get(val)
-			if fullValue.Name() == "" {
+			fullValue, present := entry.Get(val)
+			if !present {
 				shell.Printf("error retrieving value for %s\n", val)
 				return
 			}

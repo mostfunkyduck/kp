@@ -52,19 +52,19 @@ func (e *Entry) UUIDString() (string, error) {
 	return string(str), nil
 }
 
-func (e Entry) Get(field string) t.Value {
+func (e Entry) Get(field string) (t.Value, bool) {
 	values, err := e.Values()
 	if err != nil {
 		// swallowing
-		return nil
+		return nil, false
 	}
 
 	for _, value := range values {
 		if value.Name() == field {
-			return value
+			return value, true
 		}
 	}
-	return nil
+	return nil, false
 }
 
 func (e *Entry) Set(value t.Value) bool {
@@ -248,7 +248,8 @@ func (e *Entry) Title() string {
 }
 
 func (e *Entry) Username() string {
-	return e.Get(fieldUn).FormattedValue(true)
+	v, _ := e.Get(fieldUn)
+	return v.FormattedValue(true)
 }
 
 func (e *Entry) SetUsername(name string) {

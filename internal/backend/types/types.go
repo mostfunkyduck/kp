@@ -126,7 +126,7 @@ type Entry interface {
 	UUIDer
 	KeepassWrapper
 	// Returns the value for a given field, or an empty struct if the field doesn't exist
-	Get(string) Value
+	Get(string) (Value, bool)
 
 	// Title and Password are needed to ensure that v1 and v2 both render
 	// their specific representations of that data (they access it in different ways, fun times)
@@ -181,11 +181,13 @@ const (
 // OptionalWrapper wraps Values with functions that force the caller of a function to detect whether the value being
 // returned is implemented by the function, this is to help bridge the gap between v2 and v1
 // Proper usage:
-// if wrapper.Present {
-//   <use value>
-// } else {
-// 	 <adapt>
-// }
+//
+//	if wrapper.Present {
+//	  <use value>
+//	} else {
+//
+//		 <adapt>
+//	}
 type OptionalWrapper struct {
 	Present bool
 	Value   Value
@@ -195,8 +197,10 @@ type Value interface {
 	FormattedValue(full bool) string
 	Value() []byte
 	Name() string
+	NameTitle() string
 	Searchable() bool
 	Protected() bool
 	ReadOnly() bool
+	Output(showProtected bool) string
 	Type() ValueType
 }

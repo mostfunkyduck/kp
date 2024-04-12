@@ -63,7 +63,7 @@ func TestEntryGetSet(t *testing.T) {
 		types.STRING,
 	)
 
-	retVal := r.BlankEntry.Get(value.Name())
+	retVal, _ := r.BlankEntry.Get(value.Name())
 	if retVal != nil {
 		t.Fatalf("%v", retVal)
 	}
@@ -72,8 +72,8 @@ func TestEntryGetSet(t *testing.T) {
 	}
 
 	name := value.Name()
-	entryValue := string(r.BlankEntry.Get(name).Value())
-	if entryValue != string(value.Value()) {
+	entryValue, _ := r.BlankEntry.Get(name)
+	if string(entryValue.Value()) != string(value.Value()) {
 		t.Fatalf("[%s] != [%s], %v", entryValue, name, value)
 	}
 
@@ -90,8 +90,8 @@ func TestEntryGetSet(t *testing.T) {
 		t.Fatalf("could not overwrite value: %v", value)
 	}
 
-	entryValue = string(r.BlankEntry.Get(value.Name()).Value())
-	if entryValue != secondValue {
+	entryValue, _ = r.BlankEntry.Get(value.Name())
+	if string(entryValue.Value()) != secondValue {
 		t.Fatalf("[%s] != [%s] %v", entryValue, secondValue, value)
 	}
 }
