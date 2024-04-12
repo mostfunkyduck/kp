@@ -12,8 +12,8 @@ import (
 )
 
 func listAttachment(entry t.Entry) (s string, err error) {
-	attachment := entry.Get("attachment")
-	if len(attachment.Value()) == 0 && attachment.Name() == "" {
+	attachment, present := entry.Get("attachment")
+	if !present {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
@@ -29,11 +29,12 @@ func getAttachment(entry t.Entry, outputLocation string) (s string, err error) {
 	}
 	defer f.Close()
 
-	attachment := entry.Get("attachment")
-	if len(attachment.Value()) == 0 {
+	attachment, present := entry.Get("attachment")
+	if !present {
 		err = fmt.Errorf("entry has no attachment")
 		return
 	}
+
 	written, err := f.Write(attachment.Value())
 	if err != nil {
 		err = fmt.Errorf("could not write to [%s]", outputLocation)
@@ -90,12 +91,16 @@ func createAttachment(entry t.Entry, name string, path string) (output string, e
 		return "", fmt.Errorf("could not open %s: %s", path, err)
 	}
 
-	entry.Set(c.NewValue(
-		data,
-		"attachment",
-		false, false, false,
-		t.BINARY,
-	))
+	entry.Set(c.Attachment{
+		EntryValue: c.NewValue(
+			data,
+			name,
+			false,
+			false,
+			false,
+			t.BINARY,
+		),
+	})
 
 	return "added attachment to database", nil
 }
@@ -116,8 +121,10 @@ func runAttachCommands(args []string, cmd string, entry t.Entry, shell *ishell.S
 		}
 
 		outputLocation := args[1]
-		if !confirmOverwrite(shell, outputLocation) {
-			return "aborting", nil
+		if _, err := os.Stat(outputLocation); os.IsNotExist(err) {
+			if !confirmOverwrite(shell, outputLocation) {
+				return "aborting", nil
+			}
 		}
 		return getAttachment(entry, outputLocation)
 	case "details":

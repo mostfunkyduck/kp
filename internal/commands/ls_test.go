@@ -14,8 +14,9 @@ func TestLsNoArgsFromGroup(t *testing.T) {
 	_, _ = r.Group.NewSubgroup("test")
 	r.Db.SetCurrentLocation(r.Group)
 	main.Ls(r.Shell)(r.Context)
-	if !strings.Contains(r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test") {
-		t.Fatalf("[%s] does not contain  [%s]", r.F.outputHolder.output, "=== Groups ===test/=== Entries ===0: test")
+	expected := "=== Groups ===\ntest/\n\n=== Entries ===\n0: test\n"
+	if !strings.Contains(r.F.outputHolder.output, expected) {
+		t.Fatalf("[%s] does not contain  [%s]", r.F.outputHolder.output, expected)
 	}
 }
 
@@ -28,7 +29,7 @@ func TestLsEntryFromRoot(t *testing.T) {
 	r.Context.Args = []string{path}
 	r.Db.SetCurrentLocation(r.Db.Root())
 	main.Ls(r.Shell)(r.Context)
-	if r.F.outputHolder.output != "test" {
+	if r.F.outputHolder.output != "test\n" {
 		t.Fatalf("[%s] does not contain  [%s]", r.F.outputHolder.output, "test")
 	}
 }

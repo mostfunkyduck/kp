@@ -129,8 +129,7 @@ func (e *Entry) Output(full bool) (val string) {
 		return
 	}
 	for _, val := range values {
-
-		fmt.Fprintf(&b, "%s:\t%s\n", val.Title(), val.FormattedValue(full))
+		fmt.Fprintln(&b, val.Output(full))
 	}
 	return b.String()
 }

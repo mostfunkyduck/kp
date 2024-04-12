@@ -5,7 +5,6 @@ package commands_test
 import (
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/abiosoft/readline"
@@ -27,7 +26,7 @@ type FakeWriter struct {
 
 func (f FakeWriter) Write(p []byte) (n int, err error) {
 	// output will look a little funny...
-	f.outputHolder.output += strings.TrimSpace(strings.ReplaceAll(string(p), "\n", " "))
+	f.outputHolder.output += string(p)
 
 	return len(p), nil
 }
@@ -122,7 +121,8 @@ func testEntry(full bool, t *testing.T, r testResources) {
 	}
 	testShowOutput(o, fmt.Sprintf("Location:\t%s", path), t)
 	testShowOutput(o, fmt.Sprintf("Title:\t%s", r.Entry.Title()), t)
-	testShowOutput(o, fmt.Sprintf("URL:\t%s", r.Entry.Get("URL").Value()), t)
+	urlValue, _ := r.Entry.Get("URL")
+	testShowOutput(o, fmt.Sprintf("URL:\t%s", urlValue.Value()), t)
 	// compensating for v1 and v2 formatting differently
 	unFieldName := "Username"
 	if os.Getenv("KPVERSION") == "2" {
@@ -139,8 +139,8 @@ func testEntry(full bool, t *testing.T, r testResources) {
 	// This is ridiculously annoying to test properly, pushing it off for now, will test manually
 	//testShowOutput(o, fmt.Sprintf("Notes:\t\n>\t%s", strings.ReplaceAll(string(r.Entry.Get("notes").Value), "\n", "\n>\t")), t)
 
-	att := r.Entry.Get("attachment")
-	if att != nil {
-		testShowOutput(o, fmt.Sprintf("Attachment:\t%s", att.Name()), t)
+	att, present := r.Entry.Get("attachment")
+	if present {
+		testShowOutput(o, att.Output(false), t)
 	}
 }

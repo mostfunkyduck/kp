@@ -126,7 +126,7 @@ type Entry interface {
 	UUIDer
 	KeepassWrapper
 	// Returns the value for a given field, or an empty struct if the field doesn't exist
-	Get(string) Value
+	Get(string) (Value, bool)
 
 	// Title and Password are needed to ensure that v1 and v2 both render
 	// their specific representations of that data (they access it in different ways, fun times)
@@ -197,9 +197,10 @@ type Value interface {
 	FormattedValue(full bool) string
 	Value() []byte
 	Name() string
-	Title() string
+	NameTitle() string
 	Searchable() bool
 	Protected() bool
 	ReadOnly() bool
+	Output(showProtected bool) string
 	Type() ValueType
 }

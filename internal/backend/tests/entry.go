@@ -165,7 +165,7 @@ func testOutput(e types.Entry, full bool) (output string, failures string) {
 		return
 	}
 	for _, value := range values {
-		expected := strings.Title(string(value.Name())) + ":\t" + value.FormattedValue(full)
+		expected := value.Output(full)
 		if !strings.Contains(output, expected) {
 			failures = fmt.Sprintf("%svalue [%s] should have been in output\n", failures, expected)
 		}

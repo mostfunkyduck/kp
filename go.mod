@@ -1,6 +1,6 @@
 module github.com/mostfunkyduck/kp
 
-go 1.18
+go 1.21
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
@@ -11,7 +11,10 @@ require (
 	zombiezen.com/go/sandpass v1.1.0
 )
 
-require github.com/mostfunkyduck/ishell v0.0.0-20230416142217-6b0f1edba07f
+require (
+	github.com/mostfunkyduck/ishell v0.0.0-20230416142217-6b0f1edba07f
+	golang.org/x/text v0.9.0
+)
 
 require (
 	github.com/aead/argon2 v0.0.0-20180111183520-a87724528b07 // indirect
@@ -26,7 +29,6 @@ require (
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
 )
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911

@@ -9,18 +9,22 @@ import (
 	"golang.org/x/text/language"
 )
 
-type Value struct {
+type EntryValue struct {
 	value      []byte
-	name       string // v1 compatibility - attachments have their own name within entries
-	searchable bool   // indicates whether this value should be included in searches
+	name       string
+	searchable bool // indicates whether this value should be included in searches
 	protected  bool
 	readOnly   bool
 	valueType  t.ValueType
 }
 
+type Attachment struct {
+	EntryValue
+}
+
 // NewValue initializes a value object
-func NewValue(value []byte, name string, searchable bool, protected bool, readOnly bool, valueType t.ValueType) Value {
-	return Value{
+func NewValue(value []byte, name string, searchable bool, protected bool, readOnly bool, valueType t.ValueType) EntryValue {
+	return EntryValue{
 		value:      value,
 		name:       name,
 		searchable: searchable,
@@ -30,12 +34,13 @@ func NewValue(value []byte, name string, searchable bool, protected bool, readOn
 	}
 }
 
+func (a Attachment) FormattedValue(full bool) string {
+	return fmt.Sprintf("binary: %d bytes", len(a.value))
+}
+
 // FormattedValue returns the appropriately formatted value contents, with the `full` argument determining
 // whether protected values should be returned in cleartext
-func (v Value) FormattedValue(full bool) string {
-	if v.Type() == t.BINARY {
-		return fmt.Sprintf("binary: %d bytes", len(v.value))
-	}
+func (v EntryValue) FormattedValue(full bool) string {
 
 	if v.Protected() && !full {
 		return "[protected]"
@@ -53,30 +58,38 @@ func (v Value) FormattedValue(full bool) string {
 	return string(v.Value())
 }
 
-func (v Value) Value() []byte {
+func (v EntryValue) Value() []byte {
 	return v.value
 }
 
-func (v Value) Name() string {
+func (v EntryValue) NameTitle() string {
+	return cases.Title(language.English, cases.NoLower).String(v.name)
+}
+
+func (v EntryValue) Output(showProtected bool) string {
+	return fmt.Sprintf("%s:\t%s", v.NameTitle(), v.FormattedValue(showProtected))
+}
+
+func (a Attachment) Output(showProtected bool) string {
+	return fmt.Sprintf("Attachment:\n\tName:\t%s\n\tSize:\t%s", a.Name(), a.FormattedValue(showProtected))
+}
+
+func (v EntryValue) Name() string {
 	return v.name
 }
 
-func (v Value) Title() string {
-	return cases.Title(language.English, cases.NoLower).String(v.Name())
-}
-
-func (v Value) Searchable() bool {
+func (v EntryValue) Searchable() bool {
 	return v.searchable
 }
 
-func (v Value) Protected() bool {
+func (v EntryValue) Protected() bool {
 	return v.protected
 }
 
-func (v Value) ReadOnly() bool {
+func (v EntryValue) ReadOnly() bool {
 	return v.readOnly
 }
 
-func (v Value) Type() t.ValueType {
+func (v EntryValue) Type() t.ValueType {
 	return v.valueType
 }

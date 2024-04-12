@@ -287,11 +287,13 @@ func copyFromEntry(shell *ishell.Shell, targetPath string, entryData string) err
 	// FIXME hardcoded values
 	case "username":
 		// FIXME rewire this so that the entry provides the copy function
-		data = string(entry.Get("username").Value())
+		v, _ := entry.Get("username")
+		data = string(v.Value())
 	case "password":
 		data = entry.Password()
 	case "url":
-		data = string(entry.Get("URL").Value())
+		v, _ := entry.Get("URL")
+		data = string(v.Value())
 	default:
 		return fmt.Errorf("'%s' was not a valid entry data type", entryData)
 	}

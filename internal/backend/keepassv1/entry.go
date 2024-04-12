@@ -38,7 +38,7 @@ func (e *Entry) UUIDString() (string, error) {
 	return e.entry.UUID.String(), nil
 }
 
-func (e *Entry) Get(field string) (rv t.Value) {
+func (e *Entry) Get(field string) (rv t.Value, present bool) {
 	var value []byte
 	var name = field
 	searchable := true
@@ -60,13 +60,20 @@ func (e *Entry) Get(field string) (rv t.Value) {
 		valueType = t.LONGSTRING
 	case strings.ToLower(fieldAttachment):
 		if !e.entry.HasAttachment() {
-			return nil
+			return nil, false
 		}
-		name = e.entry.Attachment.Name
-		value = e.entry.Attachment.Data
-		valueType = t.BINARY
+		return c.Attachment{
+			EntryValue: c.NewValue(
+				e.entry.Attachment.Data,
+				e.entry.Attachment.Name,
+				searchable,
+				protected,
+				false,
+				t.BINARY,
+			),
+		}, true
 	default:
-		return nil
+		return nil, false
 	}
 
 	return c.NewValue(
@@ -76,13 +83,20 @@ func (e *Entry) Get(field string) (rv t.Value) {
 		protected,
 		false,
 		valueType,
-	)
+	), true
 }
 
 func (e *Entry) Set(value t.Value) (updated bool) {
 	updated = true
 	field := value.Name()
 	fieldValue := value.Value()
+
+	if value.Type() == t.BINARY {
+		e.entry.Attachment.Name = field
+		e.entry.Attachment.Data = fieldValue
+		return true
+	}
+
 	switch strings.ToLower(field) {
 	case strings.ToLower(fieldTitle):
 		e.entry.Title = string(fieldValue)
@@ -94,12 +108,10 @@ func (e *Entry) Set(value t.Value) (updated bool) {
 		e.entry.URL = string(fieldValue)
 	case strings.ToLower(fieldNotes):
 		e.entry.Notes = string(fieldValue)
-	case strings.ToLower(fieldAttachment):
-		e.entry.Attachment.Name = field
-		e.entry.Attachment.Data = fieldValue
 	default:
 		updated = false
 	}
+
 	return
 }
 
@@ -167,7 +179,8 @@ func (e *Entry) Raw() interface{} {
 }
 
 func (e *Entry) Password() string {
-	return string(e.Get("password").Value())
+	v, _ := e.Get("password")
+	return string(v.Value())
 }
 
 func (e *Entry) SetPassword(password string) {
@@ -182,7 +195,8 @@ func (e *Entry) SetPassword(password string) {
 }
 
 func (e *Entry) Title() string {
-	return string(e.Get("title").Value())
+	v, _ := e.Get("title")
+	return string(v.Value())
 }
 
 func (e *Entry) SetTitle(title string) {
@@ -199,19 +213,17 @@ func (e *Entry) SetTitle(title string) {
 func (e *Entry) Values() (vals []t.Value, err error) {
 	path, _ := e.Path()
 	vals = append(vals, c.NewValue([]byte(path), "location", false, false, true, t.STRING))
-	vals = append(vals, e.Get(fieldTitle))
-	vals = append(vals, e.Get(fieldUrl))
-	vals = append(vals, e.Get(fieldUn))
-	vals = append(vals, e.Get(fieldPw))
-	vals = append(vals, e.Get(fieldNotes))
-	if e.entry.HasAttachment() {
-		vals = append(vals, e.Get(fieldAttachment))
+	for _, field := range []string{fieldTitle, fieldUrl, fieldUn, fieldPw, fieldNotes, fieldAttachment} {
+		if v, present := e.Get(field); present {
+			vals = append(vals, v)
+		}
 	}
 	return
 }
 
 func (e *Entry) Username() string {
-	return e.Get(fieldUn).FormattedValue(true)
+	v, _ := e.Get(fieldUn)
+	return v.FormattedValue(true)
 }
 
 func (e *Entry) SetUsername(name string) {
