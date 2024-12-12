@@ -34,8 +34,7 @@ lint:
 	./scripts/lint.sh || exit 1
 
 install: kp
-	cp ./kp /usr/local/bin/kp
-
+	install ./kp $(HOME)/.local/bin
 # allow testing v1 and v2 separately or together
 coveragecmd := -coverprofile coverage.out -coverpkg=./internal/commands,./internal/backend/types,./internal/backend/common
 internalpkgs := ./internal/commands
