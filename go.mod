@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/mostfunkyduck/ishell v0.0.0-20230416142217-6b0f1edba07f
-	golang.org/x/text v0.14.0
+	golang.org/x/text v0.21.0
 )
 
 require (
@@ -26,9 +26,9 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/crypto v0.31.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
 )
 
 replace zombiezen.com/go/sandpass => github.com/mostfunkyduck/sandpass v1.1.1-0.20200617090953-4e7550e75911
