@@ -13,6 +13,14 @@ type Group struct {
 	group *keepass.Group
 }
 
+func (g *Group) EntryExists(name string) bool {
+	for _, each := range g.Entries() {
+		if each.Title() == name {
+			return true
+		}
+	}
+	return false
+}
 func WrapGroup(group *keepass.Group, db t.Database) t.Group {
 	if group == nil {
 		return nil
@@ -121,6 +129,9 @@ func (g *Group) Raw() interface{} {
 
 func (g *Group) NewEntry(name string) (t.Entry, error) {
 	// FIXME allows dupe entries
+	if g.EntryExists(name) {
+		return nil, fmt.Errorf("entry '%s' already exists in location '%s'", name, g.Name())
+	}
 	entry, err := g.group.NewEntry()
 	if err != nil {
 		return nil, err

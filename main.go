@@ -204,30 +204,17 @@ func main() {
 		break
 	}
 
-	if dbWrapper.Locked() {
-		shell.Printf("Lockfile exists for DB at path '%s', another process is using this database!\n", dbWrapper.SavePath())
-		shell.Printf("Open anyways? Data loss may occur. (will only proceed if 'yes' is entered)  ")
-		line, err := shell.ReadLineErr()
-		if err != nil {
-			shell.Printf("could not read user input: %s\n", line)
-			os.Exit(1)
-		}
-
-		if line != "yes" {
-			shell.Println("aborting")
-			os.Exit(1)
-		}
-	}
-
-	if err := dbWrapper.Lock(); err != nil {
-		shell.Printf("aborting, could not lock database: %s\n", err)
-		os.Exit(1)
-	}
 	shell.Printf("opened database at %s\n", dbWrapper.SavePath())
 
 	shell.Set("db", dbWrapper)
 	shell.SetPrompt(fmt.Sprintf("/%s > ", dbWrapper.CurrentLocation().Name()))
 
+	shell.AddCmd(&ishell.Cmd{
+		Name:                "firefox-import",
+		Help:                "firefox-import <filesystem path> <target location (must exist in DB)>",
+		Func:                commands.FirefoxImport(shell),
+		CompleterWithPrefix: fileCompleter(shell, true),
+	})
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "ls",
 		Help:                "ls [path]",
