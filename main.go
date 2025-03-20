@@ -403,9 +403,4 @@ func main() {
 	} else {
 		fmt.Println("no changes detected since last save.")
 	}
-
-	if err := dbWrapper.Unlock(); err != nil {
-		fmt.Printf("failed to unlock db: %s", err)
-		os.Exit(1)
-	}
 }
