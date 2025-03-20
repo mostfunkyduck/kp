@@ -41,24 +41,23 @@ func removeEntry(parentLocation t.Group, entryName string) error {
 
 func Rm(shell *ishell.Shell) (f func(c *ishell.Context)) {
 	return func(c *ishell.Context) {
+		groupMode := false
+		if c.Cmd.HasFlag("-r") {
+			groupMode = true
+		}
 		errString, ok := syntaxCheck(c, 1)
 		if !ok {
 			shell.Println(errString)
 			return
 		}
 
-		targetPath := buildPath(c.Args)
-		groupMode := false
-		if c.Args[0] == "-r" {
-			groupMode = true
-			targetPath = buildPath(c.Args[1:])
-		}
+		targetPath := c.Args[len(c.Args)-1]
 
 		db := shell.Get("db").(t.Database)
 		currentLocation := db.CurrentLocation()
 		newLocation, entry, err := TraversePath(db, currentLocation, targetPath)
 		if err != nil {
-			shell.Printf("could not reach location %s: %s", targetPath, err)
+			shell.Printf("could not reach location %s: %s\n", targetPath, err)
 			return
 		}
 

@@ -306,7 +306,8 @@ func main() {
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:                "rm",
-		Help:                "rm <entry>",
+		Flags:               []string{"-r"},
+		Help:                "rm [-r] <entry>",
 		LongHelp:            "removes an entry",
 		CompleterWithPrefix: fileCompleter(shell, true),
 		Func:                commands.Rm(shell),

@@ -30,6 +30,14 @@ var allFields = []string{
 	GUID, TIME_CREATED, TIME_LAST_USED, TIME_PASSWORD_CHANGED,
 }
 
+func parseTimestamp(input string) (time.Time, error) {
+	i, err := strconv.ParseInt(input[:10], 10, 64)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(i, 0), nil
+}
+
 func parseCSV(shell *ishell.Shell, path string, location t.Group) (int, int, error) {
 	updated := 0
 	broken := 0
@@ -64,7 +72,7 @@ func parseCSV(shell *ishell.Shell, path string, location t.Group) (int, int, err
 		timeLastUsed := record[headers[TIME_LAST_USED]]
 		timePasswordChanged := record[headers[TIME_PASSWORD_CHANGED]]
 		url := record[headers[URL]]
-		title := fmt.Sprintf("%s (%s)", url, username)
+		title := fmt.Sprintf("%s (%s)", strings.TrimPrefix(url, "https://"), username)
 		entry, err := location.NewEntry(title)
 		if err != nil {
 			shell.Println(fmt.Sprintf("error creating entry for '%s': %s", title, err))
@@ -75,16 +83,23 @@ func parseCSV(shell *ishell.Shell, path string, location t.Group) (int, int, err
 		updated++
 		entry.SetUsername(username)
 		entry.SetPassword(password)
-		// NOTE: lack of error handling if it isn't an int
-		if timeInt, err := strconv.ParseInt(timeCreated, 10, 64); err != nil {
-			entry.SetCreationTime(time.Unix(timeInt, 0))
+		if uTime, err := parseTimestamp(timeCreated); err == nil {
+			entry.SetCreationTime(uTime)
+		} else {
+			shell.Println(err)
 		}
-		if timeInt, err := strconv.ParseInt(timeLastUsed, 10, 64); err != nil {
-			entry.SetLastAccessTime(time.Unix(timeInt, 0))
+		if uTime, err := parseTimestamp(timeLastUsed); err == nil {
+			entry.SetLastAccessTime(uTime)
+		} else {
+			shell.Println(err)
 		}
-		if timeInt, err := strconv.ParseInt(timePasswordChanged, 10, 64); err != nil {
-			entry.SetLastModificationTime(time.Unix(timeInt, 0))
+
+		if uTime, err := parseTimestamp(timePasswordChanged); err == nil {
+			entry.SetLastModificationTime(uTime)
+		} else {
+			shell.Println(err)
 		}
+
 		// FIXME: this is assuming kpv1 format, not a huge deal rn, but not what it should be
 		entry.Set(c.NewValue(
 			[]byte(url),

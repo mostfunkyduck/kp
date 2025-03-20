@@ -2,7 +2,7 @@ REVISION=`git show | head -1 | awk '{print $$NF}' | cut -c 1-5`
 HOSTNAME=`hostname`
 DATE=`date -u +%Y-%m-%d-%H-%M`
 BRANCH=`git branch 2>/dev/null | grep '\*' | sed "s/* //"`
-RELEASE=0.1
+RELEASE=0.1.0
 
 .PHONY: test cscope install tidy fix lint testv1 testv2 vet
 
